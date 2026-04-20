@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome Page</title>
+    <link href="css/style.css" rel="stylesheet" />
+    <script src="js/main.js" defer></script>
+  </head>
+  <body>
+    <div id="terminal-content">
+      <div class="typing-container">
+        <pre>
+   __      __       .__                               
+  /  \    /  \ ____ |  |   ____  ____   _____   ____  
+  \   \/\/   // __ \|  | _/ ___\/  _ \ /     \_/ __ \ 
+   \        /\  ___/|  |_\  \__(  <_> )  Y Y  \  ___/ 
+    \__/\  /  \___  >____/\___  >____/|__|_|  /\___  >
+         \/       \/          \/            \/     \/ 
+        </pre>
+      </div>
+      <div class="typing-container">
+        <p>This is my personal webpage. Try running <b>./wbctrl.sh</b> -h to see what you can do.</p>
+        <p style="color: #666; font-size: 0.9em; margin-top: -5px;">&copy; 2026 DeployedReject. All rights reserved.</p>
+      </div>
+      <div id="terminal-history"></div>
+    </div>
+    <div class="terminal-prompt">
+      <span class="prompt">vaibhav@DeployedReject ~ %</span> <span id="command-text"><span class="cursor">_</span></span>
+      <input type="text" id="terminal-input" autofocus />
+    </div>
+    <div id="gui-window" class="gui-window">
+      <div class="gui-titlebar">
+        <span class="gui-title">Documentation Viewer</span>
+        <div class="gui-controls">
+          <span class="gui-btn gui-min" onclick="toggleMinDocs()"></span>
+          <span class="gui-btn gui-max" onclick="toggleMaxDocs()"></span>
+          <span class="gui-btn gui-close" onclick="closeDocs()"></span>
+        </div>
+      </div>
+      <div class="gui-body">
+        <div class="gui-sidebar">
+          <div class="gui-sidebar-item">cf-p-link</div>
+        </div>
+        <div class="gui-content">
+          <div class="gui-icon">📚</div>
+          <h1>Documentation</h1>
+          <p>Oops no documentation, will add it later(never probably).</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

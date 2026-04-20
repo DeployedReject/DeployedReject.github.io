@@ -1,0 +1,212 @@
+body {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Courier New', Courier, monospace;
+  margin: 0;
+  padding: 10px;
+}
+
+pre {
+  color: #007bff;
+  margin: 0;
+}
+
+.prompt {
+  color: #4af626;
+  font-weight: bold;
+}
+
+.cursor {
+  color: #ffffff;
+  animation: blink 1s step-end infinite;
+}
+
+#terminal-history div {
+  margin-bottom: 5px;
+  white-space: pre-wrap;
+}
+
+.history-command {
+  font-weight: bold;
+}
+
+.history-output {
+  color: #d4d4d4;
+  margin-bottom: 15px;
+}
+
+.error-red {
+  color: #ff5555;
+  font-weight: bold;
+}
+
+#terminal-input {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+.typing-container {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  animation: typing 0.5s steps(70, end) forwards;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.gui-window {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70vw;
+  max-width: 800px;
+  height: 60vh;
+  background-color: #242424;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  flex-direction: column;
+  z-index: 1000;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+  border: 1px solid #333;
+}
+
+.gui-titlebar {
+  height: 35px;
+  background-color: #1a1a1a;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  user-select: none;
+  border-bottom: 1px solid #000;
+}
+
+.gui-title {
+  font-size: 14px;
+  color: #a0a0a0;
+}
+
+.gui-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.gui-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0,0,0,0.6);
+  font-weight: bold;
+  user-select: none;
+}
+
+.gui-btn::before { content: ""; display: none; margin-top: -1px; }
+.gui-controls:hover .gui-close::before { content: "×"; display: block; font-size: 13px; }
+.gui-controls:hover .gui-min::before { content: "−"; display: block; font-size: 11px; }
+.gui-controls:hover .gui-max::before { content: "+"; display: block; font-size: 11px; }
+
+.gui-close { background-color: #ff5f56; }
+.gui-close:hover { background-color: #ff3b30; }
+.gui-min { background-color: #ffbd2e; }
+.gui-max { background-color: #27c93f; }
+
+.gui-window.maximized {
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  transform: none;
+  max-width: none;
+  border-radius: 0;
+}
+
+.gui-window.minimized {
+  height: 35px;
+  overflow: hidden;
+  top: auto;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.gui-window.minimized .gui-body {
+  display: none;
+}
+
+.gui-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.gui-sidebar {
+  width: 180px;
+  background-color: #1e1e1e;
+  border-right: 1px solid #333;
+  padding: 15px 0;
+}
+
+.gui-sidebar-item {
+  padding: 10px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #3a3a3a;
+  border-left: 3px solid #007bff;
+  transition: background 0.2s;
+}
+
+.gui-sidebar-item:hover {
+  background-color: #4a4a4a;
+}
+
+.gui-content {
+  flex: 1;
+  padding: 30px;
+  background-color: #242424;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.gui-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.gui-content h1 {
+  margin-top: 0;
+  font-size: 24px;
+  font-weight: normal;
+  margin-bottom: 10px;
+}
+
+.gui-content p {
+  font-size: 16px;
+  color: #a0a0a0;
+  line-height: 1.5;
+}
