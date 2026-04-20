@@ -24,6 +24,12 @@ pre {
 #terminal-history div {
   margin-bottom: 5px;
   white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.terminal-prompt {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .history-command {
@@ -209,4 +215,23 @@ pre {
   font-size: 16px;
   color: #a0a0a0;
   line-height: 1.5;
+}
+
+/* Responsive text wrapping for small screens */
+@media screen and (max-width: 768px) {
+  .typing-container {
+    white-space: pre-wrap !important;
+    width: 100% !important;
+    animation: mobileFadeIn 0.8s forwards !important;
+  }
+  
+  pre {
+    font-size: clamp(4px, 2.5vw, 16px);
+    overflow: hidden;
+  }
+}
+
+@keyframes mobileFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
