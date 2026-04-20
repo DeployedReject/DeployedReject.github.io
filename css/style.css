@@ -9,6 +9,8 @@ body {
 pre {
   color: #007bff;
   margin: 0;
+  font-size: clamp(4px, 2.2vw, 16px);
+  line-height: 1.2;
 }
 
 .prompt {
@@ -223,11 +225,6 @@ pre {
     white-space: pre-wrap !important;
     width: 100% !important;
     animation: mobileFadeIn 0.8s forwards !important;
-  }
-  
-  pre {
-    font-size: clamp(4px, 2.5vw, 16px);
-    overflow: hidden;
   }
 }
 
