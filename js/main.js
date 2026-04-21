@@ -204,6 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (cmd === 'whoami') {
             output.textContent = 'you are nothing and nobody';
             history.appendChild(output);
+        } else if (cmd === 'echo') {
+            output.textContent = args.join(' ');
+            history.appendChild(output);
         } else {
             output.innerHTML = `zsh: command not found: ${cmd}<br>Try running <b style="color: white">./wbctrl.sh</b> -h to see what you can do.`;
             history.appendChild(output);
