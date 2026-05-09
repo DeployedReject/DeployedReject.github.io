@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const history = document.getElementById('terminal-history');
     const promptLabel = document.querySelector('.prompt');
 
+    const portfolioProjects = ['VitalLink'];
+
     // Virtual File System
     const fs = {
         '/': {
@@ -15,6 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 'css': { type: 'dir', children: { 'style.css': { type: 'file' } } },
                 'js': { type: 'dir', children: { 'main.js': { type: 'file' } } },
                 'docs': { type: 'dir', children: { 'documentation.txt': { type: 'file' }, 'app-gui': { type: 'file' } } },
+                'portfolio': { 
+                    type: 'dir', 
+                    children: { 
+                        'VitalLink': { type: 'dir', children: { 'main.png': { type: 'file' }, 'description.md': { type: 'file' }, 'images': { type: 'dir', children: { '1.png': { type: 'file' } } } } }
+                    } 
+                },
                 'index.html': { type: 'file' },
                 'README.md': { type: 'file' },
                 'wbctrl.sh': { type: 'file' }
@@ -173,7 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                  `  -gg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Open GitHub Profile<br><br>` +
                                  `  -c&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;View Codeberg info<br>` +
                                  `  -cg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Open Codeberg Profile<br><br>` +
-                                 `  -d&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Launch Documentation GUI<br><br>` +
+                                 `  -d&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Launch Documentation GUI<br>` +
+                                 `  -p&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Launch Portfolio GUI<br><br>` +
                                  `  -m&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;View Contact info<br>` +
                                  `  -mg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Compose Email (opens client)`;
             } else if (args.includes('-g')) {
@@ -191,6 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 input.disabled = true;
                 setTimeout(() => {
                     document.getElementById('gui-window').style.display = 'flex';
+                }, 500);
+            } else if (args.includes('-p')) {
+                output.innerHTML = 'Loading portfolio...<br>Launching GUI environment...';
+                input.disabled = true;
+                setTimeout(() => {
+                    initPortfolio();
+                    document.getElementById('portfolio-window').style.display = 'flex';
                 }, 500);
             } else if (args.includes('-m')) {
                 output.textContent = 'Contact: DeployedReject via Email. Use -mg to compose.';
@@ -276,5 +292,120 @@ document.addEventListener('DOMContentLoaded', () => {
         history.appendChild(output);
         
         window.scrollTo(0, document.body.scrollHeight);
+    };
+
+    window.toggleMaxPortfolio = function() {
+        const w = document.getElementById('portfolio-window');
+        w.classList.toggle('maximized');
+        w.classList.remove('minimized');
+    };
+
+    window.toggleMinPortfolio = function() {
+        const w = document.getElementById('portfolio-window');
+        w.classList.toggle('minimized');
+        w.classList.remove('maximized');
+    };
+
+    window.closePortfolio = function() {
+        const w = document.getElementById('portfolio-window');
+        w.style.display = 'none';
+        w.classList.remove('maximized', 'minimized');
+        input.disabled = false;
+        input.focus();
+        
+        const output = document.createElement('div');
+        output.className = 'history-output';
+        output.textContent = '[Process completed: Portfolio GUI app closed]';
+        history.appendChild(output);
+        
+        window.scrollTo(0, document.body.scrollHeight);
+    };
+
+    window.initPortfolio = function() {
+        const content = document.getElementById('portfolio-content');
+        
+        let gridHtml = '<div class="portfolio-grid">';
+        portfolioProjects.forEach(project => {
+            gridHtml += `
+                <div class="portfolio-card" onclick="loadProject('${project}')">
+                    <img src="portfolio/${project}/main.png" alt="${project}" onerror="this.src='https://via.placeholder.com/150'">
+                    <div class="portfolio-card-title">${project}</div>
+                </div>
+            `;
+        });
+        gridHtml += '</div>';
+        
+        content.innerHTML = gridHtml;
+    };
+
+    window.loadProject = async function(project) {
+        const content = document.getElementById('portfolio-content');
+        content.innerHTML = '<p>Loading project details...</p>';
+        
+        try {
+            const mdResponse = await fetch(`portfolio/${project}/description.md`);
+            if (!mdResponse.ok) throw new Error('Could not load description.md');
+            const mdText = await mdResponse.text();
+            
+            const htmlContent = marked.parse(mdText);
+            
+            content.innerHTML = `
+                <img src="portfolio/${project}/main.png" class="portfolio-image" alt="${project} image" onerror="this.style.display='none'">
+                <div class="portfolio-markdown">${htmlContent}</div>
+                <div class="portfolio-controls">
+                    <button class="portfolio-btn" onclick="initPortfolio()">Back</button>
+                    <button class="portfolio-btn" onclick="viewProjectImages('${project}')">View Images</button>
+                </div>
+            `;
+        } catch (error) {
+            content.innerHTML = `
+                <h1>Error</h1>
+                <p>Failed to load project details: ${error.message}</p>
+                <div class="portfolio-controls">
+                    <button class="portfolio-btn" onclick="initPortfolio()">Back</button>
+                </div>
+            `;
+        }
+    };
+
+    window.viewProjectImages = async function(project) {
+        const content = document.getElementById('portfolio-content');
+        content.innerHTML = '<p>Loading images...</p>';
+        
+        let loadedImages = [];
+        const exts = ['png', 'jpg', 'jpeg', 'webp'];
+        
+        // Scan up to 10 images
+        for (let i = 1; i <= 10; i++) {
+            for (let ext of exts) {
+                let url = `portfolio/${project}/images/${i}.${ext}`;
+                try {
+                    let res = await fetch(url, { method: 'HEAD' });
+                    if (res.ok) {
+                        loadedImages.push(url);
+                        break;
+                    }
+                } catch(e) {
+                    // Ignore and try next
+                }
+            }
+        }
+        
+        let gridHtml = '<div class="image-gallery-grid">';
+        if (loadedImages.length === 0) {
+            gridHtml += '<p>No additional images found.</p>';
+        } else {
+            loadedImages.forEach(url => {
+                gridHtml += `<img src="${url}" alt="Gallery Image" loading="lazy">`;
+            });
+        }
+        gridHtml += '</div>';
+        
+        content.innerHTML = `
+            ${gridHtml}
+            <div class="portfolio-controls">
+                <button class="portfolio-btn" onclick="loadProject('${project}')">Back to Project</button>
+            </div>
+        `;
     };
 });

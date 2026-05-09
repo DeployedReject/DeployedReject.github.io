@@ -6,6 +6,7 @@
     <title>Welcome Page</title>
     <link href="css/style.css" rel="stylesheet" />
     <script src="js/main.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </head>
   <body>
     <div id="terminal-content">
@@ -45,6 +46,21 @@
           <div class="gui-icon">📚</div>
           <h1>Documentation</h1>
           <p>Oops no documentation, will add it later(never probably).</p>
+        </div>
+      </div>
+    </div>
+    <div id="portfolio-window" class="gui-window">
+      <div class="gui-titlebar">
+        <span class="gui-title">Portfolio Viewer</span>
+        <div class="gui-controls">
+          <span class="gui-btn gui-min" onclick="toggleMinPortfolio()"></span>
+          <span class="gui-btn gui-max" onclick="toggleMaxPortfolio()"></span>
+          <span class="gui-btn gui-close" onclick="closePortfolio()"></span>
+        </div>
+      </div>
+      <div class="gui-body" style="flex-direction: column;">
+        <div class="gui-content portfolio-content" id="portfolio-content" style="width: 100%; padding: 20px; box-sizing: border-box; flex: 1;">
+          <!-- Content dynamically injected here (Grid or Details) -->
         </div>
       </div>
     </div>
