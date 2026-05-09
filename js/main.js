@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const htmlContent = marked.parse(mdText);
             
             content.innerHTML = `
-                <img src="portfolio/${project}/main.png" class="portfolio-image" alt="${project} image" onerror="this.style.display='none'">
+                <img src="portfolio/${project}/main.png" class="portfolio-image" alt="${project} image" onerror="this.style.display='none'" oncontextmenu="openFullscreenImage(event, this.src)">
                 <div class="portfolio-markdown">${htmlContent}</div>
                 <div class="portfolio-controls">
                     <button class="portfolio-btn" onclick="initPortfolio()">Back</button>
@@ -366,6 +366,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         }
+    };
+
+    let currentFullscreenSrc = '';
+
+    window.openFullscreenImage = function(e, src) {
+        e.preventDefault();
+        currentFullscreenSrc = src;
+        const menu = document.getElementById('custom-context-menu');
+        menu.style.display = 'block';
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+    };
+
+    window.triggerFullscreen = function() {
+        const menu = document.getElementById('custom-context-menu');
+        menu.style.display = 'none';
+        if(currentFullscreenSrc) {
+            const overlay = document.getElementById('fullscreen-overlay');
+            const img = document.getElementById('fullscreen-image');
+            img.src = currentFullscreenSrc;
+            overlay.style.display = 'flex';
+        }
+    };
+
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('custom-context-menu');
+        if (menu && menu.style.display === 'block') {
+            menu.style.display = 'none';
+        }
+    });
+
+    window.closeFullscreenImage = function() {
+        const overlay = document.getElementById('fullscreen-overlay');
+        overlay.style.display = 'none';
     };
 
     window.viewProjectImages = async function(project) {
@@ -396,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gridHtml += '<p>No additional images found.</p>';
         } else {
             loadedImages.forEach(url => {
-                gridHtml += `<img src="${url}" alt="Gallery Image" loading="lazy">`;
+                gridHtml += `<img src="${url}" alt="Gallery Image" loading="lazy" oncontextmenu="openFullscreenImage(event, this.src)">`;
             });
         }
         gridHtml += '</div>';
