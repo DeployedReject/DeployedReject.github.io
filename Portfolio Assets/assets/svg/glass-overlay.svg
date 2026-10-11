@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" width="1200" height="1000" preserveAspectRatio="none">
+<defs>
+  <radialGradient id="edge" cx="0.5" cy="0.5" r="0.72">
+    <stop offset="0.55" stop-color="#000" stop-opacity="0"/>
+    <stop offset="0.85" stop-color="#000" stop-opacity="0.22"/>
+    <stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+  </radialGradient>
+  <linearGradient id="streak" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+    <stop offset="0.5" stop-color="#fff" stop-opacity="0.16"/>
+    <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0.10"/>
+    <stop offset="0.5" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="smudge" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.07"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1200" height="1000" fill="url(#sheen)"/>
+<rect width="1200" height="1000" fill="url(#edge)"/>
+<g transform="rotate(-24 300 250)">
+  <rect x="120" y="-500" width="130" height="2400" fill="url(#streak)"/>
+  <rect x="285" y="-500" width="46" height="2400" fill="url(#streak)" opacity="0.7"/>
+</g>
+<ellipse cx="820" cy="640" rx="130" ry="90" fill="url(#smudge)"/>
+<ellipse cx="420" cy="780" rx="90" ry="60" fill="url(#smudge)"/>
+<g fill="#fff" fill-opacity="0.18">
+  <circle cx="210" cy="620" r="1.6"/><circle cx="905" cy="215" r="1.3"/><circle cx="640" cy="130" r="1.1"/>
+  <circle cx="1010" cy="760" r="1.8"/><circle cx="330" cy="880" r="1.2"/><circle cx="760" cy="470" r="1"/>
+  <circle cx="115" cy="300" r="1.4"/><circle cx="560" cy="905" r="1.5"/>
+</g>
+<rect x="6" y="6" width="1188" height="988" rx="70" fill="none" stroke="#fff" stroke-opacity="0.10" stroke-width="5"/>
+</svg>

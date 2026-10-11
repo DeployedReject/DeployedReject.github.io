@@ -1,0 +1,105 @@
+{
+ "handheld-body": {
+  "size": [
+   790,
+   1290
+  ],
+  "screen_hole": [
+   [
+    175,
+    210,
+    440,
+    396
+   ]
+  ]
+ },
+ "tv-crt": {
+  "size": [
+   1278,
+   999
+  ],
+  "screen_hole": [
+   [
+    154,
+    152,
+    798,
+    661
+   ]
+  ]
+ },
+ "console-topload": {
+  "size": [
+   2262,
+   1061
+  ],
+  "screen_hole": [],
+  "slot_opening": [
+   456,
+   127,
+   1353,
+   97
+  ],
+  "cartridge_clip_y": 232
+ },
+ "cartridge-shell": {
+  "viewBox": [
+   800,
+   900
+  ],
+  "label_rect": [
+   140,
+   210,
+   520,
+   390
+  ],
+  "title_plate": [
+   180,
+   640,
+   440,
+   72
+  ],
+  "connector_end": "bottom"
+ },
+ "labels": {
+  "size": [
+   960,
+   720
+  ],
+  "aspect": "4:3",
+  "note": "scale to label_rect of the shell"
+ },
+ "room-backdrop": {
+  "size": [
+   2752,
+   1536
+  ],
+  "table_top_edge_y": 1090,
+  "table_front_lip_y": 1310,
+  "object_contact_line_y": [
+   1230,
+   1255
+  ],
+  "table_left_edge_x": 110,
+  "note": "values read by eye from the image; re-measure if you crop"
+ },
+ "desk-top": {
+  "size": [
+   2280,
+   1100
+  ]
+ },
+ "desk-top-portrait": {
+  "size": [
+   1100,
+   2280
+  ]
+ },
+ "glass-overlay": {
+  "viewBox": [
+   1200,
+   1000
+  ],
+  "preserveAspectRatio": "none",
+  "note": "real alpha; stretches to any screen shape"
+ }
+}

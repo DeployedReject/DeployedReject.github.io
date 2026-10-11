@@ -2,76 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Welcome Page</title>
-    <link href="css/style.css?v=2" rel="stylesheet" />
-    <script src="js/main.js?v=2" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" type="image/svg+xml" href="/svg/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeployedReject | Freelance Software & Systems Engineer</title>
+    <!-- Retro Fonts: VT323 & Press Start 2P & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
   </head>
-  <body>
-    <div id="terminal-content">
-      <div class="typing-container">
-        <pre>
-   __      __       .__                               
-  /  \    /  \ ____ |  |   ____  ____   _____   ____  
-  \   \/\/   // __ \|  | _/ ___\/  _ \ /     \_/ __ \ 
-   \        /\  ___/|  |_\  \__(  <_> )  Y Y  \  ___/ 
-    \__/\  /  \___  >____/\___  >____/|__|_|  /\___  >
-         \/       \/          \/            \/     \/ 
-        </pre>
-      </div>
-      <div class="typing-container">
-        <p>This is my personal webpage. Try running <b>./wbctrl.sh</b> -h to see what you can do.</p>
-        <p style="color: #666; font-size: 0.9em; margin-top: -5px;">&copy; 2026 DeployedReject. All rights reserved.</p>
-      </div>
-      <div id="terminal-history"></div>
-    </div>
-    <div class="terminal-prompt"><span class="prompt">vaibhav@DeployedReject ~ %</span> <span id="command-text"><span class="cursor">_</span></span>
-      <input type="text" id="terminal-input" autofocus />
-    </div>
-    <div id="gui-window" class="gui-window">
-      <div class="gui-titlebar">
-        <span class="gui-title">Documentation Viewer</span>
-        <div class="gui-controls">
-          <span class="gui-btn gui-min" onclick="toggleMinDocs()"></span>
-          <span class="gui-btn gui-max" onclick="toggleMaxDocs()"></span>
-          <span class="gui-btn gui-close" onclick="closeDocs()"></span>
-        </div>
-      </div>
-      <div class="gui-body">
-        <div class="gui-sidebar">
-          <div class="gui-sidebar-item">cf-p-link</div>
-        </div>
-        <div class="gui-content">
-          <div class="gui-icon">📚</div>
-          <h1>Documentation</h1>
-          <p>Oops no documentation, will add it later(never probably).</p>
-        </div>
-      </div>
-    </div>
-    <div id="portfolio-window" class="gui-window">
-      <div class="gui-titlebar">
-        <span class="gui-title">Portfolio Viewer</span>
-        <div class="gui-controls">
-          <span class="gui-btn gui-min" onclick="toggleMinPortfolio()"></span>
-          <span class="gui-btn gui-max" onclick="toggleMaxPortfolio()"></span>
-          <span class="gui-btn gui-close" onclick="closePortfolio()"></span>
-        </div>
-      </div>
-      <div class="gui-body" style="flex-direction: column;">
-        <div class="gui-content portfolio-content" id="portfolio-content" style="width: 100%; padding: 20px; box-sizing: border-box; flex: 1;">
-          <!-- Content dynamically injected here (Grid or Details) -->
-        </div>
-      </div>
-    </div>
-    <div id="fullscreen-overlay" class="fullscreen-overlay">
-      <div style="position: absolute; top: 20px; left: 20px; z-index: 2001;">
-        <button class="portfolio-btn" onclick="closeFullscreenImage()">Back</button>
-      </div>
-      <img id="fullscreen-image" src="" alt="Fullscreen view">
-    </div>
-    <div id="custom-context-menu" class="custom-context-menu">
-        <div class="context-menu-item" onclick="triggerFullscreen()">Full Screen</div>
-    </div>
+  <body class="bg-stone-950 text-stone-100 antialiased overflow-x-hidden selection:bg-emerald-500 selection:text-black">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
