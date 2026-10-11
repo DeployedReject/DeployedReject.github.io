@@ -1,149 +1,313 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Project } from '../data/projects';
-
-import { ConsoleScreenContent } from './ConsoleScreenContent';
+import { ConsoleScreenContent, type ScreenTab } from './ConsoleScreenContent';
 import { Cartridge } from './Cartridge';
-import { Sparkles, Terminal } from 'lucide-react';
+
+export type SceneCameraMode = 'closeup' | 'table' | 'inserting' | 'zooming-in' | 'ejecting';
 
 interface TVConsoleSceneProps {
   projects: Project[];
+  cameraMode: SceneCameraMode;
+  setCameraMode: (mode: SceneCameraMode) => void;
   onSelectProject: (projectId: string) => void;
-  insertingProjectId: string | null;
+  activeCartridgeId: string | null;
 }
+
+const TABS: ScreenTab[] = ['status', 'github', 'pings', 'hire', 'cartridges'];
+
+// Exact resting positions for the 5 cartridges on the wooden table (in % of 2752x1536 backdrop)
+const TABLE_CARTRIDGE_SLOTS = [
+  { left: '63.2%', bottom: '19.0%' },
+  { left: '69.6%', bottom: '17.4%' },
+  { left: '76.0%', bottom: '19.3%' },
+  { left: '82.4%', bottom: '17.6%' },
+  { left: '88.8%', bottom: '18.8%' },
+];
 
 export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   projects,
+  cameraMode,
+  setCameraMode,
   onSelectProject,
-  insertingProjectId,
+  activeCartridgeId,
 }) => {
-  const [screenTab, setScreenTab] = useState<'status' | 'infra' | 'services' | 'projects'>('status');
+  const [screenTab, setScreenTab] = useState<ScreenTab>('status');
+  const [knobAngle, setKnobAngle] = useState<number>(0);
 
-  const insertingProject = projects.find((p) => p.id === insertingProjectId);
+  const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
+
+  // Keyboard shortcuts for retro navigation (1-5 for channels, Escape/Tab to toggle table zoom)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '1') setScreenTab('status');
+      if (e.key === '2') setScreenTab('github');
+      if (e.key === '3') setScreenTab('pings');
+      if (e.key === '4') setScreenTab('hire');
+      if (e.key === '5') {
+        setScreenTab('cartridges');
+        setCameraMode('table');
+      }
+      if (e.key === 'Escape' && cameraMode === 'table') {
+        setCameraMode('closeup');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [cameraMode, setCameraMode]);
+
+  const cycleChannel = () => {
+    setKnobAngle((prev) => prev + 45);
+    const nextIdx = (TABS.indexOf(screenTab) + 1) % TABS.length;
+    setScreenTab(TABS[nextIdx]);
+  };
+
+  // Compute exact 2D camera transform on the 2752x1536 locked stage
+  const getCameraTransform = (): string => {
+    if (cameraMode === 'closeup') {
+      // Zoomed into the CRT TV (center: x=25.0%, y=55.6%) so it fills the viewport by default
+      return 'translate(3.0%, -54.5%) scale(1.88)';
+    }
+    if (cameraMode === 'zooming-in') {
+      // Zoom all the way into the CRT screen hole (center: x=22.51%, y=54.71%) until bezel leaves viewport
+      return 'translate(-31.04%, -146.96%) scale(3.6)';
+    }
+    // 'table', 'inserting', 'ejecting' -> full table overview
+    return 'translate(0%, 0%) scale(1)';
+  };
+
+  const isTableZoomedOut = cameraMode !== 'closeup';
 
   return (
-    <div className="relative w-full min-h-screen bg-stone-950 flex flex-col items-center justify-center overflow-hidden select-none">
-      {/* Background Room & Shelf Backdrop */}
+    <div className="relative w-screen h-screen overflow-hidden bg-[#1e2629] flex items-center justify-center select-none">
+      {/* Ambient background fill matching wall (top) and wood desk (bottom) for ultra-wide/tall monitors */}
+      <div className="absolute inset-x-0 top-0 h-[72%] bg-[#2d393d] pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-[28%] bg-[#473223] pointer-events-none" />
+
+      {/* Locked 16:9 Stage (2752 x 1536 coordinate space) */}
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-70 filter brightness-90"
-        style={{ backgroundImage: `url('/img/room-backdrop.webp')` }}
-      />
+        className="relative w-screen h-[55.81vw] max-h-screen max-w-[179.17vh] transition-transform duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+        style={{
+          transformOrigin: '0 0',
+          transform: getCameraTransform(),
+        }}
+      >
+        {/* 1. Room Wall & Wooden Table Backdrop */}
+        <img
+          src="/img/room-backdrop.webp"
+          alt="Retro Room & Table"
+          className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
+        />
 
-      {/* Dim ambient lighting overlay */}
-      <div className="absolute inset-0 bg-radial from-transparent via-stone-950/40 to-stone-950/85 pointer-events-none" />
-
-      {/* TV & Console Deck Wrapper (Scaled to fit nicely on desktop & tablet) */}
-      <div className="relative z-10 w-full max-w-5xl px-4 py-6 flex flex-col items-center gap-2">
-        {/* Top Floating Badge */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-stone-900/90 border border-stone-800 text-stone-300 font-mono text-xs backdrop-blur-md shadow-md mb-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>DEPLOYEDREJECT // RETRO WORKSTATION</span>
-          <span className="text-stone-500">•</span>
-          <span className="text-stone-400">Click any cartridge to load project</span>
-        </div>
-
-        {/* TV UNIT CONTAINER */}
-        <div className="relative w-full max-w-[680px] aspect-[1278/999] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
-          {/* 1. Live Screen (Positioned behind transparent hole) */}
-          {/* According to measurements.json: TV size [1278, 999], hole at [154, 152, 798, 661] */}
+        {/* Subtle Retro HUD Hint in Table Mode */}
+        {isTableZoomedOut && (
           <div
-            className="absolute rounded-lg overflow-hidden z-0 bg-[#07130f] crt-screen-container shadow-[inset_0_0_40px_rgba(0,0,0,0.9)]"
+            className="absolute top-[5%] left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 bg-[#171513]/95 border-2 border-[#d9d0c6] px-4 py-2 text-[#e6cf65] text-[10px] sm:text-xs shadow-[4px_4px_0px_#000]"
+            style={{ fontFamily: "'Press Start 2P', monospace" }}
+          >
+            <span>CLICK A CARTRIDGE ON THE TABLE TO INSERT</span>
+            <button
+              type="button"
+              onClick={() => setCameraMode('closeup')}
+              className="px-2 py-1 bg-[#a6e26e] text-[#111912] hover:bg-[#c3f593] cursor-pointer font-bold"
+            >
+              [ ▲ ZOOM TO TV ]
+            </button>
+          </div>
+        )}
+
+        {/* 2. CRT TV Unit on Left-Center of Table (left: 6.5%, bottom: 18.5%, width: 37%) */}
+        <div
+          onClick={() => {
+            if (cameraMode === 'table') setCameraMode('closeup');
+          }}
+          className={`absolute z-10 ${cameraMode === 'table' ? 'cursor-zoom-in' : ''}`}
+          style={{
+            left: '6.5%',
+            bottom: '18.5%',
+            width: '37%',
+            aspectRatio: '1278 / 999',
+          }}
+        >
+          {/* Contact shadow under TV feet */}
+          <div className="absolute -bottom-3 left-[6%] right-[6%] h-6 bg-black/75 rounded-full blur-md pointer-events-none" />
+
+          {/* 2a. Live CRT Screen Layer (Positioned behind the transparent hole in tv-crt.webp) */}
+          {/* Hole in 1278x999 is x=154, y=152, w=798, h=661. Slightly bled by 0.6% behind opaque bezel */}
+          <div
+            className="absolute z-0 bg-[#111912] crt-screen-container overflow-hidden"
             style={{
-              left: `${(154 / 1278) * 100}%`,
-              top: `${(152 / 999) * 100}%`,
-              width: `${(798 / 1278) * 100}%`,
-              height: `${(661 / 999) * 100}%`,
+              left: '11.4%',
+              top: '14.6%',
+              width: '63.7%',
+              height: '67.4%',
+              borderRadius: '24px',
             }}
           >
-            {/* Screen Content */}
             <ConsoleScreenContent
               projects={projects}
-              onSelectProject={onSelectProject}
               activeTab={screenTab}
               setActiveTab={setScreenTab}
+              onZoomToTable={() => setCameraMode('table')}
+              onSelectProject={(id) => {
+                setCameraMode('table');
+                setTimeout(() => onSelectProject(id), 450);
+              }}
+              isTableZoomedOut={isTableZoomedOut}
+              insertingProjectName={
+                cameraMode === 'inserting' || cameraMode === 'zooming-in'
+                  ? activeCartridge?.name
+                  : null
+              }
             />
 
-            {/* CRT Glass Overlay */}
+            {/* Curved CRT Glass Reflection Overlay */}
             <img
               src="/svg/glass-overlay.svg"
-              alt="Glass Reflection"
-              className="absolute inset-0 w-full h-full pointer-events-none opacity-40 mix-blend-screen"
+              alt=""
+              className="absolute inset-0 w-full h-full pointer-events-none opacity-55"
             />
-            {/* CRT Vignette shadow */}
             <div className="crt-vignette" />
           </div>
 
-          {/* 2. TV Bezel Layer (webp with transparent hole) */}
+          {/* 2b. TV Plastic Bezel Image (with transparent screen hole) */}
           <img
             src="/img/tv-crt.webp"
-            alt="Retro CRT TV"
+            alt="CRT Television"
             className="relative z-10 w-full h-full object-contain pointer-events-none select-none"
+          />
+
+          {/* 2c. Interactive Physical Buttons & Rotary Knobs on the TV Right Bezel */}
+          {/* Teal Rectangular Channel Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              cycleChannel();
+            }}
+            title="Switch CRT Channel"
+            className="absolute z-20 cursor-pointer hover:bg-white/10 active:scale-95 transition-transform rounded"
+            style={{
+              left: '84.5%',
+              top: '42.8%',
+              width: '6.8%',
+              height: '5.2%',
+            }}
+          />
+
+          {/* Top Rotary Knob (Channel Dial) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              cycleChannel();
+            }}
+            title="Turn Knob: Next Channel"
+            className="absolute z-20 cursor-pointer rounded-full hover:ring-2 hover:ring-[#e6cf65]/60 transition-transform"
+            style={{
+              left: '83.5%',
+              top: '53.6%',
+              width: '9.0%',
+              height: '11.2%',
+              transform: `rotate(${knobAngle}deg)`,
+            }}
+          />
+
+          {/* Bottom Rotary Knob (Toggle Table View) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCameraMode(cameraMode === 'closeup' ? 'table' : 'closeup');
+            }}
+            title="Turn Knob: Toggle Table / Cartridges View"
+            className="absolute z-20 cursor-pointer rounded-full hover:ring-2 hover:ring-[#a6e26e]/60"
+            style={{
+              left: '83.5%',
+              top: '69.8%',
+              width: '9.0%',
+              height: '11.2%',
+            }}
           />
         </div>
 
-        {/* TOP-LOADING CONSOLE UNIT & CARTRIDGE INSERTION SLOT */}
-        <div className="relative w-full max-w-[620px] aspect-[2262/1061] -mt-10 sm:-mt-14 z-20 flex justify-center">
-          {/* Inserting Cartridge Animation Layer */}
-          {/* Console slot is at x456, y127, w1353, h97. Clip line is at y232 */}
-          {insertingProject && (
+        {/* 3. Top-Loading Console Unit Sitting Next to the TV on the Wooden Table */}
+        {/* Console is 2262 x 1061. Slot opening at y=127..224, front rim clip at y=232 (21.87%) */}
+        <div
+          className="absolute z-20"
+          style={{
+            left: '44.5%',
+            bottom: '18.2%',
+            width: '17.2%',
+            aspectRatio: '2262 / 1061',
+          }}
+        >
+          {/* Contact shadow under Console */}
+          <div className="absolute -bottom-2.5 left-[5%] right-[5%] h-5 bg-black/75 rounded-full blur-md pointer-events-none" />
+
+          {/* Back Layer: Full Console Image */}
+          <img
+            src="/img/console-topload.webp"
+            alt="Top-Loading Console"
+            className="relative z-10 w-full h-full object-contain pointer-events-none select-none"
+          />
+
+          {/* Middle Layer: Cartridge Sliding Into or Ejecting From the Slot */}
+          {activeCartridge && (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting') && (
             <div
-              className="absolute z-10 animate-insertCartridge"
+              className={`absolute z-15 w-[34%] aspect-[800/900] ${
+                cameraMode === 'ejecting' ? 'animate-ejectCartridge' : 'animate-insertCartridge'
+              }`}
               style={{
-                top: '-40px',
-                width: '130px',
-                height: '145px',
-                clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 70%)',
+                left: '33%',
+                top: '-65%',
               }}
             >
-              <Cartridge project={insertingProject} />
+              <Cartridge
+                project={activeCartridge}
+                showShadow={false}
+                showTooltip={false}
+              />
             </div>
           )}
 
-          {/* Console hardware image */}
+          {/* Front Lip Mask Layer: Console cropped from y=232 (21.87%) downward so cartridge goes INSIDE slot! */}
           <img
             src="/img/console-topload.webp"
-            alt="Top-Loading Retro Console"
-            className="w-full h-full object-contain drop-shadow-2xl pointer-events-none select-none"
+            alt=""
+            className="absolute inset-0 z-20 w-full h-full object-contain pointer-events-none select-none"
+            style={{
+              clipPath: 'inset(21.87% 0 0 0)',
+            }}
           />
-
-          {/* Clickable Power / Reset / Channel Buttons */}
-          <div className="absolute bottom-6 right-12 flex gap-2 z-30">
-            <button
-              onClick={() => {
-                const tabs: Array<'status' | 'infra' | 'services' | 'projects'> = ['status', 'infra', 'services', 'projects'];
-                const nextIdx = (tabs.indexOf(screenTab) + 1) % tabs.length;
-                setScreenTab(tabs[nextIdx]);
-              }}
-              className="px-3 py-1 bg-stone-800 hover:bg-stone-700 active:translate-y-0.5 border border-stone-600 rounded text-[11px] font-mono text-stone-200 cursor-pointer shadow-md transition-all flex items-center gap-1.5"
-            >
-              <Terminal className="w-3 h-3 text-emerald-400" />
-              <span>CHANNEL / SWITCH TAB</span>
-            </button>
-          </div>
         </div>
 
-        {/* SHELF CARTRIDGES RACK */}
-        <div className="relative z-30 w-full max-w-4xl pt-4 pb-2">
-          <div className="flex items-center justify-between px-3 pb-2 text-stone-400 font-mono text-xs border-b border-stone-800/80">
-            <span className="flex items-center gap-1.5 text-stone-300">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              AVAILABLE CARTRIDGES (HOVER TO LEVITATE • CLICK TO INSERT)
-            </span>
-            <span className="hidden sm:inline text-stone-500">
-              5 Modular Architectures
-            </span>
-          </div>
+        {/* 4. The 5 Project Cartridges Laid Out on the Wooden Table Surface */}
+        {projects.map((project, idx) => {
+          const slot = TABLE_CARTRIDGE_SLOTS[idx] || TABLE_CARTRIDGE_SLOTS[0];
+          const isCurrentlyInSlot =
+            activeCartridgeId === project.id &&
+            (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting');
 
-          {/* Cartridges Row */}
-          <div className="flex items-end justify-center gap-3 sm:gap-6 pt-5 pb-3 overflow-x-auto px-2">
-            {projects.map((project) => (
+          if (isCurrentlyInSlot) return null;
+
+          return (
+            <div
+              key={project.id}
+              className="absolute z-25"
+              style={{
+                left: slot.left,
+                bottom: slot.bottom,
+                width: '5.8%',
+                aspectRatio: '800 / 900',
+              }}
+            >
               <Cartridge
-                key={project.id}
                 project={project}
                 onClick={() => onSelectProject(project.id)}
               />
-            ))}
-          </div>
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

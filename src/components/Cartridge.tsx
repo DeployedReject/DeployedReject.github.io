@@ -1,30 +1,34 @@
 import type { Project } from '../data/projects';
 
-
 interface CartridgeProps {
   project: Project;
   onClick?: () => void;
   className?: string;
+  showShadow?: boolean;
+  showTooltip?: boolean;
 }
 
 export const Cartridge: React.FC<CartridgeProps> = ({
   project,
   onClick,
-  className = '',
+  className = 'w-full h-full',
+  showShadow = true,
+  showTooltip = true,
 }) => {
   return (
     <div
       onClick={onClick}
-      className={`group relative cursor-pointer select-none transition-all duration-300 transform hover:-translate-y-4 hover:scale-105 ${className}`}
-      style={{ width: '128px', height: '144px' }}
+      className={`group relative cursor-pointer select-none transition-transform duration-300 ease-out hover:-translate-y-4 ${className}`}
     >
-      {/* Levitating shadow underneath */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-3 bg-black/60 rounded-full blur-sm group-hover:scale-125 group-hover:bg-black/80 transition-all duration-300" />
+      {/* Physical contact shadow on the wooden table surface */}
+      {showShadow && (
+        <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-[82%] h-4 bg-black/65 rounded-full blur-[5px] transition-all duration-300 group-hover:w-[68%] group-hover:bg-black/40 group-hover:blur-[8px] group-hover:translate-y-3 pointer-events-none" />
+      )}
 
       {/* Cartridge Outer Shell (SVG) */}
       <svg
         viewBox="0 0 800 900"
-        className="w-full h-full overflow-visible drop-shadow-xl"
+        className="w-full h-full overflow-visible drop-shadow-[0_10px_14px_rgba(0,0,0,0.65)]"
       >
         <defs>
           <linearGradient id={`body-${project.id}`} x1="0" y1="0" x2="1" y2="1">
@@ -68,7 +72,6 @@ export const Cartridge: React.FC<CartridgeProps> = ({
             <line x1="370" y1="800" x2="370" y2="846" />
             <line x1="406" y1="800" x2="406" y2="846" />
             <line x1="442" y1="800" x2="442" y2="846" />
-            <line x1="478" y1="800" x2="478" y2="846" />
             <line x1="514" y1="800" x2="514" y2="846" />
             <line x1="550" y1="800" x2="550" y2="846" />
             <line x1="586" y1="800" x2="586" y2="846" />
@@ -125,18 +128,27 @@ export const Cartridge: React.FC<CartridgeProps> = ({
             clipPath={`url(#label-clip-${project.id})`}
           />
 
-          {/* title plate */}
-          <rect x="180" y="640" width="440" height="72" rx="16" fill="#1c1917" stroke={project.accentColor} strokeWidth="3" />
+          {/* Vintage moulded title plate */}
+          <rect
+            x="180"
+            y="640"
+            width="440"
+            height="72"
+            rx="12"
+            fill="#2b2623"
+            stroke="#8f847a"
+            strokeWidth="4"
+          />
           <text
             x="400"
             y="688"
             textAnchor="middle"
-            fill="#f5f5f4"
+            fill="#e6cf65"
             fontFamily="'Press Start 2P', monospace"
             fontSize="26"
             fontWeight="bold"
           >
-            {project.name.toUpperCase().slice(0, 11)}
+            {project.id.toUpperCase().slice(0, 10)}
           </text>
 
           {/* screws */}
@@ -157,10 +169,15 @@ export const Cartridge: React.FC<CartridgeProps> = ({
         />
       </svg>
 
-      {/* Floating tooltip badge */}
-      <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-stone-900 border border-stone-700 text-stone-200 text-[10px] font-mono px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-30">
-        Insert {project.name}
-      </div>
+      {/* Retro 8-bit Pixel Tooltip on Hover */}
+      {showTooltip && (
+        <div
+          className="absolute -top-9 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1b1917] border-2 border-[#d9d0c6] text-[#e6cf65] text-[8px] sm:text-[9px] px-2 py-1 shadow-[3px_3px_0px_#000] whitespace-nowrap pointer-events-none z-40"
+          style={{ fontFamily: "'Press Start 2P', monospace" }}
+        >
+          ▲ INSERT {project.id.toUpperCase()}.ROM
+        </div>
+      )}
     </div>
   );
 };
