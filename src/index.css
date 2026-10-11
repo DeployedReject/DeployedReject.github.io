@@ -378,43 +378,32 @@
   animation: cameraZoomOutAnim 0.56s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Expanding Ball of Light Transition (Dark -> Light Mode) */
+/* Expanding Circle Transition (Dark -> Light Mode): Clean, GPU-composited, zero-lag */
 @keyframes expandLightOrb {
   0% {
-    transform: scale(0.04);
-    opacity: 1;
-    filter: drop-shadow(0 0 25px #ffffff);
-  }
-  25% {
+    transform: scale(0.02);
     opacity: 0.95;
-    filter: drop-shadow(0 0 80px #fef08a);
   }
-  60% {
-    opacity: 0.75;
-    filter: drop-shadow(0 0 160px #fde047);
+  70% {
+    opacity: 0.85;
   }
   100% {
-    transform: scale(3.4);
+    transform: scale(3.5);
     opacity: 0;
-    filter: drop-shadow(0 0 260px #fbbf24);
   }
 }
 
-/* Contracting Dark Wave (Light -> Dark Mode) */
+/* Contracting Dark Circle (Light -> Dark Mode) */
 @keyframes contractDarkOrb {
   0% {
-    transform: scale(3.2);
+    transform: scale(3.5);
     opacity: 0;
   }
   30% {
-    opacity: 0.7;
-    filter: drop-shadow(0 0 60px #eab308);
-  }
-  75% {
-    opacity: 0.9;
+    opacity: 0.85;
   }
   100% {
-    transform: scale(0.04);
+    transform: scale(0.02);
     opacity: 0;
   }
 }
@@ -423,18 +412,11 @@
 @keyframes filamentIgnite {
   0% {
     stroke: #ffffff;
-    stroke-width: 5px;
-    filter: drop-shadow(0 0 16px #ffffff);
-  }
-  40% {
-    stroke: #fffbeb;
-    stroke-width: 3.5px;
-    filter: drop-shadow(0 0 10px #fef08a);
+    stroke-width: 4px;
   }
   100% {
     stroke: #ffffff;
     stroke-width: 2.4px;
-    filter: none;
   }
 }
 
@@ -459,12 +441,12 @@
 
 .animate-expandLightOrb {
   will-change: transform, opacity;
-  animation: expandLightOrb 0.75s cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+  animation: expandLightOrb 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-contractDarkOrb {
   will-change: transform, opacity;
-  animation: contractDarkOrb 0.65s cubic-bezier(0.32, 0, 0.67, 0) forwards;
+  animation: contractDarkOrb 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-filamentIgnite {

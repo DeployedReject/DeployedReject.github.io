@@ -15,14 +15,6 @@ interface HandheldSceneProps {
 
 const TABS: ScreenTab[] = ['status', 'cartridges', 'github', 'pings', 'hire'];
 
-const SCREEN_PALETTES = [
-  { name: 'PHOSPHOR', filter: 'none', dot: '#5ec299' },
-  { name: 'AMBER', filter: 'hue-rotate(-48deg) saturate(1.35)', dot: '#f59e0b' },
-  { name: 'ICE CYAN', filter: 'hue-rotate(72deg) saturate(1.15)', dot: '#38bdf8' },
-  { name: 'VIOLET', filter: 'hue-rotate(155deg) saturate(1.2)', dot: '#a855f7' },
-  { name: 'MONO', filter: 'grayscale(1) contrast(1.18) brightness(1.08)', dot: '#e5e7eb' },
-];
-
 export const HandheldScene: React.FC<HandheldSceneProps> = ({
   projects,
   cameraMode,
@@ -35,12 +27,10 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
-  const [paletteIndex, setPaletteIndex] = useState<number>(0);
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
   const highlightedProject =
     projects[((selectedIndex % projects.length) + projects.length) % projects.length] || projects[0];
-  const currentPalette = SCREEN_PALETTES[paletteIndex] || SCREEN_PALETTES[0];
 
   const cycleTab = (dir: 'prev' | 'next') => {
     const idx = TABS.indexOf(screenTab);
@@ -62,10 +52,6 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
     } else {
       setOptionIndex((prev) => (dir === 'next' ? prev + 1 : Math.max(0, prev - 1)));
     }
-  };
-
-  const cyclePalette = () => {
-    setPaletteIndex((prev) => (prev + 1) % SCREEN_PALETTES.length);
   };
 
   const handleActionA = () => {
@@ -121,14 +107,14 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
           borderBottom: isLightMode ? '4px solid #8c7d6b' : '4px solid #171412',
         }}
       >
-        {/* Top Lens Bezel Header: Battery LED + Active Palette */}
+        {/* Top Lens Bezel Header: Power LED + Backlight Status */}
         <div className="flex items-center justify-between px-2 mb-1.5 shrink-0">
           <div className="flex items-center gap-2">
             <span
               className="w-2.5 h-2.5 rounded-full animate-pulse"
               style={{
-                backgroundColor: currentPalette.dot,
-                boxShadow: `0 0 8px ${currentPalette.dot}`,
+                backgroundColor: isLightMode ? '#f59e0b' : '#5ec299',
+                boxShadow: isLightMode ? '0 0 8px #f59e0b' : '0 0 8px #5ec299',
               }}
             />
             <span
@@ -137,7 +123,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               }`}
               style={{ fontFamily: 'var(--font-pixel)' }}
             >
-              {currentPalette.name} (•‿•)
+              {isLightMode ? 'DAYLIGHT (•‿•)' : 'BACKLIT (•‿•)'}
             </span>
           </div>
 
@@ -161,7 +147,6 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               ? 'inset 0 4px 12px rgba(0,0,0,0.22), 0 2px 0 rgba(255,255,255,0.5)'
               : 'inset 0 8px 24px rgba(0,0,0,0.95), 0 2px 0 rgba(255,255,255,0.12), 0 0 30px rgba(166,226,110,0.15)',
             border: isLightMode ? '3px solid #6b7869' : '3px solid #181c18',
-            filter: currentPalette.filter,
           }}
         >
           <ConsoleScreenContent
@@ -365,11 +350,11 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
           </div>
         </div>
 
-        {/* BOTTOM ROW: SINGLE PALETTE PILL + SPEAKER GRILLE */}
+        {/* BOTTOM ROW: SINGLE BACKLIGHT PILL + SPEAKER GRILLE */}
         <div className="relative z-10 flex items-end justify-between px-2 pt-1">
           <div className="w-12 hidden sm:block" />
 
-          {/* Center: Single Molded Rubber Pill Button to Cycle Screen Color Palette */}
+          {/* Center: Single Molded Rubber Pill Button for BACKLIGHT (toggles Light / Dark mode) */}
           <div className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
               <div
@@ -381,20 +366,22 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               >
                 <button
                   type="button"
-                  onClick={cyclePalette}
+                  onClick={() => onToggleLightMode?.()}
                   className="w-14 h-3.5 sm:w-16 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
                   style={{
-                    background: 'linear-gradient(180deg, #5c534d 0%, #38322e 100%)',
+                    background: isLightMode
+                      ? 'linear-gradient(180deg, #d97706 0%, #b45309 100%)'
+                      : 'linear-gradient(180deg, #5c534d 0%, #38322e 100%)',
                     boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.3)',
                   }}
-                  title="Cycle Screen Color Palette"
+                  title="Toggle Backlight (Light / Dark Mode)"
                 />
               </div>
               <span
                 className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
-                PALETTE
+                BACKLIGHT
               </span>
             </div>
           </div>

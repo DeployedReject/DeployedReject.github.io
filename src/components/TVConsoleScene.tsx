@@ -319,6 +319,17 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           isLightMode ? 'bg-[#e6decb]' : 'bg-black'
         }`}
       >
+        {/* TV Static Transition Burst when entering closeup TV view */}
+        {staticBurst && (
+          <div className="fixed inset-0 z-[120] pointer-events-none overflow-hidden animate-tvStaticBurst">
+            <img
+              src="/img/tv-static.gif"
+              alt="TV Static"
+              className="w-full h-full object-cover opacity-90"
+            />
+          </div>
+        )}
+
         {/* Invisible Screen-Edge Sensors: Moving mouse to the edge returns to room view */}
         <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 bottom-0 left-0 w-4 z-50" />
         <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 bottom-0 right-0 w-4 z-50" />
@@ -512,8 +523,8 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   // Subtitle text when hovering a cartridge, the console, or the room light bulb
   const hoverSubtitle = hoveredBulb
     ? isLightMode
-      ? '"Ahhh my eyes! Touch the bulb to turn it back off (>_<)"'
-      : '"It\'s dark in here... touch the bulb to turn the light on (•‿•)"'
+      ? '"Ahhh my eyes! Click the bulb to turn it back off (>_<)"'
+      : '"It\'s dark in here... click the bulb to turn the light on (•‿•)"'
     : hoveredProject
     ? `"${hoveredProject.originNote || hoveredProject.tagline}"`
     : hoveredConsole
@@ -776,50 +787,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               <stop offset="100%" stopColor="#966138" />
             </linearGradient>
 
-            {/* ---------------- RETRO MEDIA DESK / TABLE GRADIENTS ---------------- */}
-            <linearGradient id="tableTopLight" x1="0" y1="0" x2="1" y2="0.3">
-              <stop offset="0%" stopColor="#cfa175" />
-              <stop offset="48%" stopColor="#b58257" />
-              <stop offset="100%" stopColor="#96643c" />
-            </linearGradient>
-            <linearGradient id="tableFrontLight" x1="0" y1="0" x2="0.1" y2="1">
-              <stop offset="0%" stopColor="#b58257" />
-              <stop offset="100%" stopColor="#7a4b27" />
-            </linearGradient>
-            <linearGradient id="tableSideLight" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#683d1c" />
-              <stop offset="100%" stopColor="#87532d" />
-            </linearGradient>
-
-            <linearGradient id="tableTopDark" x1="0" y1="0" x2="1" y2="0.3">
-              <stop offset="0%" stopColor="#3d2c1d" />
-              <stop offset="48%" stopColor="#2c1e13" />
-              <stop offset="100%" stopColor="#1a120b" />
-            </linearGradient>
-            <linearGradient id="tableFrontDark" x1="0" y1="0" x2="0.1" y2="1">
-              <stop offset="0%" stopColor="#2c1e13" />
-              <stop offset="100%" stopColor="#140d07" />
-            </linearGradient>
-            <linearGradient id="tableSideDark" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#150d07" />
-              <stop offset="100%" stopColor="#25190f" />
-            </linearGradient>
-
-            {/* ---------------- EXPANDING BALL OF LIGHT TRANSITION GRADIENTS ---------------- */}
-            <radialGradient id="expandLightBallGrad" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-              <stop offset="18%" stopColor="#fffbeb" stopOpacity="0.88" />
-              <stop offset="42%" stopColor="#fef08a" stopOpacity="0.75" />
-              <stop offset="68%" stopColor="#facc15" stopOpacity="0.45" />
-              <stop offset="88%" stopColor="#eab308" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#ca8a04" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="contractDarkBallGrad" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0%" stopColor="#020302" stopOpacity="0.95" />
-              <stop offset="60%" stopColor="#090d0a" stopOpacity="0.85" />
-              <stop offset="85%" stopColor="#121a14" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-            </radialGradient>
           </defs>
 
           {/* ================================================================ */}
@@ -867,17 +834,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             </>
           )}
 
-          {/* ================================================================ */}
-          {/* 1A. REALISTIC GROUND SHADOWS AT THE EXACT BASE OF FURNITURE       */}
-          {/* ================================================================ */}
-          {/* Ground Cast Shadow Directly Under the Retro Media Table */}
-          <polygon
-            points="70,915 650,895 730,970 105,992"
-            fill={isLightMode ? '#8c7960' : '#000000'}
-            opacity={isLightMode ? '0.36' : '0.88'}
-            filter="url(#rtFineBlur)"
-          />
-
           {/* Ground Cast Shadow Attached Seamlessly to the Bottom of the Shelf */}
           <polygon
             points="1000,870 1680,890 1860,945 1080,915"
@@ -892,95 +848,28 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           />
 
           {/* ================================================================ */}
-          {/* 1B. RETRO WOODEN MEDIA DESK / CONSOLE TABLE UNDER THE TV & CONSOLE*/}
+          {/* 1B. DIRECT FLOOR CONTACT SHADOW UNDER THE TV & CONSOLE           */}
           {/* ================================================================ */}
-          <g>
-            {/* Table Back Legs (resting on floor at y=908..920) */}
-            <polygon
-              points="82,786 94,786 92,920 86,920"
-              fill={isLightMode ? 'url(#tableSideLight)' : 'url(#tableSideDark)'}
-            />
-            {/* Back-Left Brass Cap & Floor Contact Shadow */}
-            <rect x="85" y="910" width="8" height="10" rx="1" fill={isLightMode ? '#d97706' : '#6b5025'} />
-            <ellipse cx="89" cy="920" rx="12" ry="4.5" fill={isLightMode ? '#786550' : '#000'} opacity="0.45" />
-
-            <polygon
-              points="676,768 688,768 684,908 678,908"
-              fill={isLightMode ? 'url(#tableSideLight)' : 'url(#tableSideDark)'}
-            />
-            {/* Back-Right Brass Cap & Floor Contact Shadow */}
-            <rect x="677" y="898" width="8" height="10" rx="1" fill={isLightMode ? '#d97706' : '#6b5025'} />
-            <ellipse cx="681" cy="908" rx="12" ry="4.5" fill={isLightMode ? '#786550' : '#000'} opacity="0.45" />
-
-            {/* Table 3D Top Surface directly supporting the White Console base */}
-            <polygon
-              points="100,836 80,770 700,752 720,818"
-              fill={isLightMode ? 'url(#tableTopLight)' : 'url(#tableTopDark)'}
-              stroke={isLightMode ? '#b58257' : '#2c1e13'}
-              strokeWidth="1.5"
-            />
-
-            {/* Contact Shadow of Console on the Table Top */}
-            <polygon
-              points="110,778 190,826 670,810 590,762"
-              fill={isLightMode ? '#5c3d23' : '#050302'}
-              opacity={isLightMode ? '0.42' : '0.78'}
-            />
-
-            {/* Table Front Apron Lip (Thickness) */}
-            <polygon
-              points="100,836 720,818 720,846 100,864"
-              fill={isLightMode ? 'url(#tableFrontLight)' : 'url(#tableFrontDark)'}
-              stroke={isLightMode ? '#8a562c' : '#1c130b'}
-              strokeWidth="1"
-            />
-            <line
-              x1="100"
-              y1="837"
-              x2="720"
-              y2="819"
-              stroke={isLightMode ? '#e6b38a' : '#85b87e'}
-              strokeOpacity="0.8"
-              strokeWidth="1.5"
-            />
-
-            {/* Table Left Side Apron */}
-            <polygon
-              points="80,770 100,836 100,864 80,798"
-              fill={isLightMode ? 'url(#tableSideLight)' : 'url(#tableSideDark)'}
-              stroke={isLightMode ? '#683d1c' : '#140c07'}
-              strokeWidth="1"
-            />
-
-            {/* Table Front Legs (standing solidly on floor at y=965..980) */}
-            {/* Front-Left Leg */}
-            <polygon
-              points="114,862 130,860 126,980 118,980"
-              fill={isLightMode ? 'url(#tableFrontLight)' : 'url(#tableFrontDark)'}
-            />
-            {/* Front-Left Brass Cap & Floor Contact Shadow */}
-            <rect x="117" y="968" width="10" height="12" rx="1.5" fill={isLightMode ? '#f59e0b' : '#85642e'} />
-            <ellipse cx="122" cy="980" rx="16" ry="6" fill={isLightMode ? '#5c4d3d' : '#000'} opacity={isLightMode ? '0.5' : '0.9'} />
-
-            {/* Front-Right Leg */}
-            <polygon
-              points="692,844 708,842 704,965 696,965"
-              fill={isLightMode ? 'url(#tableFrontLight)' : 'url(#tableFrontDark)'}
-            />
-            {/* Front-Right Brass Cap & Floor Contact Shadow */}
-            <rect x="695" y="953" width="10" height="12" rx="1.5" fill={isLightMode ? '#f59e0b' : '#85642e'} />
-            <ellipse cx="700" cy="965" rx="16" ry="6" fill={isLightMode ? '#5c4d3d' : '#000'} opacity={isLightMode ? '0.5' : '0.9'} />
-          </g>
+          {/* Soft Ground Contact Shadow Directly Grounding the Console Base on the Floor */}
+          <polygon
+            points="100,776 182,826 676,810 594,760"
+            fill={isLightMode ? '#786550' : '#000000'}
+            opacity={isLightMode ? '0.50' : '0.92'}
+            filter="url(#rtFineBlur)"
+          />
+          {/* Deep Ambient Occlusion Contact Line Grounding the Front Base */}
+          <polygon
+            points="186,825 674,809 676,815 188,831"
+            fill={isLightMode ? '#4a3b2c' : '#000000'}
+            opacity={isLightMode ? '0.72' : '0.98'}
+          />
 
           {/* ================================================================ */}
           {/* 1C. INTERACTIVE HANGING LIGHT BULB IN THE MIDDLE OF THE ROOM     */}
           {/*     Touching toggles Light Mode with an expanding ball of light! */}
           {/* ================================================================ */}
           <g
-            onMouseEnter={() => {
-              setHoveredBulb(true);
-              handleTouchBulb();
-            }}
+            onMouseEnter={() => setHoveredBulb(true)}
             onMouseLeave={() => setHoveredBulb(false)}
             onClick={handleTouchBulb}
             className="cursor-pointer"
@@ -1094,42 +983,27 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           </g>
 
           {/* ================================================================ */}
-          {/* 1D. EXPANDING BALL OF LIGHT TRANSITION EFFECT                    */}
+          {/* 1D. SIMPLE EXPANDING CIRCLE TRANSITION EFFECT                    */}
           {/* ================================================================ */}
           {lightTransition === 'turning-on' && (
-            <g
+            <circle
+              cx="835"
+              cy="310"
+              r="680"
+              fill="#fff9db"
               className="pointer-events-none animate-expandLightOrb"
               style={{ transformOrigin: '835px 310px' }}
-            >
-              <circle
-                cx="835"
-                cy="310"
-                r="750"
-                fill="url(#expandLightBallGrad)"
-              />
-              <circle
-                cx="835"
-                cy="310"
-                r="720"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="16"
-                strokeOpacity="0.85"
-              />
-            </g>
+            />
           )}
           {lightTransition === 'turning-off' && (
-            <g
+            <circle
+              cx="835"
+              cy="310"
+              r="680"
+              fill="#020302"
               className="pointer-events-none animate-contractDarkOrb"
               style={{ transformOrigin: '835px 310px' }}
-            >
-              <circle
-                cx="835"
-                cy="310"
-                r="750"
-                fill="url(#contractDarkBallGrad)"
-              />
-            </g>
+            />
           )}
 
           {/* ================================================================ */}

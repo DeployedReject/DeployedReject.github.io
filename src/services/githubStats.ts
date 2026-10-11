@@ -36,15 +36,15 @@ export interface DeveloperStats {
   fetchedLive: boolean;
 }
 
-const CACHE_KEY = 'dr_retro_stats_v3';
+const CACHE_KEY = 'dr_retro_stats_v4';
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 const FALLBACK_STATS: DeveloperStats = {
   handle: 'DEPLOYEDREJECT',
   level: 24,
   totalCommitsYear: 482,
-  publicRepos: 14,
-  totalStars: 19,
+  publicRepos: 12,
+  totalStars: 18,
   murcesStars: 16,
   followers: 12,
   languages: [
@@ -112,12 +112,11 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       headers.Authorization = `Bearer ${envToken}`;
     }
 
-    const [userRes, reposRes, eventsRes, contribRes, codebergRes] = await Promise.allSettled([
+    const [userRes, reposRes, eventsRes, contribRes] = await Promise.allSettled([
       fetch('https://api.github.com/users/DeployedReject', { headers }),
       fetch('https://api.github.com/users/DeployedReject/repos?per_page=100&sort=updated', { headers }),
       fetch('https://api.github.com/users/DeployedReject/events/public?per_page=25', { headers }),
       fetch('https://github-contributions-api.jogruber.de/v4/DeployedReject?y=last'),
-      fetch('https://codeberg.org/api/v1/repos/DeployedReject/murces'),
     ]);
 
     let publicRepos = FALLBACK_STATS.publicRepos;
@@ -128,47 +127,32 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       followers = u.followers ?? followers;
     }
 
-    let murcesStars = FALLBACK_STATS.murcesStars;
-    let murcesForks = 2;
-    if (codebergRes.status === 'fulfilled' && codebergRes.value.ok) {
-      const cb = await codebergRes.value.json();
-      murcesStars = cb.stars_count ?? murcesStars;
-      murcesForks = cb.forks_count ?? murcesForks;
-    }
-
     let ghStars = 0;
+    let murcesStars = 0;
     const langCounts: Record<string, number> = { Java: 4, TypeScript: 4, Python: 2, Shell: 1 };
-    const repoList: RepoStat[] = [
-      {
-        name: 'murces',
-        stars: murcesStars,
-        forks: murcesForks,
-        language: 'Java',
-        updatedAt: 'LIVE',
-        source: 'codeberg',
-        url: 'https://codeberg.org/DeployedReject/murces',
-      },
-    ];
+    const repoList: RepoStat[] = [];
 
     if (reposRes.status === 'fulfilled' && reposRes.value.ok) {
       const reposJson = await reposRes.value.json();
       if (Array.isArray(reposJson)) {
         for (const r of reposJson) {
-          ghStars += r.stargazers_count || 0;
+          const stars = r.stargazers_count || 0;
+          ghStars += stars;
+          if (r.name.toLowerCase() === 'murces') {
+            murcesStars = stars;
+          }
           if (r.language) {
             langCounts[r.language] = (langCounts[r.language] || 0) + (r.size || 100);
           }
-          if (r.name.toLowerCase() !== 'murces') {
-            repoList.push({
-              name: r.name,
-              stars: r.stargazers_count || 0,
-              forks: r.forks_count || 0,
-              language: r.language || 'Code',
-              updatedAt: (r.updated_at || '').slice(0, 10),
-              source: 'github',
-              url: r.html_url,
-            });
-          }
+          repoList.push({
+            name: r.name,
+            stars: stars,
+            forks: r.forks_count || 0,
+            language: r.language || 'Code',
+            updatedAt: (r.updated_at || '').slice(0, 10),
+            source: 'github',
+            url: r.html_url,
+          });
         }
       }
     }
@@ -220,7 +204,7 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       }
     }
 
-    const totalStars = ghStars + murcesStars;
+    const totalStars = ghStars;
     const level = Math.max(15, Math.min(99, Math.floor(totalCommitsYear / 15) + publicRepos));
 
     const result: DeveloperStats = {
