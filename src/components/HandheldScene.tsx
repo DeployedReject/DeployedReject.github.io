@@ -9,6 +9,8 @@ interface HandheldSceneProps {
   setCameraMode: (mode: SceneCameraMode) => void;
   onSelectProject: (projectId: string) => void;
   activeCartridgeId: string | null;
+  isLightMode?: boolean;
+  onToggleLightMode?: () => void;
 }
 
 const TABS: ScreenTab[] = ['status', 'cartridges', 'github', 'pings', 'hire'];
@@ -26,6 +28,8 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   cameraMode,
   onSelectProject,
   activeCartridgeId,
+  isLightMode = false,
+  onToggleLightMode,
 }) => {
   const [screenTab, setScreenTab] = useState<ScreenTab>('cartridges');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
@@ -70,37 +74,54 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
       return;
     }
     if (screenTab === 'hire') {
-      window.open('https://github.com/DeployedReject', '_blank', 'noopener,noreferrer');
+      const urls = [
+        'https://github.com/DeployedReject',
+        'https://codeberg.org/DeployedReject',
+        'mailto:deployedreject@proton.me',
+      ];
+      window.open(urls[optionIndex % urls.length], '_blank', 'noopener,noreferrer');
       return;
     }
-    if (screenTab !== 'cartridges') {
-      setScreenTab('cartridges');
+    if (screenTab === 'github') {
+      const urls = [
+        'https://github.com/DeployedReject',
+        'https://codeberg.org/DeployedReject',
+      ];
+      window.open(urls[optionIndex % urls.length], '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (screenTab === 'status') {
+      const urls = [
+        'https://github.com/DeployedReject',
+        'https://codeberg.org/DeployedReject',
+      ];
+      window.open(urls[optionIndex % urls.length], '_blank', 'noopener,noreferrer');
       return;
     }
     onSelectProject(highlightedProject.id);
   };
 
-  // ============================================================================
-  // FULLSCREEN 50/50 SPLIT VIEW (Mobile always uses ROMs menu directly)
-  // Top 50%: Dimensional recessed dark-slate lens bezel & live CRT/LCD screen
-  // Bottom 50%: Sculpted 3D warm-putty handheld body with tactile D-Pad, A/B,
-  // Select (cycles screen palette), Start (loads ROM), and speaker grille
-  // ============================================================================
   return (
-    <div className="w-screen h-screen flex flex-col bg-[#1a1614] overflow-hidden select-none">
+    <div
+      className={`w-screen h-screen flex flex-col overflow-hidden select-none transition-colors duration-300 ${
+        isLightMode ? 'bg-[#ede4d3]' : 'bg-[#1a1614]'
+      }`}
+    >
       {/* ==================================================================== */}
       {/* TOP 50%: DIMENSIONAL RECESSED SCREEN HOUSING                         */}
       {/* ==================================================================== */}
       <div
-        className="w-full h-1/2 p-2.5 sm:p-4 flex flex-col relative"
+        className="w-full h-1/2 p-2.5 sm:p-4 flex flex-col relative transition-all duration-300"
         style={{
-          background: 'linear-gradient(165deg, #4a4340 0%, #332e2c 55%, #211d1c 100%)',
+          background: isLightMode
+            ? 'linear-gradient(165deg, #d8cfc2 0%, #c2b6a6 55%, #ab9e8d 100%)'
+            : 'linear-gradient(165deg, #4a4340 0%, #332e2c 55%, #211d1c 100%)',
           boxShadow:
-            'inset 0 2px 4px rgba(255,255,255,0.18), inset 0 -8px 20px rgba(0,0,0,0.85)',
-          borderBottom: '4px solid #171412',
+            'inset 0 2px 4px rgba(255,255,255,0.18), inset 0 -8px 20px rgba(0,0,0,0.65)',
+          borderBottom: isLightMode ? '4px solid #8c7d6b' : '4px solid #171412',
         }}
       >
-        {/* Top Lens Bezel Header: Battery LED + Active Palette + ROM Preview */}
+        {/* Top Lens Bezel Header: Battery LED + Active Palette */}
         <div className="flex items-center justify-between px-2 mb-1.5 shrink-0">
           <div className="flex items-center gap-2">
             <span
@@ -111,36 +132,35 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               }}
             />
             <span
-              className="text-[7px] text-[#b8aca3] tracking-wider uppercase"
-              style={{ fontFamily: "var(--font-pixel)" }}
+              className={`text-[7px] tracking-wider uppercase ${
+                isLightMode ? 'text-[#3d342c]' : 'text-[#b8aca3]'
+              }`}
+              style={{ fontFamily: 'var(--font-pixel)' }}
             >
-              {currentPalette.name}
+              {currentPalette.name} (•‿•)
             </span>
           </div>
 
-          {/* Mini Cartridge Label Asset Preview Pill */}
-          <div className="flex items-center gap-2 bg-[#1a1716] px-2 py-0.5 rounded-full border border-[#524945] shadow-inner">
-            <img
-              src={highlightedProject.labelSvg}
-              alt=""
-              className="w-4 h-3 object-cover rounded-[2px] border border-[#a6e26e]/50"
-            />
-            <span
-              className="text-[7px] text-[#e6cf65]"
-              style={{ fontFamily: "var(--font-pixel)" }}
-            >
-              ROM: {highlightedProject.name.toUpperCase()}
-            </span>
-          </div>
+          <span
+            className={`text-[7px] tracking-wider ${
+              isLightMode ? 'text-[#4f4339]' : 'text-[#a89c94]'
+            }`}
+            style={{ fontFamily: 'var(--font-pixel)' }}
+          >
+            PORTFOLIO BOY :D
+          </span>
         </div>
 
         {/* Deep Recessed Screen Cavity */}
         <div
-          className="relative flex-1 w-full rounded-[14px] overflow-hidden bg-[#0c130d] crt-screen-container transition-all duration-300"
+          className={`relative flex-1 w-full rounded-[14px] overflow-hidden crt-screen-container transition-all duration-300 ${
+            isLightMode ? 'bg-[#e8f0e6]' : 'bg-[#0c130d]'
+          }`}
           style={{
-            boxShadow:
-              'inset 0 8px 24px rgba(0,0,0,0.95), 0 2px 0 rgba(255,255,255,0.12), 0 0 30px rgba(166,226,110,0.15)',
-            border: '3px solid #181c18',
+            boxShadow: isLightMode
+              ? 'inset 0 4px 12px rgba(0,0,0,0.22), 0 2px 0 rgba(255,255,255,0.5)'
+              : 'inset 0 8px 24px rgba(0,0,0,0.95), 0 2px 0 rgba(255,255,255,0.12), 0 0 30px rgba(166,226,110,0.15)',
+            border: isLightMode ? '3px solid #6b7869' : '3px solid #181c18',
             filter: currentPalette.filter,
           }}
         >
@@ -149,30 +169,19 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             activeTab={screenTab}
             selectedIndex={selectedIndex}
             optionIndex={optionIndex}
-            onSelectOptionIndex={setOptionIndex}
-            onTriggerOption={(opt) => {
-              if (opt.action === 'ping') {
-                setPingRefreshKey((prev) => prev + 1);
-              } else if (opt.url) {
-                window.open(opt.url, '_blank', 'noopener,noreferrer');
-              }
-            }}
             pingRefreshKey={pingRefreshKey}
             isTableZoomedOut={false}
-            insertingProject={
-              cameraMode === 'inserting' || cameraMode === 'zooming-in'
-                ? activeCartridge
-                : null
-            }
+            insertingProject={cameraMode === 'inserting' ? activeCartridge : null}
+            isLightMode={isLightMode}
           />
 
           {/* Curved Glass Reflection Asset */}
           <img
             src="/svg/glass-overlay.svg"
             alt=""
-            className="absolute inset-0 w-full h-full object-fill pointer-events-none opacity-55"
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none opacity-45"
           />
-          <div className="crt-vignette" />
+          {!isLightMode && <div className="crt-vignette" />}
         </div>
       </div>
 
@@ -182,8 +191,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
       <div
         className="w-full h-1/2 flex flex-col justify-between p-4 sm:p-6 relative overflow-hidden"
         style={{
-          background:
-            'linear-gradient(155deg, #ebe0d2 0%, #d8c8b5 48%, #bfa992 88%, #a38d76 100%)',
+          background: isLightMode
+            ? 'linear-gradient(155deg, #f7efe4 0%, #eadbc9 48%, #d6c3ad 88%, #bfa890 100%)'
+            : 'linear-gradient(155deg, #ebe0d2 0%, #d8c8b5 48%, #bfa992 88%, #a38d76 100%)',
           boxShadow:
             'inset 0 4px 6px rgba(255,255,255,0.7), inset 0 -12px 24px rgba(66,50,36,0.65), inset 6px 0 12px rgba(255,255,255,0.35), inset -6px 0 14px rgba(66,50,36,0.45)',
         }}
@@ -195,19 +205,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
           className="absolute inset-0 w-full h-full object-cover object-bottom opacity-15 mix-blend-multiply pointer-events-none"
         />
 
-        {/* Top Molded Seam Groove & Instruction Strip */}
-        <div className="relative z-10 flex items-center justify-between px-2 py-1 rounded-md bg-[#c4b19c]/70 border border-[#a6927c] shadow-[inset_0_2px_4px_rgba(70,54,40,0.35),0_1px_0_rgba(255,255,255,0.6)]">
+        {/* Top Molded Seam Groove */}
+        <div className="relative z-10 flex items-center justify-center px-2 py-1 rounded-md bg-[#c4b19c]/70 border border-[#a6927c] shadow-[inset_0_2px_4px_rgba(70,54,40,0.35),0_1px_0_rgba(255,255,255,0.6)]">
           <span
             className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
-            style={{ fontFamily: "var(--font-pixel)" }}
+            style={{ fontFamily: 'var(--font-pixel)' }}
           >
-            {'\uf053\uf054'} CHANNEL  |  {'\uf077\uf078'} ROM
-          </span>
-          <span
-            className="text-[7px] sm:text-[8px] text-[#7c2d38] font-bold tracking-wider"
-            style={{ fontFamily: "var(--font-pixel)" }}
-          >
-            [A] LOAD ROM
+            {'\uf053\uf054'} CHANNELS  |  {'\uf077\uf078'} SCROLL
           </span>
         </div>
 
@@ -262,14 +266,14 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 type="button"
                 onClick={() => cycleItem('prev')}
                 className="absolute top-2 left-1/3 w-1/3 h-10 cursor-pointer active:bg-white/10 rounded-t"
-                title="Previous ROM"
+                title="Scroll Up"
               />
               {/* DOWN Button (Next Project/Item) */}
               <button
                 type="button"
                 onClick={() => cycleItem('next')}
                 className="absolute bottom-2 left-1/3 w-1/3 h-10 cursor-pointer active:bg-white/10 rounded-b"
-                title="Next ROM"
+                title="Scroll Down"
               />
               {/* LEFT Button (Previous Channel) */}
               <button
@@ -288,7 +292,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             </div>
           </div>
 
-          {/* RIGHT: Angled Recessed Pill Well + 3D Burgundy B & A Buttons */}
+          {/* RIGHT: Angled Recessed Pill Well + 3D Burgundy B (Light Mode) & A (Action) Buttons */}
           <div
             className="px-4 py-3 sm:px-5 sm:py-3.5 rounded-full flex items-center gap-5 sm:gap-7 -rotate-24"
             style={{
@@ -298,20 +302,21 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               border: '1px solid #b09a82',
             }}
           >
-            {/* B Button: Back / Previous Channel */}
+            {/* B Button: Toggle Light Mode (Unique function) */}
             <div className="flex flex-col items-center">
               <button
                 type="button"
-                onClick={() => cycleTab('prev')}
+                onClick={() => onToggleLightMode?.()}
                 className="w-13 h-13 sm:w-15 sm:h-15 rounded-full cursor-pointer active:translate-y-1 transition-transform flex items-center justify-center relative"
                 style={{
-                  background:
-                    'radial-gradient(circle at 35% 30%, #b83b4a 0%, #872330 60%, #57121b 100%)',
+                  background: isLightMode
+                    ? 'radial-gradient(circle at 35% 30%, #fbbf24 0%, #d97706 65%, #92400e 100%)'
+                    : 'radial-gradient(circle at 35% 30%, #b83b4a 0%, #872330 60%, #57121b 100%)',
                   boxShadow:
                     '0 6px 0 #380a10, 0 8px 12px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,210,215,0.45)',
                   border: '2px solid #6b1823',
                 }}
-                title="Previous Channel"
+                title="Toggle Light / Dark Mode"
               >
                 <span
                   className="text-[#fceee0] text-xs font-bold rotate-24"
@@ -324,11 +329,11 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 className="text-[8px] text-[#45382d] font-bold tracking-wider mt-2 rotate-24"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
-                BACK
+                LIGHT
               </span>
             </div>
 
-            {/* A Button: Load ROM / Confirm */}
+            {/* A Button: Trigger Selected Item / Load ROM */}
             <div className="flex flex-col items-center">
               <button
                 type="button"
@@ -341,7 +346,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                     '0 6px 0 #380a10, 0 8px 12px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,210,215,0.45)',
                   border: '2px solid #6b1823',
                 }}
-                title="Load Selected ROM"
+                title="Select / Load Highlighted Item"
               >
                 <span
                   className="text-[#fceee0] text-xs font-bold rotate-24"
@@ -354,19 +359,18 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 className="text-[8px] text-[#7c2d38] font-bold tracking-wider mt-2 rotate-24"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
-                LOAD
+                SELECT
               </span>
             </div>
           </div>
         </div>
 
-        {/* BOTTOM ROW: SELECT (DISPLAY PALETTE) / START (LOAD ROM) PILLS + SPEAKER GRILLE */}
+        {/* BOTTOM ROW: SINGLE PALETTE PILL + SPEAKER GRILLE */}
         <div className="relative z-10 flex items-end justify-between px-2 pt-1">
           <div className="w-12 hidden sm:block" />
 
-          {/* Center: Molded Rubber SELECT (Cycles Display Palette) & START (Loads ROM) Pill Buttons */}
-          <div className="flex items-center gap-8 sm:gap-10">
-            {/* SELECT Pill: Cycles Handheld Screen Color Palette */}
+          {/* Center: Single Molded Rubber Pill Button to Cycle Screen Color Palette */}
+          <div className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className="p-1 rounded-full -rotate-24"
@@ -378,7 +382,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 <button
                   type="button"
                   onClick={cyclePalette}
-                  className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
+                  className="w-14 h-3.5 sm:w-16 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
                   style={{
                     background: 'linear-gradient(180deg, #5c534d 0%, #38322e 100%)',
                     boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.3)',
@@ -390,46 +394,12 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
-                SELECT
-              </span>
-            </div>
-
-            {/* START Pill */}
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className="p-1 rounded-full -rotate-24"
-                style={{
-                  background: '#b8a38c',
-                  boxShadow: 'inset 0 2px 4px rgba(50,38,28,0.5), 0 1px 0 rgba(255,255,255,0.6)',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (screenTab !== 'cartridges') {
-                      setScreenTab('cartridges');
-                    } else {
-                      onSelectProject(highlightedProject.id);
-                    }
-                  }}
-                  className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
-                  style={{
-                    background: 'linear-gradient(180deg, #5e8f83 0%, #395c53 100%)',
-                    boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.4)',
-                  }}
-                  title="Open ROMs Menu / Start Selected ROM"
-                />
-              </div>
-              <span
-                className="text-[7px] sm:text-[8px] text-[#28473f] font-bold tracking-wider"
-                style={{ fontFamily: "'Press Start 2P', monospace" }}
-              >
-                START
+                PALETTE
               </span>
             </div>
           </div>
 
-          {/* Bottom-Right Diagonal Speaker Grille Slots (Matching handheld-body.webp) */}
+          {/* Bottom-Right Diagonal Speaker Grille Slots */}
           <div className="flex items-center gap-1.5 -rotate-28 pr-1 pb-1 opacity-85">
             {[0, 1, 2, 3, 4].map((slot) => (
               <div
@@ -448,3 +418,4 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
     </div>
   );
 };
+

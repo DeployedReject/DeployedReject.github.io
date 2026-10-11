@@ -6,6 +6,7 @@ import { CfPLinkDemo } from './CfPLinkDemo';
 interface FullscreenProjectViewProps {
   project: Project;
   onEject: () => void;
+  isLightMode?: boolean;
 }
 
 const GITINGEST_TREES: Record<
@@ -13,7 +14,6 @@ const GITINGEST_TREES: Record<
   {
     stats: string;
     tree: string;
-    keyFiles: { path: string; role: string }[];
   }
 > = {
   murces: {
@@ -36,20 +36,6 @@ const GITINGEST_TREES: Record<
         └── tui/
             ├── ServerManagerTui.java     # Terminal UI window, log viewer, and menus
             └── Themes.java               # Color themes for the terminal UI`,
-    keyFiles: [
-      {
-        path: 'src/main/java/com/usedura/manager/tui/ServerManagerTui.java',
-        role: 'Draws the terminal UI panels, shows live server logs, and handles keyboard shortcuts.',
-      },
-      {
-        path: 'src/main/java/com/usedura/manager/core/BackupManager.java',
-        role: 'Sends save-off and save-all to tmux, compresses the world folder into a tar archive, and uploads it with rclone.',
-      },
-      {
-        path: 'src/main/java/com/usedura/manager/core/ModManager.java',
-        role: 'Checks Modrinth and CurseForge APIs for newer versions of installed mods and downloads them.',
-      },
-    ],
   },
   sentric: {
     stats: 'Files: 64 | React + MapLibre GL + Uber H3 + FastAPI + MQTT',
@@ -71,20 +57,6 @@ const GITINGEST_TREES: Record<
             ├── disease.py                # Groups incoming symptom reports by map region
             ├── dispatch.py               # Tracks ambulance status and assignments
             └── auth.py                   # Login endpoints`,
-    keyFiles: [
-      {
-        path: 'sentric-web/src/pages/VitalLinkApp.tsx',
-        role: 'The main dashboard showing incoming sensor reports on the map and the list of ambulances.',
-      },
-      {
-        path: 'sentric-backend/app/routers/disease.py',
-        role: 'Receives clinic reports from the hardware nodes and counts cases per hex area.',
-      },
-      {
-        path: 'sentric-backend/app/routers/dispatch.py',
-        role: 'Assigns an available ambulance to an alert and updates its status.',
-      },
-    ],
   },
   cireu: {
     stats: 'Files: 19 | React + TypeScript + Vite + Tailwind CSS',
@@ -102,20 +74,6 @@ const GITINGEST_TREES: Record<
         │   └── PlaybackControls.tsx      # Play, pause, and step buttons for viewing the path
         └── storage/
             └── presetGraphs.ts           # Example graphs (Konigsberg Bridges, Petersen, etc.)`,
-    keyFiles: [
-      {
-        path: 'src/algorithms/eulerian.ts',
-        role: "Finds an Eulerian path or circuit using Fleury's algorithm and checks for bridge edges.",
-      },
-      {
-        path: 'src/algorithms/hamiltonian.ts',
-        role: 'Uses backtracking to search for a path or cycle that visits every vertex once.',
-      },
-      {
-        path: 'src/components/MatrixEditor.tsx',
-        role: 'Lets you edit the adjacency matrix numbers directly and updates the drawn graph.',
-      },
-    ],
   },
   'cf-p-link': {
     stats: 'Files: 16 | Java 21 + GraalVM Native Image | Cloudflare API',
@@ -129,20 +87,6 @@ const GITINGEST_TREES: Record<
         ├── WorkerManager.java            # Builds the Worker router script and uploads it to Cloudflare
         ├── CloudflareApi.java            # HTTP calls to the Cloudflare API
         └── Config.java                   # Reads and writes config.json`,
-    keyFiles: [
-      {
-        path: 'src/main/java/com/cfplink/TunnelDaemon.java',
-        role: 'Starts a cloudflared tunnel for each configured local port and restarts it if it exits.',
-      },
-      {
-        path: 'src/main/java/com/cfplink/WorkerManager.java',
-        role: 'Takes the current random tunnel URLs and updates a Cloudflare Worker so your main URL forwards to them.',
-      },
-      {
-        path: 'src/main/java/com/cfplink/SetupCli.java',
-        role: 'Saves your Cloudflare API token and local port list to config.json and sets up the systemd service.',
-      },
-    ],
   },
   aggregator: {
     stats: 'Files: 52 | Browser Extension + React + Spring Boot + PostgreSQL',
@@ -163,56 +107,18 @@ const GITINGEST_TREES: Record<
             ├── service/GitSyncService.java   # Clones plugin repos from Git
             ├── service/VoteService.java      # Tracks upvotes/downvotes on plugins
             └── tui/AdminConsoleTui.java      # Terminal UI for managing the backend server`,
-    keyFiles: [
-      {
-        path: 'Aggregator-Website/super-website/public/generator/sandbox.html',
-        role: 'Runs plugin scripts inside an isolated iframe and passes search results back via postMessage.',
-      },
-      {
-        path: 'Aggregator-Extension/background.js',
-        role: 'Fetches external pages and streams from the browser extension so CORS does not block them.',
-      },
-      {
-        path: 'Aggregator-Backend/src/main/java/com/aggregator/service/GitSyncService.java',
-        role: 'Pulls plugin files from Git repositories and serves the plugin list to the frontend.',
-      },
-    ],
   },
 };
 
 export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   project,
   onEject,
+  isLightMode = false,
 }) => {
-  // CRT static clears away during the first 440ms when entering the TV ROM screen
-  const [staticClearing, setStaticClearing] = useState(true);
-  // Brief ROM boot animation showing the ROM's logo and description before the demo starts
-  const [romBooting, setRomBooting] = useState(true);
-  // Show CRT vanish effect for the first 500ms after boot completes
-  const [crtVanishing, setCrtVanishing] = useState(true);
-  // Show the top details/eject bar initially for 4.5s, then hide until mouse enters top/left corner
-  const [headerPinnedOpen, setHeaderPinnedOpen] = useState(true);
-  const [cornerHovered, setCornerHovered] = useState(false);
-  // Exclusively switch between Demo (false) and Gitingest Summary (true) via button only
+  // Exclusively switch between Demo (false) and Gitingest Summary (true) via top bar button
   const [showSummary, setShowSummary] = useState(false);
   // For Sentric: allow switching between VitalLink (#/vital), Landing (#/), and Docs (#/docs)
   const [sentricSubRoute, setSentricSubRoute] = useState<'/vital' | '/' | '/docs'>('/vital');
-
-  useEffect(() => {
-    setStaticClearing(true);
-    setRomBooting(true);
-    setCrtVanishing(true);
-    const staticTimer = setTimeout(() => setStaticClearing(false), 450);
-    const bootTimer = setTimeout(() => setRomBooting(false), 1450);
-    const crtTimer = setTimeout(() => setCrtVanishing(false), 1950);
-    const headerTimer = setTimeout(() => setHeaderPinnedOpen(false), 4800);
-    return () => {
-      clearTimeout(staticTimer);
-      clearTimeout(bootTimer);
-      clearTimeout(crtTimer);
-      clearTimeout(headerTimer);
-    };
-  }, [project.id]);
 
   // Allow Escape key to eject cartridge if focus is on the outer document
   useEffect(() => {
@@ -225,122 +131,41 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onEject]);
 
-  const isHeaderVisible = !romBooting && (headerPinnedOpen || cornerHovered || showSummary);
   const gitingest = GITINGEST_TREES[project.id] || GITINGEST_TREES.murces;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#090a0f] text-stone-100 flex flex-col relative selection:bg-emerald-500 selection:text-black">
-      {/* CRT STATIC CLEARING OVERLAY (Transitions from zoom-in static to TV ROM screen) */}
-      {staticClearing && (
-        <div className="fixed inset-0 z-[70] pointer-events-none overflow-hidden animate-crtStaticClear">
-          <div
-            className="absolute -inset-8 animate-crtStaticNoise opacity-95"
-            style={{
-              backgroundImage: `
-                repeating-radial-gradient(circle at 30% 40%, rgba(180,190,180,0.88) 0px, rgba(12,18,14,0.95) 1.5px, rgba(166,226,110,0.75) 3px, rgba(0,0,0,0.98) 4.5px),
-                repeating-linear-gradient(0deg, rgba(166,226,110,0.28) 0px, rgba(0,0,0,0.85) 2px, rgba(255,255,255,0.22) 4px)
-              `,
-              backgroundSize: '28px 28px, 100% 6px',
-            }}
-          />
-        </div>
-      )}
-
-      {/* BRIEF ROM LOADING SCREEN WITH LOGO & DESCRIPTION */}
-      {romBooting && (
-        <div className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center p-6 text-center select-none animate-fadeIn">
-          {/* Subtle Green Phosphor Glow Behind Logo */}
-          <div className="relative mb-6">
-            <div className="absolute -inset-6 bg-[#a6e26e]/20 rounded-full blur-2xl animate-tv-tingle" />
-            <img
-              src={project.labelSvg}
-              alt={project.name}
-              className="relative w-28 h-28 sm:w-36 sm:h-36 object-cover rounded-2xl border-2 border-[#a6e26e]/80 shadow-[0_0_35px_rgba(166,226,110,0.4)]"
-            />
-          </div>
-
-          <h1 className="pixel-dull-white text-lg sm:text-2xl tracking-wider mb-4">
-            {project.name}
-          </h1>
-
-          <p className="pixel-dull-white text-xs sm:text-sm max-w-2xl leading-relaxed mb-4">
-            "{project.originNote || project.tagline}"
-          </p>
-
-          <p className="text-stone-400 text-xs sm:text-sm max-w-lg font-mono mb-6">
-            {project.tagline}
-          </p>
-
-          {/* Animated ROM Loading Progress Bar */}
-          <div className="w-56 sm:w-72 h-2 bg-stone-900 border border-[#a6e26e]/50 rounded-full overflow-hidden">
-            <div className="h-full bg-[#a6e26e] shadow-[0_0_12px_#a6e26e] animate-romLoadBar" />
-          </div>
-          <span
-            className="text-[9px] text-[#a6e26e] tracking-widest uppercase mt-2.5"
-            style={{ fontFamily: "var(--font-pixel)" }}
-          >
-            {'\uf110'} LOADING ROM...
-          </span>
-        </div>
-      )}
-
-      {/* CRT-to-Clean Vanish Overlay (fades out after ROM boot completes) */}
-      <div
-        className={`fixed inset-0 z-50 pointer-events-none transition-opacity duration-500 ${
-          crtVanishing ? 'opacity-90' : 'opacity-0'
-        }`}
-        style={{
-          background:
-            'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.45) 50%), radial-gradient(circle, transparent 55%, rgba(0,0,0,0.85) 100%)',
-          backgroundSize: '100% 4px, 100% 100%',
-        }}
-      />
-
-      {/* Hot-Corner Trigger Zone (Top-Left Corner & Top 16px Edge) */}
-      <div
-        onMouseEnter={() => setCornerHovered(true)}
-        className="fixed top-0 left-0 right-0 h-4 z-50"
-      />
-      <div
-        onMouseEnter={() => setCornerHovered(true)}
-        className="fixed top-0 left-0 w-44 h-12 z-50 pointer-events-auto"
-      >
-        {!isHeaderVisible && (
-          <button
-            type="button"
-            onClick={() => setCornerHovered(true)}
-            className="m-2 px-2.5 py-1 bg-[#141914]/90 hover:bg-[#1e281e] text-[#a6e26e] border border-[#a6e26e]/60 text-[10px] shadow-lg flex items-center gap-1.5 cursor-pointer transition-opacity opacity-75 hover:opacity-100"
-            style={{ fontFamily: "var(--font-pixel)" }}
-            title="Reveal Eject & Project Info"
-          >
-            <span>{'\uf052'} EJECT / INFO</span>
-          </button>
-        )}
-      </div>
-
-      {/* Auto-Hiding Top Details & Eject Bar */}
+    <div
+      className={`h-screen w-screen overflow-hidden flex flex-col relative selection:bg-emerald-500 selection:text-black transition-colors duration-300 ${
+        isLightMode ? 'bg-[#f5f0e6] text-stone-900' : 'bg-[#090a0f] text-stone-100'
+      }`}
+    >
+      {/* Single Top Bar (Only place with Eject, Title/Tagline, and Summary toggle) */}
       <header
-        onMouseEnter={() => setCornerHovered(true)}
-        onMouseLeave={() => setCornerHovered(false)}
-        className={`fixed top-0 left-0 right-0 z-50 bg-[#121417]/95 backdrop-blur-md border-b-2 border-[#333942] px-4 sm:px-6 py-3 transition-transform duration-300 shadow-2xl ${
-          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+        className={`shrink-0 z-50 border-b-2 px-4 sm:px-6 py-2.5 transition-colors duration-300 ${
+          isLightMode
+            ? 'bg-[#ebe4d5] border-[#c8bda8] text-stone-900 shadow-sm'
+            : 'bg-[#121417] border-[#333942] text-stone-100 shadow-xl'
         }`}
       >
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          {/* Left: Eject Cartridge Button & Project Title */}
+          {/* Left: Single Eject Button & Project Identity */}
           <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
               onClick={onEject}
-              className="flex items-center gap-2 px-3 py-2 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] active:translate-y-0.5 transition-all text-[10px] sm:text-xs cursor-pointer"
-              style={{ fontFamily: "var(--font-pixel)" }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[2px_2px_0px_#000] active:translate-y-0.5 transition-all text-[10px] sm:text-xs cursor-pointer"
+              style={{ fontFamily: 'var(--font-pixel)' }}
             >
               <span>{'\uf060 \uf052'} EJECT</span>
             </button>
 
-            <div className="hidden sm:flex flex-col">
+            <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-sm text-white">
+                <span
+                  className={`font-mono font-bold text-sm ${
+                    isLightMode ? 'text-stone-900' : 'text-white'
+                  }`}
+                >
                   {project.title}
                 </span>
                 <span
@@ -354,22 +179,34 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   {project.badge}
                 </span>
               </div>
-              <span className="text-[11px] text-stone-400 font-mono line-clamp-1">
+              <span
+                className={`text-[11px] font-mono line-clamp-1 ${
+                  isLightMode ? 'text-stone-600' : 'text-stone-400'
+                }`}
+              >
                 {project.tagline}
               </span>
             </div>
           </div>
 
-          {/* Right: Sub-route Switcher (for Sentric), Exclusive Demo/Summary Toggle Button, Repo & Live Links */}
+          {/* Right: Sentric Route Switcher, Single Demo/Summary Toggle, Repo & Live Links */}
           <div className="flex items-center gap-2 text-xs font-mono flex-wrap">
             {!showSummary && project.id === 'sentric' && (
-              <div className="flex items-center bg-stone-900 border border-stone-700 rounded p-0.5 mr-1">
+              <div
+                className={`flex items-center border rounded p-0.5 mr-1 ${
+                  isLightMode
+                    ? 'bg-stone-200 border-stone-400'
+                    : 'bg-stone-900 border-stone-700'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setSentricSubRoute('/vital')}
                   className={`px-2 py-1 rounded text-[11px] cursor-pointer transition-colors ${
                     sentricSubRoute === '/vital'
                       ? 'bg-red-600 text-white font-semibold'
+                      : isLightMode
+                      ? 'text-stone-700 hover:text-stone-950'
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
@@ -381,6 +218,8 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   className={`px-2 py-1 rounded text-[11px] cursor-pointer transition-colors ${
                     sentricSubRoute === '/'
                       ? 'bg-red-600 text-white font-semibold'
+                      : isLightMode
+                      ? 'text-stone-700 hover:text-stone-950'
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
@@ -392,6 +231,8 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   className={`px-2 py-1 rounded text-[11px] cursor-pointer transition-colors ${
                     sentricSubRoute === '/docs'
                       ? 'bg-red-600 text-white font-semibold'
+                      : isLightMode
+                      ? 'text-stone-700 hover:text-stone-950'
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
@@ -403,7 +244,11 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             <button
               type="button"
               onClick={() => setShowSummary((prev) => !prev)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-600 cursor-pointer transition-colors font-semibold"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border cursor-pointer transition-colors font-semibold ${
+                isLightMode
+                  ? 'bg-stone-800 hover:bg-stone-700 text-amber-300 border-stone-700'
+                  : 'bg-stone-800 hover:bg-stone-700 text-amber-300 border-stone-600'
+              }`}
             >
               {showSummary ? (
                 <>
@@ -422,9 +267,13 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               href={project.repoUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition-colors"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border transition-colors ${
+                isLightMode
+                  ? 'bg-stone-200 hover:bg-stone-300 text-stone-900 border-stone-400'
+                  : 'bg-stone-800 hover:bg-stone-700 text-stone-200 border-stone-700'
+              }`}
             >
-              <span className="nf-glyph text-stone-400">{'\uf126'}</span>
+              <span className="nf-glyph text-stone-500">{'\uf126'}</span>
               <span>Repo</span>
               <span className="nf-glyph text-stone-500 text-[10px]">{'\uf08e'}</span>
             </a>
@@ -446,7 +295,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
 
       {/* EXCLUSIVELY RENDER EITHER THE DEMO OR THE GITINGEST SUMMARY */}
       {!showSummary ? (
-        <section className="w-full h-full flex flex-col bg-[#090a0f] relative overflow-hidden">
+        <section className="flex-1 min-h-0 w-full flex flex-col relative overflow-hidden">
           {project.id === 'murces' && (
             <div className="w-full h-full overflow-y-auto p-3 sm:p-6">
               <MurcesTuiDemo
@@ -489,154 +338,126 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               className="w-full h-full border-0 bg-[#0b0f17]"
             />
           )}
-
-          {/* Dedicated Button to Switch to Gitingest Summary */}
-          <button
-            type="button"
-            onClick={() => setShowSummary(true)}
-            className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 text-stone-100 border border-stone-600 text-xs font-mono shadow-2xl cursor-pointer hover:border-emerald-500 transition-colors"
-          >
-            <span className="nf-glyph text-emerald-400">{'\uf15c'}</span>
-            <span>Read Gitingest Summary</span>
-          </button>
         </section>
       ) : (
-        <section className="w-full h-full overflow-y-auto bg-[#0c0d12] pt-20 pb-16 px-4 sm:px-8 animate-fadeIn">
-          <div className="max-w-7xl mx-auto space-y-8">
-            {/* Section Header with Exclusive Back-to-Demo Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-6">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 mb-1">
-                  <span className="nf-glyph">{'\uf120'}</span>
-                  <span>Gitingest Summary</span>
+        <section
+          className={`flex-1 min-h-0 w-full overflow-y-auto py-8 px-4 sm:px-8 animate-fadeIn ${
+            isLightMode ? 'bg-[#f5f0e6]' : 'bg-[#0c0d12]'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left 6 Cols: Gitingest Directory Structure */}
+            <div className="lg:col-span-6">
+              <div
+                className={`rounded-lg border overflow-hidden ${
+                  isLightMode
+                    ? 'border-stone-300 bg-white shadow-sm'
+                    : 'border-stone-800 bg-[#08090c]'
+                }`}
+              >
+                <div
+                  className={`px-4 py-2.5 border-b flex items-center justify-between text-xs font-mono ${
+                    isLightMode
+                      ? 'bg-stone-100 border-stone-300 text-stone-800'
+                      : 'bg-stone-900/90 border-stone-800 text-amber-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 font-semibold">
+                    <span className="nf-glyph">{'\uf15c'}</span>
+                    gitingest://{project.id}/digest.txt
+                  </span>
+                  <span className="text-[11px] opacity-70">(•‿•) UTF-8</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold font-mono text-white">
-                  {project.title}
-                </h2>
-                <p className="text-stone-400 text-sm mt-1">{project.tagline}</p>
-              </div>
-
-              <div className="flex items-center gap-3 self-start sm:self-center shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowSummary(false)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white border-2 border-emerald-300/80 shadow-[3px_3px_0px_#000] text-xs font-mono font-bold cursor-pointer transition-colors"
+                <div
+                  className={`px-4 py-2 border-b text-[11px] font-mono ${
+                    isLightMode
+                      ? 'bg-emerald-50 border-stone-200 text-emerald-800'
+                      : 'bg-stone-950/60 border-stone-900 text-emerald-400'
+                  }`}
                 >
-                  <span className="nf-glyph">{'\uf04b'}</span>
-                  <span>BACK TO DEMO</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={onEject}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] text-xs cursor-pointer"
-                  style={{ fontFamily: "var(--font-pixel)" }}
+                  {gitingest.stats}
+                </div>
+                <pre
+                  className={`p-4 text-[11px] sm:text-xs font-mono overflow-x-auto leading-relaxed ${
+                    isLightMode ? 'text-stone-800' : 'text-stone-300'
+                  }`}
                 >
-                  <span>{'\uf060 \uf052'} EJECT</span>
-                </button>
+                  {gitingest.tree}
+                </pre>
               </div>
             </div>
 
-            {/* Two-Column Grid: Gitingest Tree + Plain Function Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left 5 Cols: Gitingest Directory Structure & Main Files */}
-              <div className="lg:col-span-5 space-y-4">
-                <div className="rounded-lg border border-stone-800 bg-[#08090c] overflow-hidden">
-                  <div className="px-4 py-2.5 bg-stone-900/90 border-b border-stone-800 flex items-center justify-between text-xs font-mono">
-                    <span className="flex items-center gap-2 text-amber-300 font-semibold">
-                      <span className="nf-glyph">{'\uf15c'}</span>
-                      gitingest://{project.id}/digest.txt
-                    </span>
-                    <span className="text-[11px] text-stone-400">UTF-8</span>
-                  </div>
-                  <div className="px-4 py-2 bg-stone-950/60 border-b border-stone-900 text-[11px] font-mono text-emerald-400">
-                    {gitingest.stats}
-                  </div>
-                  <pre className="p-4 text-[11px] sm:text-xs font-mono text-stone-300 overflow-x-auto leading-relaxed">
-                    {gitingest.tree}
-                  </pre>
+            {/* Right 6 Cols: How It Works & Built With */}
+            <div className="lg:col-span-6 space-y-6">
+              <div
+                className={`rounded-lg border p-6 space-y-4 ${
+                  isLightMode
+                    ? 'border-stone-300 bg-white shadow-sm'
+                    : 'border-stone-800 bg-stone-900/40'
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-2 font-mono text-sm font-semibold ${
+                    isLightMode ? 'text-emerald-700' : 'text-emerald-400'
+                  }`}
+                >
+                  <span className="nf-glyph">{'\uf085'}</span>
+                  <span>How It Works (｡•̀ᴗ-)✧</span>
                 </div>
-
-                {/* Main Files */}
-                <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-4 space-y-3">
-                  <div className="text-xs font-mono uppercase tracking-wider text-stone-400">
-                    Main Files:
-                  </div>
-                  <div className="space-y-2.5">
-                    {gitingest.keyFiles.map((file) => (
-                      <div
-                        key={file.path}
-                        className="p-2.5 rounded bg-stone-950/80 border border-stone-800/90 font-mono"
+                <ul
+                  className={`space-y-2.5 text-sm ${
+                    isLightMode ? 'text-stone-800' : 'text-stone-300'
+                  }`}
+                >
+                  {project.summary.architecture.map((item, idx) => (
+                    <li
+                      key={idx}
+                      className={`flex items-start gap-3 p-3 rounded border ${
+                        isLightMode
+                          ? 'bg-stone-50 border-stone-200'
+                          : 'bg-stone-950/60 border-stone-800/80'
+                      }`}
+                    >
+                      <span
+                        className={`font-mono font-bold shrink-0 mt-0.5 ${
+                          isLightMode ? 'text-emerald-700' : 'text-emerald-400'
+                        }`}
                       >
-                        <div className="text-xs text-emerald-400 font-semibold break-all">
-                          {file.path}
-                        </div>
-                        <div className="text-xs text-stone-400 mt-1 leading-relaxed">
-                          {file.role}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                        0{idx + 1}
+                      </span>
+                      <span className="leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              {/* Right 7 Cols: What It Does, Why I Made It, and Tech Stack */}
-              <div className="lg:col-span-7 space-y-6">
-                <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-6 space-y-4">
-                  <div className="flex items-center gap-2 text-emerald-400 font-mono text-sm font-semibold">
-                    <span className="nf-glyph">{'\uf0c9'}</span>
-                    <span>What It Does</span>
-                  </div>
-                  <p className="text-stone-200 text-sm sm:text-base leading-relaxed">
-                    {project.summary.overview}
-                  </p>
-
-                  <div className="pt-3 space-y-3">
-                    <div className="text-xs font-mono uppercase tracking-wider text-stone-400">
-                      How It Works:
-                    </div>
-                    <ul className="space-y-2.5 text-sm text-stone-300">
-                      {project.summary.architecture.map((item, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-3 p-3 rounded bg-stone-950/60 border border-stone-800/80"
-                        >
-                          <span className="text-emerald-400 font-mono font-bold shrink-0 mt-0.5">
-                            0{idx + 1}
-                          </span>
-                          <span className="leading-relaxed">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+              <div
+                className={`rounded-lg border p-5 ${
+                  isLightMode
+                    ? 'border-stone-300 bg-white shadow-sm'
+                    : 'border-stone-800 bg-stone-900/40'
+                }`}
+              >
+                <div
+                  className={`text-xs font-mono uppercase tracking-wider mb-3 ${
+                    isLightMode ? 'text-stone-600' : 'text-stone-400'
+                  }`}
+                >
+                  Built With :D
                 </div>
-
-                {/* Why I Made It & Tech Stack */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-5">
-                    <div className="text-xs font-mono text-stone-400 uppercase tracking-wider mb-2">
-                      Why I Made It:
-                    </div>
-                    <p className="text-sm text-white font-semibold leading-relaxed">
-                      "{project.originNote || project.summary.clientValue}"
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-5">
-                    <div className="text-xs font-mono text-stone-400 uppercase tracking-wider mb-3">
-                      Built With:
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {project.summary.techStack.map((tech) => (
-                        <span
-                          key={tech}
-                          className="text-xs font-mono px-2.5 py-1 rounded bg-stone-950 text-stone-200 border border-stone-800"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {project.summary.techStack.map((tech) => (
+                    <span
+                      key={tech}
+                      className={`text-xs font-mono px-2.5 py-1 rounded border ${
+                        isLightMode
+                          ? 'bg-stone-100 text-stone-800 border-stone-300'
+                          : 'bg-stone-950 text-stone-200 border-stone-800'
+                      }`}
+                    >
+                      {tech}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -646,4 +467,5 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
     </div>
   );
 };
+
 

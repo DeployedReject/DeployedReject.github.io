@@ -36,11 +36,11 @@ export const PROJECTS: Project[] = [
     labelSvg: '/svg/label-murces.svg',
     demoType: 'terminal',
     stars: 'Linux / WSL',
-    originNote: 'Made to controlling my weak minecraft server more convinient while playing with friends.',
+    originNote: 'Made to make controlling my weak Minecraft server more convenient while playing with friends :D',
     repoUrl: 'https://codeberg.org/DeployedReject/murces',
     summary: {
       overview:
-        'A lightweight terminal dashboard and command-line tool that runs a Minecraft server in the background using tmux. Built so I could start, stop, back up, and update mods on a low-spec machine without running a heavy web panel.',
+        'A lightweight terminal dashboard and command-line tool that runs a Minecraft server in the background using tmux.',
       architecture: [
         'Starts and stops the Minecraft server inside a background tmux session and lets you attach to live logs or send server commands.',
         'Downloads the required Java version (OpenJDK 8, 17, or 21) automatically so you do not have to configure Java manually.',
@@ -49,8 +49,7 @@ export const PROJECTS: Project[] = [
         'Manages a Playit.gg tunnel process so friends can join without port forwarding.',
       ],
       techStack: ['Java 21', 'GraalVM Native Image', 'Lanterna TUI', 'tmux', 'Playit.gg', 'Modrinth API', 'CurseForge API'],
-      clientValue:
-        'Made to controlling my weak minecraft server more convinient while playing with friends.',
+      clientValue: '',
     },
     initialTerminalLogs: [
       '[MurCes] MurCes v1.6.0 initialized',
@@ -115,12 +114,12 @@ Usage:
     accentBg: 'rgba(239, 68, 68, 0.15)',
     labelSvg: '/svg/label-sentric.svg',
     demoType: 'interactive',
-    originNote: 'Made for a friend during a hackathon for thier hardware IOT project',
+    originNote: 'Made for a friend during a hackathon for their hardware IoT project ^_^',
     repoUrl: 'https://github.com/deployedreject/sentrictechnologies',
     liveUrl: 'https://sentrictechnologies.in',
     summary: {
       overview:
-        'A web dashboard and Python backend built for a friend\'s hardware IoT project at a hackathon. The hardware sensors send patient vitals and clinic reports over MQTT, and the web app plots them on a map and tracks ambulance dispatch.',
+        'A web dashboard and Python backend where hardware sensors stream patient vitals over MQTT and operators track ambulance dispatch.',
       architecture: [
         'Receives live sensor readings and symptom reports from the IoT hardware over an MQTT broker.',
         'Displays reported cases on an interactive map grouped into hex regions so you can see where cases are piling up.',
@@ -128,8 +127,7 @@ Usage:
         'Includes a basic login check to separate clinic staff from dashboard operators.',
       ],
       techStack: ['React', 'TypeScript', 'Tailwind CSS', 'MapLibre GL', 'Uber H3', 'FastAPI', 'Mosquitto MQTT', 'PostgreSQL'],
-      clientValue:
-        'Made for a friend during a hackathon for thier hardware IOT project',
+      clientValue: '',
     },
   },
   {
@@ -142,12 +140,12 @@ Usage:
     accentBg: 'rgba(139, 92, 246, 0.15)',
     labelSvg: '/svg/label-cireu.svg',
     demoType: 'visualizer',
-    originNote: 'Made for assignment during my discrete mathematics class to make up for missed signatures',
+    originNote: 'Made for an assignment during my discrete mathematics class to make up for missed signatures >_<',
     repoUrl: 'https://github.com/deployedreject/cireu',
     liveUrl: 'https://deployedreject.github.io/cireu/',
     summary: {
       overview:
-        'A browser tool for drawing graphs and checking whether they have an Eulerian or Hamiltonian path or cycle. You can add vertices and edges on the canvas or edit the adjacency matrix directly, then step through the path one edge at a time.',
+        'A browser tool for drawing graphs and stepping through Eulerian and Hamiltonian paths one edge at a time.',
       architecture: [
         'Lets you draw nodes and edges on an SVG canvas or edit the adjacency and incidence tables directly—changes in one update the other.',
         'Checks vertex degrees and runs Fleury\'s algorithm to find an Eulerian path or circuit.',
@@ -155,8 +153,7 @@ Usage:
         'Includes playback controls (play, pause, step forward/backward) to watch the algorithm walk the graph.',
       ],
       techStack: ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'SVG'],
-      clientValue:
-        'Made for assignment during my discrete mathematics class to make up for missed signatures',
+      clientValue: '',
     },
   },
   {
@@ -169,11 +166,11 @@ Usage:
     accentBg: 'rgba(245, 158, 11, 0.15)',
     labelSvg: '/svg/label-cfplink.svg',
     demoType: 'terminal',
-    originNote: 'Made to expose local dev servers and services through Cloudflare without port forwarding.',
+    originNote: 'Made to expose local dev servers and services through Cloudflare without port forwarding ;)',
     repoUrl: 'https://github.com/deployedreject/cf-p-link',
     summary: {
       overview:
-        'Free Cloudflare quick tunnels (`*.trycloudflare.com`) generate a random URL every time they restart. This tool runs `cloudflared` in the background for your local ports, reads the new random URLs from the logs, and updates a Cloudflare Worker so you can access your local services from one fixed URL.',
+        'Runs cloudflared in the background for local ports, parses each new random trycloudflare.com URL, and updates a Cloudflare Worker router.',
       architecture: [
         'Starts a `cloudflared` process for each local port listed in `config.json` and restarts it if it crashes.',
         'Reads the generated `*.trycloudflare.com` URL from `cloudflared` output whenever a tunnel starts.',
@@ -181,8 +178,7 @@ Usage:
         'Includes a setup command that writes the config file and creates a `systemd` service to run on boot.',
       ],
       techStack: ['Java 21', 'GraalVM Native Image', 'Cloudflare API', 'Cloudflare Workers', 'cloudflared', 'systemd'],
-      clientValue:
-        'Made to expose local dev servers and services through Cloudflare without port forwarding.',
+      clientValue: '',
     },
     initialTerminalLogs: [
       '[cf-p-link] Loaded 3 local services from /opt/cf-p-link/config.json',
@@ -238,12 +234,12 @@ Usage:
     accentBg: 'rgba(132, 204, 22, 0.15)',
     labelSvg: '/svg/label-aggregator.svg',
     demoType: 'interactive',
-    originNote: 'Wanted to learn JS so made it for a friend who wanted a better way to manage all his sites',
+    originNote: 'Wanted to learn JS, so I made it for a friend who wanted a better way to manage all his sites :)',
     repoUrl: 'https://github.com/deployedreject/aggregator',
     liveUrl: 'https://aggregator-registry.mishravaibhav2048.workers.dev',
     summary: {
       overview:
-        'A browser extension and website that lets you search and play media across different sites from a single interface. Each site is handled by a small JavaScript plugin, and a Spring Boot backend keeps a list of available plugins.',
+        'A browser extension and website that searches and plays media across multiple sites using sandboxed JavaScript plugins.',
       architecture: [
         'Runs each site plugin inside a sandboxed iframe so plugin scripts cannot read the main page.',
         'Uses a browser extension background script to fetch pages and media streams that would normally be blocked by CORS.',
@@ -251,8 +247,7 @@ Usage:
         'Lets users vote on whether a plugin works and hides plugins that stop working.',
       ],
       techStack: ['JavaScript', 'WebExtensions API', 'React', 'Spring Boot', 'PostgreSQL', 'JGit'],
-      clientValue:
-        'Wanted to learn JS so made it for a friend who wanted a better way to manage all his sites',
+      clientValue: '',
     },
   },
 ];

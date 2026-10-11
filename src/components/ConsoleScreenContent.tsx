@@ -23,19 +23,19 @@ export function getChannelOptions(
   if (activeTab === 'status') {
     return [
       {
-        label: '\uf09b  Open GitHub Profile (github.com/DeployedReject)',
+        label: '\uf121  Browse Java Repositories',
         action: 'url',
-        url: 'https://github.com/DeployedReject',
+        url: 'https://github.com/DeployedReject?tab=repositories&language=java',
       },
       {
-        label: '\uf126  Open Codeberg Profile (codeberg.org/DeployedReject)',
+        label: '\uf121  Browse TypeScript Repositories',
         action: 'url',
-        url: 'https://codeberg.org/DeployedReject',
+        url: 'https://github.com/DeployedReject?tab=repositories&language=typescript',
       },
       {
-        label: '\uf0e0  Send Email (mishravaibhav2048@gmail.com)',
+        label: '\uf121  Browse Python & Shell Repositories',
         action: 'url',
-        url: 'mailto:mishravaibhav2048@gmail.com',
+        url: 'https://github.com/DeployedReject?tab=repositories&language=python',
       },
     ];
   }
@@ -46,32 +46,25 @@ export function getChannelOptions(
       { repo: 'Cireu', message: 'fix light theme colors', date: '10-11' },
     ];
     const uniqueRepos = Array.from(new Set(commits.map((c) => c.repo))).slice(0, 3);
-    return [
-      ...uniqueRepos.map((repo) => ({
-        label: `\uf126  Open Repo: DeployedReject/${repo}`,
-        action: 'url' as const,
-        url: `https://github.com/DeployedReject/${repo}`,
-      })),
-      {
-        label: '\uf09b  View All Repositories on GitHub',
-        action: 'url',
-        url: 'https://github.com/DeployedReject?tab=repositories',
-      },
-    ];
+    return uniqueRepos.map((repo) => ({
+      label: `\uf126  DeployedReject/${repo}`,
+      action: 'url' as const,
+      url: `https://github.com/DeployedReject/${repo}`,
+    }));
   }
   if (activeTab === 'pings') {
     return [
       {
-        label: '\uf021  Re-Ping Active Servers (144.24.141.13 & 150.230.141.102)',
+        label: '\uf021  Refresh Server Pings',
         action: 'ping',
       },
       {
-        label: '\uf233  Open Aggregator Registry Worker (aggregator-registry.mishravaibhav2048.workers.dev)',
+        label: '\uf233  aggregator-registry.mishravaibhav2048.workers.dev',
         action: 'url',
         url: 'https://aggregator-registry.mishravaibhav2048.workers.dev',
       },
       {
-        label: '\uf233  Open Sentric Technologies (sentrictechnologies.in)',
+        label: '\uf233  sentrictechnologies.in',
         action: 'url',
         url: 'https://sentrictechnologies.in',
       },
@@ -80,24 +73,19 @@ export function getChannelOptions(
   if (activeTab === 'hire') {
     return [
       {
-        label: '\uf09b  Open GitHub   (github.com/DeployedReject)',
+        label: '\uf09b  github.com/DeployedReject',
         action: 'url',
         url: 'https://github.com/DeployedReject',
       },
       {
-        label: '\uf126  Open Codeberg (codeberg.org/DeployedReject)',
+        label: '\uf126  codeberg.org/DeployedReject',
         action: 'url',
         url: 'https://codeberg.org/DeployedReject',
       },
       {
-        label: '\uf0e0  Send Email    (mishravaibhav2048@gmail.com)',
+        label: '\uf0e0  mishravaibhav2048@gmail.com',
         action: 'url',
         url: 'mailto:mishravaibhav2048@gmail.com',
-      },
-      {
-        label: '\uf0c5  Copy Email Address (mishravaibhav2048@gmail.com)',
-        action: 'copy',
-        copyText: 'mishravaibhav2048@gmail.com',
       },
     ];
   }
@@ -109,12 +97,11 @@ interface ConsoleScreenContentProps {
   activeTab: ScreenTab;
   selectedIndex?: number;
   optionIndex?: number;
-  onSelectOptionIndex?: (idx: number) => void;
-  onTriggerOption?: (opt: ChannelOption) => void;
   pingRefreshKey?: number;
   isTableZoomedOut: boolean;
   insertingProject?: Project | null;
   hideRomsTab?: boolean;
+  isLightMode?: boolean;
 }
 
 function makeBlockBar(blocks: number, total = 10): string {
@@ -135,12 +122,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   activeTab,
   selectedIndex = 0,
   optionIndex = 0,
-  onSelectOptionIndex,
-  onTriggerOption,
   pingRefreshKey = 0,
   isTableZoomedOut,
   insertingProject = null,
   hideRomsTab = false,
+  isLightMode = false,
 }) => {
   const [stats, setStats] = useState<DeveloperStats | null>(null);
   const [pings, setPings] = useState<PingResult[]>([
@@ -207,13 +193,13 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
         { name: 'Shell       ', percent: 12, blocks: 3 },
       ];
       return [
-        '\uf120 DeployedReject (Vaibhav)',
+        '\uf120 DeployedReject (Vaibhav) (•‿•)',
         '----------------------------------------',
         ...langs.map(
           (l) => `${l.name} [${makeBlockBar(l.blocks, 10)}] ${String(l.percent).padStart(2, ' ')}%`
         ),
         '----------------------------------------',
-        `REPOS : ${String(s?.publicRepos ?? 14).padEnd(4, ' ')} STARS : ${String(s?.totalStars ?? 19).padEnd(4, ' ')} COMMITS : ${s?.totalCommitsYear ?? 482}`,
+        `REPOS : ${String(s?.publicRepos ?? 14).padEnd(6, ' ')} STARS : ${String(s?.totalStars ?? 19)}`,
       ];
     }
 
@@ -228,7 +214,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
         { repo: 'Cireu', message: 'fix light theme colors', date: '10-11' },
       ];
       return [
-        `\uf126 COMMITS (365D): ${s?.totalCommitsYear ?? 482}   |   REPOS: ${s?.publicRepos ?? 14}   |   FOLLOWERS: ${s?.followers ?? 12}`,
+        `\uf126 365D TOTAL: ${s?.totalCommitsYear ?? 482}   |   FOLLOWERS: ${s?.followers ?? 12}`,
         ...commits.slice(0, 2).map(
           (c) => `[${c.date}] ${c.repo.slice(0, 10).padEnd(10, ' ')}: ${c.message.slice(0, 32)}`
         ),
@@ -237,8 +223,6 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
     if (activeTab === 'pings') {
       return [
-        '\uf233 SERVERS:',
-        '----------------------------------------',
         ...pings.map((p) => {
           if (p.status === 'HIDDEN') {
             return `${p.name.padEnd(21, ' ')} ${p.target}`;
@@ -254,21 +238,15 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
           return `${p.name.padEnd(21, ' ')} ${p.target.padEnd(15, ' ')} ${badge} ${lat}`;
         }),
         '----------------------------------------',
-        "You shouldn't be able to reach my home server anyway.",
+        "You shouldn't be able to reach my home server anyway (⌐■_■)",
       ];
     }
 
-    // hire / contact tab
+    // hire / contact tab (links are listed exclusively in the selectable rows below)
     return [
-      '\uf0e0 CONTACT // DEPLOYEDREJECT (VAIBHAV)',
-      '----------------------------------------',
-      'WORK     : Linux CLI/TUIs, Daemons & Web Apps',
-      'STACK    : Java, TypeScript, Python, Linux',
+      'FOCUS    : Linux CLI/TUIs, Daemons & Web Systems',
       'TIMEZONE : IST (UTC+5:30)',
-      '----------------------------------------',
-      'GITHUB   : github.com/DeployedReject',
-      'CODEBERG : codeberg.org/DeployedReject',
-      'EMAIL    : mishravaibhav2048@gmail.com',
+      'STATUS   : Open to Systems & Backend Engineering :D',
     ];
   }, [activeTab, stats, pings, insertingProject]);
 
@@ -308,20 +286,26 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   ];
 
   const tabs = hideRomsTab ? allTabs.filter((t) => t.id !== 'cartridges') : allTabs;
-  const activeChannelNum = Math.max(1, tabs.findIndex((t) => t.id === activeTab) + 1);
 
   return (
     <div
-      className="w-full h-full bg-[#070c08] text-[#a6e26e] p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none relative overflow-hidden"
+      className={`w-full h-full p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none relative overflow-hidden transition-colors duration-300 ${
+        isLightMode ? 'bg-[#e6f0e2] text-[#142918]' : 'bg-[#070c08] text-[#a6e26e]'
+      }`}
       style={{
         fontFamily: "var(--font-crt)",
         imageRendering: 'pixelated',
-        background:
-          'radial-gradient(circle at 50% 45%, #121f14 0%, #09100a 68%, #040704 100%)',
+        background: isLightMode
+          ? 'radial-gradient(circle at 50% 45%, #f2f8ef 0%, #e1ede0 68%, #cfe0cd 100%)'
+          : 'radial-gradient(circle at 50% 45%, #121f14 0%, #09100a 68%, #040704 100%)',
       }}
     >
       {/* Top CRT On-Screen Display (OSD) Channel Bar */}
-      <div className="border-b-2 border-[#4b6e32]/80 pb-2 flex items-center justify-between gap-2 shrink-0 pointer-events-none">
+      <div
+        className={`border-b-2 pb-2 flex items-center justify-between gap-2 shrink-0 pointer-events-none ${
+          isLightMode ? 'border-[#5c8754]/70' : 'border-[#4b6e32]/80'
+        }`}
+      >
         <div
           className="flex flex-wrap gap-1.5 sm:gap-2"
           style={{ fontFamily: "var(--font-pixel)" }}
@@ -333,7 +317,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                 key={t.id}
                 className={`px-2 py-1 text-[8px] sm:text-[10px] leading-none uppercase border transition-all duration-200 ${
                   active
-                    ? 'bg-[#a6e26e] text-[#0b120c] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.6)] scale-105'
+                    ? isLightMode
+                      ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold shadow-sm scale-105'
+                      : 'bg-[#a6e26e] text-[#0b120c] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.6)] scale-105'
+                    : isLightMode
+                    ? 'bg-[#d5e4d2] text-[#2d5434] border-[#8ab083] opacity-85'
                     : 'bg-[#121c13]/90 text-[#6ca144] border-[#355224] opacity-75'
                 }`}
               >
@@ -342,47 +330,64 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             );
           })}
         </div>
-
-        <div
-          className="text-[9px] sm:text-[11px] text-[#e6cf65] px-2 py-0.5 bg-[#1b2819] border border-[#5c8244] shadow-[0_0_8px_rgba(230,207,101,0.25)] shrink-0"
-          style={{ fontFamily: "var(--font-pixel)" }}
-        >
-          CH-0{activeChannelNum}
-        </div>
       </div>
 
       {/* Main CRT Display Area */}
       <div className="flex-1 pt-2 sm:pt-3 min-h-0 flex flex-col md:flex-row gap-4 items-stretch justify-between overflow-hidden">
-        {/* ROM Loading Animation with Logo & Description */}
+        {/* ROM Loading Animation with Logo & Progress Bar */}
         {insertingProject ? (
           <div className="w-full h-full flex flex-col items-center justify-center text-center p-2 gap-3 animate-fadeIn pointer-events-none">
             <img
               src={insertingProject.labelSvg}
               alt={insertingProject.name}
-              className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.5)]"
+              className={`w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg border-2 ${
+                isLightMode
+                  ? 'border-[#1c3b22] shadow-md'
+                  : 'border-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.5)]'
+              }`}
             />
-            <div className="pixel-dull-white text-xs sm:text-sm tracking-wide">
+            <div
+              className={`text-xs sm:text-sm tracking-wide ${
+                isLightMode ? 'text-[#142918] font-bold' : 'pixel-dull-white'
+              }`}
+              style={{ fontFamily: 'var(--font-pixel)' }}
+            >
               {SHORT_NAMES[insertingProject.id] || insertingProject.name}
             </div>
-            <div className="pixel-dull-white text-[10px] sm:text-xs max-w-md leading-relaxed">
-              "{insertingProject.originNote || insertingProject.tagline}"
-            </div>
-            <div className="w-40 sm:w-56 h-2 bg-[#142016] border border-[#5c8244] rounded overflow-hidden mt-1">
-              <div className="h-full bg-[#a6e26e] animate-romLoadBar" />
+            <div
+              className={`w-40 sm:w-56 h-2 border rounded overflow-hidden mt-1 ${
+                isLightMode
+                  ? 'bg-[#cfe0cd] border-[#5c8754]'
+                  : 'bg-[#142016] border-[#5c8244]'
+              }`}
+            >
+              <div
+                className={`h-full animate-romLoadBar ${
+                  isLightMode ? 'bg-[#1c3b22]' : 'bg-[#a6e26e]'
+                }`}
+              />
             </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
             {fullText && (
               <pre
-                className="whitespace-pre-wrap break-words text-[16px] sm:text-[20px] md:text-[22px] leading-[1.2] tracking-wide text-[#b5ec82] m-0 font-normal pointer-events-none"
+                className={`whitespace-pre-wrap break-words text-[16px] sm:text-[20px] md:text-[22px] leading-[1.2] tracking-wide m-0 font-normal pointer-events-none ${
+                  isLightMode ? 'text-[#142918]' : 'text-[#b5ec82]'
+                }`}
                 style={{
                   fontFamily: "var(--font-crt)",
-                  textShadow: '0 0 8px rgba(166, 226, 110, 0.5)',
+                  textShadow: isLightMode ? 'none' : '0 0 8px rgba(166, 226, 110, 0.5)',
                 }}
               >
                 {displayedText}
-                {isTyping && <span className="inline-block w-2.5 h-4 bg-[#b5ec82] ml-0.5 align-middle" />}
+                {isTyping && (
+                  <span
+                    className={`inline-block w-2.5 h-4 ml-0.5 align-middle ${
+                      isLightMode ? 'bg-[#142918]' : 'bg-[#b5ec82]'
+                    }`}
+                  />
+                )}
                 {!isTyping && activeTab !== 'cartridges' && <span className="animate-pulse">█</span>}
               </pre>
             )}
@@ -402,20 +407,16 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                         }}
                         className={`px-2.5 py-1 border flex items-center justify-between transition-all duration-150 ${
                           isSelected
-                            ? 'bg-[#a6e26e] text-[#0c140d] border-[#e2f9c8] font-bold shadow-[0_0_15px_rgba(166,226,110,0.45)]'
+                            ? isLightMode
+                              ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold'
+                              : 'bg-[#a6e26e] text-[#0c140d] border-[#e2f9c8] font-bold shadow-[0_0_15px_rgba(166,226,110,0.45)]'
+                            : isLightMode
+                            ? 'bg-[#d5e4d2] text-[#1c3b22] border-[#8ab083]'
                             : 'bg-[#121d13]/80 text-[#9cd66c] border-[#314a22] opacity-80'
                         }`}
                       >
                         <span className="text-[16px] sm:text-[19px] md:text-[21px] tracking-wide">
                           {isSelected ? '\uf054 ' : '  '}[{i + 1}] {shortName}
-                        </span>
-                        <span
-                          className={`text-[8px] sm:text-[9px] px-1.5 py-0.5 ${
-                            isSelected ? 'bg-[#0c140d] text-[#e6cf65]' : 'text-[#6c9e46]'
-                          }`}
-                          style={{ fontFamily: "var(--font-pixel)" }}
-                        >
-                          ROM
                         </span>
                       </div>
                     );
@@ -423,8 +424,19 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                 </div>
 
                 {/* Personal Origin Note for Highlighted Project */}
-                <div className="shrink-0 p-2 sm:p-2.5 bg-[#152216]/95 border border-[#5c8244]">
-                  <div className="pixel-dull-white text-[9px] sm:text-[11px] leading-relaxed">
+                <div
+                  className={`shrink-0 p-2 sm:p-2.5 border ${
+                    isLightMode
+                      ? 'bg-[#d5e4d2] border-[#5c8754] text-[#142918]'
+                      : 'bg-[#152216]/95 border-[#5c8244]'
+                  }`}
+                >
+                  <div
+                    className={`text-[9px] sm:text-[11px] leading-relaxed ${
+                      isLightMode ? 'text-[#142918]' : 'pixel-dull-white'
+                    }`}
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
                     "{highlightedProject.originNote || highlightedProject.tagline}"
                   </div>
                 </div>
@@ -435,7 +447,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             {activeTab === 'github' && stats && !isTableZoomedOut && (() => {
               const grid = stats.contributionGrid;
               const numCols = Math.min(28, grid[0]?.length || 20);
-              const colors = ['#121f14', '#274520', '#487a33', '#7ec252', '#c8fa8c'];
+              const colors = isLightMode
+                ? ['#d5e4d2', '#9ec497', '#639c5a', '#356e2d', '#163d12']
+                : ['#121f14', '#274520', '#487a33', '#7ec252', '#c8fa8c'];
               const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
               const weeklyTotals = Array.from({ length: numCols }, (_, colIdx) =>
                 grid.reduce((sum, row) => sum + (row[colIdx] ?? 0), 0)
@@ -443,25 +457,46 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               const maxWeekly = Math.max(12, ...weeklyTotals);
 
               return (
-                <div className="my-1.5 p-2.5 sm:p-3 rounded border-2 border-[#4b7533] bg-[#09130a]/90 shadow-[0_0_20px_rgba(166,226,110,0.16),inset_0_0_16px_rgba(0,0,0,0.85)] shrink-0 pointer-events-none flex flex-col gap-2">
+                <div
+                  className={`my-1.5 p-2.5 sm:p-3 rounded border-2 shrink-0 pointer-events-none flex flex-col gap-2 ${
+                    isLightMode
+                      ? 'border-[#5c8754] bg-[#dbead8]/90 shadow-inner'
+                      : 'border-[#4b7533] bg-[#09130a]/90 shadow-[0_0_20px_rgba(166,226,110,0.16),inset_0_0_16px_rgba(0,0,0,0.85)]'
+                  }`}
+                >
                   {/* Chart Header & Phosphor Legend */}
                   <div
-                    className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2f4d22] pb-1.5"
+                    className={`flex flex-wrap items-center justify-between gap-2 border-b pb-1.5 ${
+                      isLightMode ? 'border-[#8ab083]' : 'border-[#2f4d22]'
+                    }`}
                     style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    <span className="text-[8px] sm:text-[9px] text-[#b5ec82] tracking-wider flex items-center gap-1.5">
+                    <span
+                      className={`text-[8px] sm:text-[9px] tracking-wider flex items-center gap-1.5 ${
+                        isLightMode ? 'text-[#142918]' : 'text-[#b5ec82]'
+                      }`}
+                    >
                       <span>{'\uf080'}</span>
-                      <span>COMMIT HISTORY CHART ({numCols} WEEKS)</span>
+                      <span>28-WEEK ACTIVITY</span>
                     </span>
-                    <div className="flex items-center gap-1.5 text-[7px] sm:text-[8px] text-[#7ec252]">
+                    <div
+                      className={`flex items-center gap-1.5 text-[7px] sm:text-[8px] ${
+                        isLightMode ? 'text-[#2d5434]' : 'text-[#7ec252]'
+                      }`}
+                    >
                       <span>LESS</span>
                       {colors.map((c, idx) => (
                         <span
                           key={idx}
-                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 inline-block border border-[#3a5e29]"
+                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 inline-block border ${
+                            isLightMode ? 'border-[#6d9666]' : 'border-[#3a5e29]'
+                          }`}
                           style={{
                             backgroundColor: c,
-                            boxShadow: idx === 4 ? '0 0 6px rgba(200,250,140,0.75)' : 'none',
+                            boxShadow:
+                              !isLightMode && idx === 4
+                                ? '0 0 6px rgba(200,250,140,0.75)'
+                                : 'none',
                           }}
                         />
                       ))}
@@ -470,7 +505,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                   </div>
 
                   {/* Weekly Commit Volume Spark-Bar Chart */}
-                  <div className="flex items-end gap-[3px] sm:gap-1 h-7 sm:h-9 pl-7 sm:pl-9 pr-0.5 pt-1 border-b border-[#233b1a]/80 pb-1">
+                  <div
+                    className={`flex items-end gap-[3px] sm:gap-1 h-7 sm:h-9 pl-7 sm:pl-9 pr-0.5 pt-1 border-b pb-1 ${
+                      isLightMode ? 'border-[#8ab083]/70' : 'border-[#233b1a]/80'
+                    }`}
+                  >
                     {weeklyTotals.map((tot, cIdx) => {
                       const pct = Math.max(14, Math.round((tot / maxWeekly) * 100));
                       const isPeak = tot >= maxWeekly * 0.72;
@@ -480,8 +519,17 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                             className="w-full rounded-t-[1px]"
                             style={{
                               height: `${pct}%`,
-                              backgroundColor: isPeak ? '#b5ec82' : '#58943d',
-                              boxShadow: isPeak ? '0 0 8px rgba(181,236,130,0.55)' : 'none',
+                              backgroundColor: isLightMode
+                                ? isPeak
+                                  ? '#163d12'
+                                  : '#4b8243'
+                                : isPeak
+                                ? '#b5ec82'
+                                : '#58943d',
+                              boxShadow:
+                                !isLightMode && isPeak
+                                  ? '0 0 8px rgba(181,236,130,0.55)'
+                                  : 'none',
                             }}
                           />
                         </div>
@@ -494,7 +542,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                     {grid.slice(0, 7).map((row, rIdx) => (
                       <div key={rIdx} className="flex items-center gap-[3px] sm:gap-1">
                         <span
-                          className="w-6 sm:w-8 text-[7px] sm:text-[8px] text-[#7ec252] shrink-0 text-left"
+                          className={`w-6 sm:w-8 text-[7px] sm:text-[8px] shrink-0 text-left ${
+                            isLightMode ? 'text-[#2d5434]' : 'text-[#7ec252]'
+                          }`}
                           style={{ fontFamily: 'var(--font-pixel)' }}
                         >
                           {rIdx % 2 === 0 ? dayLabels[rIdx] : ''}
@@ -505,13 +555,17 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                             return (
                               <div
                                 key={cIdx}
-                                className="flex-1 h-2.5 sm:h-3.5 md:h-4 rounded-[2px] border border-[#22381a]/70"
+                                className={`flex-1 h-2.5 sm:h-3.5 md:h-4 rounded-[2px] border ${
+                                  isLightMode
+                                    ? 'border-[#8ab083]/70'
+                                    : 'border-[#22381a]/70'
+                                }`}
                                 style={{
                                   backgroundColor: colors[clamped],
                                   boxShadow:
-                                    clamped >= 4
+                                    !isLightMode && clamped >= 4
                                       ? '0 0 8px rgba(200, 250, 140, 0.65)'
-                                      : clamped === 3
+                                      : !isLightMode && clamped === 3
                                       ? '0 0 4px rgba(126, 194, 82, 0.35)'
                                       : 'none',
                                 }}
@@ -526,44 +580,32 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               );
             })()}
 
-            {/* Selectable Channel Options (Scrolled with SCROLL knob and opened with SELECT button) */}
+            {/* Highlighted Channel Options (Scrolled via SCROLL knob, triggered via SELECT button) */}
             {!isTableZoomedOut && activeTab !== 'cartridges' && channelOptions.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-[#375224]/90 shrink-0 space-y-1 pointer-events-auto">
-                <div
-                  className="text-[8px] text-[#7ec252] uppercase tracking-wider mb-1 flex items-center justify-between"
-                  style={{ fontFamily: "var(--font-pixel)" }}
-                >
-                  <span>{'\uf0a4'} OPTIONS (SCROLL KNOB + SELECT)</span>
-                  <span>[{safeOptionIndex + 1}/{channelOptions.length}]</span>
-                </div>
+              <div
+                className={`mt-2 pt-2 border-t shrink-0 space-y-1 pointer-events-none ${
+                  isLightMode ? 'border-[#6d9666]' : 'border-[#375224]/90'
+                }`}
+              >
                 {channelOptions.map((opt, idx) => {
                   const isSel = idx === safeOptionIndex;
                   return (
                     <div
                       key={opt.label}
-                      onClick={() => {
-                        onSelectOptionIndex?.(idx);
-                        onTriggerOption?.(opt);
-                      }}
-                      onMouseEnter={() => onSelectOptionIndex?.(idx)}
-                      className={`px-2.5 py-1 border text-[15px] sm:text-[18px] flex items-center justify-between cursor-pointer transition-all ${
+                      className={`px-2.5 py-1 border text-[15px] sm:text-[18px] flex items-center justify-between transition-all ${
                         isSel
-                          ? 'bg-[#a6e26e] text-[#09120a] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.45)]'
-                          : 'bg-[#101a11]/85 text-[#9cd66c] border-[#2d4520] hover:border-[#5c8244]'
+                          ? isLightMode
+                            ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold shadow-sm'
+                            : 'bg-[#a6e26e] text-[#09120a] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.45)]'
+                          : isLightMode
+                          ? 'bg-[#d5e4d2]/90 text-[#1c3b22] border-[#8ab083]'
+                          : 'bg-[#101a11]/85 text-[#9cd66c] border-[#2d4520]'
                       }`}
                     >
                       <span className="truncate">
                         {isSel ? '\uf054 ' : '  '}
                         {opt.label}
                       </span>
-                      {isSel && (
-                        <span
-                          className="text-[8px] px-1.5 py-0.5 bg-[#09120a] text-[#e6cf65] shrink-0 ml-2"
-                          style={{ fontFamily: "var(--font-pixel)" }}
-                        >
-                          {'\uf061'} SELECT
-                        </span>
-                      )}
                     </div>
                   );
                 })}

@@ -291,30 +291,23 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
 
         {/* Top Hotkey Bar */}
         <div
-          className="flex flex-wrap items-center gap-3 px-2 py-1 border-b text-xs mt-1"
+          className="flex flex-wrap items-center justify-between gap-3 px-2 py-1 border-b text-xs mt-1"
           style={{ borderColor: palette.border, color: palette.accent }}
         >
-          <span className="cursor-pointer hover:underline" onClick={() => setScreen('main')}>
-            {'\uf05a'} [TIP] {'\uf15c'} [A] Activity Log
-          </span>
-          <span className="opacity-50">|</span>
-          <span className="cursor-pointer hover:underline" onClick={() => setScreen('control')}>
-            {'\uf120'} [L] Server Console
-          </span>
-          <span className="opacity-50">|</span>
-          <span className="cursor-pointer hover:underline" onClick={() => setScreen('tasks')}>
-            {'\uf0ae'} [J] Active Tasks
-          </span>
-          <span className="opacity-50">|</span>
-          <span>{'\uf013'} [TAB] Cycle Focus</span>
-          <span className="opacity-50">|</span>
-          <button
-            type="button"
-            onClick={() => setScreen('main')}
-            className="cursor-pointer hover:underline font-bold"
-          >
-            {'\uf060'} [ESC] Back to Main Menu
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <span>{'\uf05a'} [TIP] Arrow keys / 1-9 to navigate (•‿•)</span>
+            <span className="opacity-50">|</span>
+            <span>{'\uf013'} [TAB] Cycle Focus</span>
+          </div>
+          {screen !== 'main' && (
+            <button
+              type="button"
+              onClick={() => setScreen('main')}
+              className="cursor-pointer hover:underline font-bold"
+            >
+              {'\uf060'} [B]ack to Main Menu
+            </button>
+          )}
         </div>
 
         {/* Middle Split Row: Workspace (Left 65%) + Activity & Diagnostics (Right 35%) */}
@@ -349,7 +342,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
 |_|  |_|\\__,_|_|   \\____\\___||___/ `}
                 </pre>
                 <div style={{ color: palette.accent }} className="text-xs font-bold">
-                  {'\uf005'} Native AOT GraalVM binary! {'\uf005'}
+                  {'\uf005'} Native AOT GraalVM binary! :D {'\uf005'}
                 </div>
 
                 {/* Main Navigation Box */}
@@ -536,14 +529,6 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     </button>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setScreen('main')}
-                  className="cursor-pointer hover:underline"
-                >
-                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
-                </button>
               </div>
             )}
 
@@ -599,13 +584,6 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
                     &lt;{'\uf0c7'} [I]nstall Only&gt;
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setScreen('main')}
-                    className="cursor-pointer hover:underline"
-                  >
-                    &lt;{'\uf060'} [B]ack to Main Menu&gt;
                   </button>
                 </div>
               </div>
@@ -709,14 +687,6 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     </div>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setScreen('main')}
-                  className="cursor-pointer hover:underline"
-                >
-                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
-                </button>
               </div>
             )}
 
@@ -778,14 +748,6 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     ))}
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setScreen('main')}
-                  className="cursor-pointer hover:underline"
-                >
-                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
-                </button>
               </div>
             )}
 
@@ -828,14 +790,6 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     <div>[x] Minecraft pickaxe dirt-breaking loading animation</div>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setScreen('main')}
-                  className="cursor-pointer hover:underline"
-                >
-                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
-                </button>
               </div>
             )}
 
@@ -918,13 +872,6 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     </div>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setScreen('main')}
-                  className="cursor-pointer hover:underline"
-                >
-                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
-                </button>
               </div>
             )}
           </div>

@@ -18,6 +18,8 @@ export function App() {
   const [cameraMode, setCameraMode] = useState<SceneCameraMode>('closeup');
   const [activeCartridgeId, setActiveCartridgeId] = useState<string | null>(null);
   const [isFullscreenProject, setIsFullscreenProject] = useState(false);
+  // Hanging room light bulb starts OFF (dark mode) and sets everything to light mode when touched
+  const [isLightMode, setIsLightMode] = useState(false);
 
   const timersRef = useRef<number[]>([]);
 
@@ -55,18 +57,14 @@ export function App() {
       return;
     }
 
-    // Desktop: Slide cartridge into the console slot (700ms), then zoom into the TV screen (700ms)
+    // Desktop: Slide cartridge into the console slot (700ms), then open the project view directly
     setCameraMode('inserting');
 
     const t1 = window.setTimeout(() => {
-      setCameraMode('zooming-in');
+      setIsFullscreenProject(true);
     }, 700);
 
-    const t2 = window.setTimeout(() => {
-      setIsFullscreenProject(true);
-    }, 1400);
-
-    timersRef.current.push(t1, t2);
+    timersRef.current.push(t1);
   };
 
   const handleEject = () => {
@@ -79,13 +77,13 @@ export function App() {
       return;
     }
 
-    // Desktop: Return from fullscreen to the shelf/console scene and play the cartridge eject animation
+    // Desktop: Return to the shelf/console scene and play the cartridge eject animation
     setCameraMode('ejecting');
 
     const t1 = window.setTimeout(() => {
       setCameraMode('table');
       setActiveCartridgeId(null);
-    }, 700);
+    }, 650);
 
     timersRef.current.push(t1);
   };
@@ -97,12 +95,17 @@ export function App() {
       <FullscreenProjectView
         project={activeProject}
         onEject={handleEject}
+        isLightMode={isLightMode}
       />
     );
   }
 
   return (
-    <div className="relative w-screen h-screen bg-[#0c0a09] overflow-hidden select-none">
+    <div
+      className={`relative w-screen h-screen overflow-hidden select-none transition-colors duration-300 ${
+        isLightMode ? 'bg-[#ede4d3]' : 'bg-[#0c0a09]'
+      }`}
+    >
       {deviceLayout === 'tv' ? (
         <TVConsoleScene
           projects={PROJECTS}
@@ -110,6 +113,8 @@ export function App() {
           setCameraMode={setCameraMode}
           onSelectProject={handleSelectProject}
           activeCartridgeId={activeCartridgeId}
+          isLightMode={isLightMode}
+          onToggleLightMode={() => setIsLightMode((prev) => !prev)}
         />
       ) : (
         <HandheldScene
@@ -118,6 +123,8 @@ export function App() {
           setCameraMode={setCameraMode}
           onSelectProject={handleSelectProject}
           activeCartridgeId={activeCartridgeId}
+          isLightMode={isLightMode}
+          onToggleLightMode={() => setIsLightMode((prev) => !prev)}
         />
       )}
     </div>
