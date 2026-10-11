@@ -142,6 +142,63 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
+  // Contact form submission state
+  const [contactEmail, setContactEmail] = useState<string>('');
+  const [contactMessage, setContactMessage] = useState<string>('');
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [contactFeedback, setContactFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  const handleSendContactRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactEmail.trim() || !contactMessage.trim()) return;
+
+    setIsSending(true);
+    setContactFeedback(null);
+
+    // Endpoint for deployed Cloudflare Worker contact gateway
+    // Based on account subdomains: https://contact-gateway.mishravaibhav2048.workers.dev
+    const workerEndpoint =
+      import.meta.env.VITE_CONTACT_WORKER_URL ||
+      'https://contact-gateway.mishravaibhav2048.workers.dev';
+
+    try {
+      const res = await fetch(workerEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: contactEmail.trim(),
+          request: contactMessage.trim(),
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        setContactFeedback({
+          type: 'success',
+          message: 'TRANSMISSION RECEIVED! Check Discord.',
+        });
+        setContactMessage('');
+      } else {
+        setContactFeedback({
+          type: 'error',
+          message: data.error || (res.status === 429 ? 'RATE LIMITED (MAX 10/MIN)' : 'TRANSMISSION FAILED'),
+        });
+      }
+    } catch {
+      setContactFeedback({
+        type: 'error',
+        message: 'NETWORK ERROR / GATEWAY OFFLINE',
+      });
+    } finally {
+      setIsSending(false);
+      window.setTimeout(() => setContactFeedback(null), 6000);
+    }
+  };
+
   useEffect(() => {
     prevTabRef.current = activeTab;
   }, [activeTab]);
@@ -261,9 +318,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
     // hire / contact tab (links are listed exclusively in the selectable rows below)
     return [
-      'FOCUS    : Linux CLI/TUIs, Daemons & Web Systems',
+      'ROLE     : Full Stack Developer',
       'TIMEZONE : IST (UTC+5:30)',
-      'STATUS   : Open to Systems & Backend Engineering :D',
+      'STATUS   : Open to opportunities :D',
     ];
   }, [activeTab, stats, pings, insertingProject]);
 
@@ -431,7 +488,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             )}
 
             {/* Scrollable Flavour Text & Diagnostics Area filling the rest of the space */}
-            {activeTab !== 'cartridges' && (
+            {activeTab !== 'cartridges' && activeTab !== 'hire' && (
               <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-between pr-1">
                 {fullText && (
                   <pre
@@ -454,6 +511,114 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                     {!isTyping && <span className="animate-pulse">█</span>}
                   </pre>
                 )}
+              </div>
+            )}
+
+            {/* Interactive Request Form (Contact / Hire Tab) */}
+            {activeTab === 'hire' && (
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-between pr-1 gap-2">
+                <div className="space-y-1">
+                  <div
+                    className={`text-[9px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center justify-between border-b pb-1 ${
+                      isLightMode ? 'text-[#1c3b22] border-[#8ab083]' : 'text-[#a6e26e] border-[#2e4d22]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
+                    <span>{'\uf0e0'} SEND A MESSAGE</span>
+                    <span className="text-[8px] opacity-80">RATE LIMIT: 10/MIN</span>
+                  </div>
+
+                  <p
+                    className={`text-[11px] sm:text-[12px] leading-tight ${
+                      isLightMode ? 'text-[#2d5434]' : 'text-[#8ccb64]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-crt)' }}
+                  >
+                    Got a question, project idea, or just want to say hi? Drop your email and a message below:
+                  </p>
+                </div>
+
+                <form onSubmit={handleSendContactRequest} className="space-y-2 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div>
+                      <label
+                        htmlFor="senderEmail"
+                        className={`block text-[9px] sm:text-[10px] font-bold mb-0.5 uppercase ${
+                          isLightMode ? 'text-[#142918]' : 'text-[#a6e26e]'
+                        }`}
+                        style={{ fontFamily: 'var(--font-pixel)' }}
+                      >
+                        YOUR EMAIL:
+                      </label>
+                      <input
+                        id="senderEmail"
+                        type="email"
+                        required
+                        placeholder="you@domain.com"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        className={`w-full px-2.5 py-1 text-xs font-mono rounded border outline-none transition-colors ${
+                          isLightMode
+                            ? 'bg-[#dce9d9] text-[#0f2413] border-[#7ea675] focus:border-[#1c3b22]'
+                            : 'bg-[#0d160e] text-[#a6e26e] border-[#2e4d22] focus:border-[#a6e26e] shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]'
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="senderMessage"
+                        className={`block text-[9px] sm:text-[10px] font-bold mb-0.5 uppercase ${
+                          isLightMode ? 'text-[#142918]' : 'text-[#a6e26e]'
+                        }`}
+                        style={{ fontFamily: 'var(--font-pixel)' }}
+                      >
+                        MESSAGE / REQUEST:
+                      </label>
+                      <textarea
+                        id="senderMessage"
+                        required
+                        rows={3}
+                        placeholder="Project requirements, inquiry or greetings..."
+                        value={contactMessage}
+                        onChange={(e) => setContactMessage(e.target.value)}
+                        className={`w-full px-2.5 py-1 text-xs font-mono rounded border outline-none resize-none transition-colors ${
+                          isLightMode
+                            ? 'bg-[#dce9d9] text-[#0f2413] border-[#7ea675] focus:border-[#1c3b22]'
+                            : 'bg-[#0d160e] text-[#a6e26e] border-[#2e4d22] focus:border-[#a6e26e] shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-between gap-2">
+                    <button
+                      type="submit"
+                      disabled={isSending}
+                      className={`px-3 py-1.5 rounded border text-[9px] sm:text-[10px] font-bold cursor-pointer transition-all active:scale-95 disabled:opacity-50 ${
+                        isLightMode
+                          ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] hover:bg-[#2b5934]'
+                          : 'bg-[#152617] text-[#a6e26e] border-[#a6e26e] hover:bg-[#a6e26e] hover:text-[#0a120c] shadow-[0_0_12px_rgba(166,226,110,0.3)]'
+                      }`}
+                      style={{ fontFamily: 'var(--font-pixel)' }}
+                    >
+                      {isSending ? '[SENDING...]' : '\uf1d8 SEND MESSAGE'}
+                    </button>
+
+                    {contactFeedback && (
+                      <span
+                        className={`text-[9px] font-mono font-bold truncate max-w-[55%] ${
+                          contactFeedback.type === 'success'
+                            ? 'text-emerald-400'
+                            : 'text-red-400'
+                        }`}
+                      >
+                        {contactFeedback.type === 'success' ? '\uf00c ' : '\uf071 '}
+                        {contactFeedback.message}
+                      </span>
+                    )}
+                  </div>
+                </form>
               </div>
             )}
 
