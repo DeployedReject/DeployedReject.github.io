@@ -5,7 +5,7 @@ import {
   measureEndpointPings,
   type DeveloperStats,
   type PingResult,
-} from '../services/githubStats';
+} from '../services/gitrepositorystatistics';
 
 export type ScreenTab = 'status' | 'cartridges' | 'github' | 'pings' | 'hire';
 

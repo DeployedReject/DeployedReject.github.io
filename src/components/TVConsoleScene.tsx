@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Project } from '../data/projects';
 import {
   ConsoleScreenContent,
@@ -6,7 +7,7 @@ import {
   type ScreenTab,
   type ChannelOption,
 } from './ConsoleScreenContent';
-import { fetchDeveloperStats, type DeveloperStats } from '../services/githubStats';
+import { fetchDeveloperStats, type DeveloperStats } from '../services/gitrepositorystatistics';
 
 export type SceneCameraMode = 'closeup' | 'table' | 'inserting' | 'zooming-in' | 'ejecting';
 
@@ -233,7 +234,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   const handleTouchBulb = () => {
     if (Date.now() < bulbCooldownRef.current) return;
-    bulbCooldownRef.current = Date.now() + 650;
+    bulbCooldownRef.current = Date.now() + 1150;
     
     // Tactile pull-chain spring bounce
     setIsYankingChain(true);
@@ -246,7 +247,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
     window.setTimeout(() => {
       setLightTransition(null);
-    }, 780);
+    }, 1100);
   };
 
   // Switch directly to room view when mouse touches the outer screen edge with TV static burst cut
@@ -981,30 +982,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               strokeLinejoin="round"
             />
           </g>
-
-          {/* ================================================================ */}
-          {/* 1D. SIMPLE EXPANDING CIRCLE TRANSITION EFFECT                    */}
-          {/* ================================================================ */}
-          {lightTransition === 'turning-on' && (
-            <circle
-              cx="835"
-              cy="310"
-              r="680"
-              fill="#fff9db"
-              className="pointer-events-none animate-expandLightOrb"
-              style={{ transformOrigin: '835px 310px' }}
-            />
-          )}
-          {lightTransition === 'turning-off' && (
-            <circle
-              cx="835"
-              cy="310"
-              r="680"
-              fill="#020302"
-              className="pointer-events-none animate-contractDarkOrb"
-              style={{ transformOrigin: '835px 310px' }}
-            />
-          )}
 
           {/* ================================================================ */}
           {/* 2. WHITE CONSOLE DECK ("Definitely Legally Distinct Console")    */}
@@ -1790,6 +1767,52 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             </g>
           )}
         </svg>
+
+        {/* ================================================================== */}
+        {/* FRAMER-MOTION SMOOTH EXPANDING & CONTRACTING CIRCLE TRANSITION     */}
+        {/* Centered directly at the light bulb (43.5% horizontal, 28.7% vertical) */}
+        {/* ================================================================== */}
+        <AnimatePresence>
+          {lightTransition === 'turning-on' && (
+            <motion.div
+              key="expanding-light"
+              initial={{
+                clipPath: 'circle(0% at 43.5% 28.7%)',
+                opacity: 0.95,
+              }}
+              animate={{
+                clipPath: 'circle(150% at 43.5% 28.7%)',
+                opacity: [0.95, 0.85, 0],
+              }}
+              transition={{
+                duration: 1.05,
+                ease: [0.22, 1, 0.36, 1],
+                times: [0, 0.7, 1],
+              }}
+              className="fixed inset-0 z-50 pointer-events-none bg-[#ded3be]"
+            />
+          )}
+
+          {lightTransition === 'turning-off' && (
+            <motion.div
+              key="contracting-dark"
+              initial={{
+                clipPath: 'circle(150% at 43.5% 28.7%)',
+                opacity: 0,
+              }}
+              animate={{
+                clipPath: 'circle(0% at 43.5% 28.7%)',
+                opacity: [0, 0.85, 0],
+              }}
+              transition={{
+                duration: 0.95,
+                ease: [0.32, 0, 0.67, 0],
+                times: [0, 0.35, 1],
+              }}
+              className="fixed inset-0 z-50 pointer-events-none bg-[#020302]"
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

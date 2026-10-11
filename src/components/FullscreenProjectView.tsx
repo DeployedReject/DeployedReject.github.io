@@ -117,20 +117,11 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
 }) => {
   // Exclusively switch between Demo (false) and Gitingest Summary (true) via top bar button
   const [showSummary, setShowSummary] = useState(false);
-  const [staticClearing, setStaticClearing] = useState(true);
   // For Sentric: allow switching between VitalLink (#/vital), Landing (#/), and Docs (#/docs)
   const [sentricSubRoute, setSentricSubRoute] = useState<'/vital' | '/' | '/docs'>('/vital');
 
-  useEffect(() => {
-    setStaticClearing(true);
-    const timer = window.setTimeout(() => setStaticClearing(false), 360);
-    return () => window.clearTimeout(timer);
-  }, [project.id]);
-
   const handleToggleSummary = () => {
-    setStaticClearing(true);
     setShowSummary((prev) => !prev);
-    window.setTimeout(() => setStaticClearing(false), 260);
   };
 
   // Allow Escape key to eject cartridge if focus is on the outer document
@@ -152,16 +143,6 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
         isLightMode ? 'bg-[#f5f0e6] text-stone-900' : 'bg-[#090a0f] text-stone-100'
       }`}
     >
-      {/* Analog CRT TV Static Transition Overlay */}
-      {staticClearing && (
-        <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden animate-tvStaticBurst">
-          <img
-            src="/img/tv-static.gif"
-            alt="TV Static"
-            className="w-full h-full object-cover opacity-90"
-          />
-        </div>
-      )}
 
       {/* Single Top Bar (Only place with Eject, Title/Tagline, and Summary toggle) */}
       <header

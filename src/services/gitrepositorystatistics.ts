@@ -112,11 +112,13 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       headers.Authorization = `Bearer ${envToken}`;
     }
 
-    const [userRes, reposRes, eventsRes, contribRes] = await Promise.allSettled([
+    const [userRes, reposRes, eventsRes, contribRes, codebergUserRes, codebergReposRes] = await Promise.allSettled([
       fetch('https://api.github.com/users/DeployedReject', { headers }),
       fetch('https://api.github.com/users/DeployedReject/repos?per_page=100&sort=updated', { headers }),
       fetch('https://api.github.com/users/DeployedReject/events/public?per_page=25', { headers }),
       fetch('https://github-contributions-api.jogruber.de/v4/DeployedReject?y=last'),
+      fetch('https://codeberg.org/api/v1/users/DeployedReject'),
+      fetch('https://codeberg.org/api/v1/users/DeployedReject/repos'),
     ]);
 
     let publicRepos = FALLBACK_STATS.publicRepos;
@@ -127,17 +129,27 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       followers = u.followers ?? followers;
     }
 
-    let ghStars = 0;
+    // Add Codeberg follower count if available
+    if (codebergUserRes.status === 'fulfilled' && codebergUserRes.value.ok) {
+      const cbUser = await codebergUserRes.value.json();
+      if (typeof cbUser.followers_count === 'number') {
+        followers += cbUser.followers_count;
+      }
+    }
+
+    let totalStars = 0;
     let murcesStars = 0;
     const langCounts: Record<string, number> = { Java: 4, TypeScript: 4, Python: 2, Shell: 1 };
     const repoList: RepoStat[] = [];
+    const seenRepoNames = new Set<string>();
 
     if (reposRes.status === 'fulfilled' && reposRes.value.ok) {
       const reposJson = await reposRes.value.json();
       if (Array.isArray(reposJson)) {
         for (const r of reposJson) {
           const stars = r.stargazers_count || 0;
-          ghStars += stars;
+          totalStars += stars;
+          seenRepoNames.add(r.name.toLowerCase());
           if (r.name.toLowerCase() === 'murces') {
             murcesStars = stars;
           }
@@ -153,6 +165,34 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
             source: 'github',
             url: r.html_url,
           });
+        }
+      }
+    }
+
+    // Include any public Codeberg repositories
+    if (codebergReposRes.status === 'fulfilled' && codebergReposRes.value.ok) {
+      const cbReposJson = await codebergReposRes.value.json();
+      if (Array.isArray(cbReposJson)) {
+        for (const cr of cbReposJson) {
+          const lowerName = (cr.name || '').toLowerCase();
+          const stars = cr.stars_count || 0;
+          if (!seenRepoNames.has(lowerName)) {
+            seenRepoNames.add(lowerName);
+            publicRepos += 1;
+            totalStars += stars;
+            if (cr.language) {
+              langCounts[cr.language] = (langCounts[cr.language] || 0) + 100;
+            }
+            repoList.push({
+              name: cr.name,
+              stars: stars,
+              forks: cr.forks_count || 0,
+              language: cr.language || 'Code',
+              updatedAt: (cr.updated_at || '').slice(0, 10),
+              source: 'codeberg',
+              url: cr.html_url,
+            });
+          }
         }
       }
     }
@@ -204,7 +244,6 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       }
     }
 
-    const totalStars = ghStars;
     const level = Math.max(15, Math.min(99, Math.floor(totalCommitsYear / 15) + publicRepos));
 
     const result: DeveloperStats = {
