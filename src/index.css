@@ -172,6 +172,57 @@
   animation: ejectHandheldAnim 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Subtle tingling green light radiating from the CRT screen in the black room */
+@keyframes tvTingleAnim {
+  0% {
+    opacity: 0.62;
+    transform: scale(1) translate(0px, 0px);
+  }
+  20% {
+    opacity: 0.74;
+    transform: scale(1.012) translate(1px, -0.5px);
+  }
+  40% {
+    opacity: 0.58;
+    transform: scale(0.995) translate(-0.5px, 0.5px);
+  }
+  65% {
+    opacity: 0.78;
+    transform: scale(1.018) translate(1.5px, 0px);
+  }
+  85% {
+    opacity: 0.64;
+    transform: scale(1.004) translate(-0.5px, -0.5px);
+  }
+  100% {
+    opacity: 0.62;
+    transform: scale(1) translate(0px, 0px);
+  }
+}
+
+.animate-tv-tingle {
+  animation: tvTingleAnim 3.2s ease-in-out infinite;
+}
+
+@keyframes romLoadBarAnim {
+  0% {
+    width: 0%;
+  }
+  35% {
+    width: 42%;
+  }
+  70% {
+    width: 78%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-romLoadBar {
+  animation: romLoadBarAnim 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @keyframes fadeInAnim {
   from {
     opacity: 0;

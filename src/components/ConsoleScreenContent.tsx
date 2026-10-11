@@ -15,7 +15,8 @@ interface ConsoleScreenContentProps {
   selectedIndex?: number;
   pingRefreshKey?: number;
   isTableZoomedOut: boolean;
-  insertingProjectName?: string | null;
+  insertingProject?: Project | null;
+  hideRomsTab?: boolean;
 }
 
 function makeBlockBar(blocks: number, total = 10): string {
@@ -25,7 +26,7 @@ function makeBlockBar(blocks: number, total = 10): string {
 
 const SHORT_NAMES: Record<string, string> = {
   murces: 'MurCes',
-  sentric: 'VitalLink',
+  sentric: 'SentricTechnologies',
   cireu: 'Cireu',
   'cf-p-link': 'cf-p-link',
   aggregator: 'Aggregator',
@@ -37,7 +38,8 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   selectedIndex = 0,
   pingRefreshKey = 0,
   isTableZoomedOut,
-  insertingProjectName,
+  insertingProject = null,
+  hideRomsTab = false,
 }) => {
   const [stats, setStats] = useState<DeveloperStats | null>(null);
   const [pings, setPings] = useState<PingResult[]>([
@@ -69,7 +71,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
     ((selectedIndex % projects.length) + projects.length) % projects.length;
   const highlightedProject = projects[normalizedIndex] || projects[0];
 
-  // Ensure the selected ROM option is always scrolled into view when navigating
+  // Ensure the selected ROM option is always scrolled into view when navigating on mobile
   useEffect(() => {
     if (activeTab === 'cartridges') {
       const el = itemRefs.current[normalizedIndex];
@@ -81,11 +83,8 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
   // Build the lines of text for the active screen so they print character-by-character
   const screenTextLines = useMemo(() => {
-    if (insertingProjectName) {
-      return [
-        `> LOADING : ${insertingProjectName.toUpperCase()}`,
-        '> STARTING DEMO...',
-      ];
+    if (insertingProject) {
+      return [];
     }
 
     const s = stats;
@@ -157,7 +156,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
       'CODEBERG : codeberg.org/DeployedReject',
       'EMAIL    : mishravaibhav2048@gmail.com',
     ];
-  }, [activeTab, stats, pings, insertingProjectName]);
+  }, [activeTab, stats, pings, insertingProject]);
 
   const fullText = useMemo(() => screenTextLines.join('\n'), [screenTextLines]);
 
@@ -186,7 +185,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   const displayedText = fullText.slice(0, charCount);
   const isTyping = charCount < fullText.length;
 
-  const tabs: Array<{ id: ScreenTab; label: string }> = [
+  const allTabs: Array<{ id: ScreenTab; label: string }> = [
     { id: 'status', label: 'About' },
     { id: 'cartridges', label: 'ROMS' },
     { id: 'github', label: 'Commits' },
@@ -194,16 +193,17 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
     { id: 'hire', label: 'Contact' },
   ];
 
-  const activeChannelNum = tabs.findIndex((t) => t.id === activeTab) + 1;
+  const tabs = hideRomsTab ? allTabs.filter((t) => t.id !== 'cartridges') : allTabs;
+  const activeChannelNum = Math.max(1, tabs.findIndex((t) => t.id === activeTab) + 1);
 
   return (
     <div
-      className="w-full h-full bg-[#0d140e] text-[#a6e26e] p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none pointer-events-none relative overflow-hidden"
+      className="w-full h-full bg-[#070c08] text-[#a6e26e] p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none pointer-events-none relative overflow-hidden"
       style={{
         fontFamily: "'VT323', monospace",
         imageRendering: 'pixelated',
         background:
-          'radial-gradient(circle at 50% 45%, #162418 0%, #0d150e 68%, #070b07 100%)',
+          'radial-gradient(circle at 50% 45%, #121f14 0%, #09100a 68%, #040704 100%)',
       }}
     >
       {/* Top CRT On-Screen Display (OSD) Channel Bar */}
@@ -239,91 +239,113 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
       {/* Main CRT Display Area */}
       <div className="flex-1 pt-2 sm:pt-3 min-h-0 flex flex-col md:flex-row gap-4 items-stretch justify-between overflow-hidden">
-        {/* Left/Main Terminal Readout */}
-        <div className="flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
-          {fullText && (
-            <pre
-              className="whitespace-pre-wrap break-words text-[16px] sm:text-[20px] md:text-[23px] leading-[1.22] tracking-wide text-[#b5ec82] m-0 font-normal"
-              style={{
-                fontFamily: "'VT323', monospace",
-                textShadow: '0 0 8px rgba(166, 226, 110, 0.5)',
-              }}
+        {/* ROM Loading Animation with Logo & Description */}
+        {insertingProject ? (
+          <div className="w-full h-full flex flex-col items-center justify-center text-center p-2 gap-3 animate-fadeIn">
+            <img
+              src={insertingProject.labelSvg}
+              alt={insertingProject.name}
+              className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.5)]"
+            />
+            <div
+              className="text-white font-bold text-sm sm:text-base tracking-wide"
+              style={{ fontFamily: "'Press Start 2P', monospace" }}
             >
-              {displayedText}
-              {isTyping && <span className="inline-block w-2.5 h-4 bg-[#b5ec82] ml-0.5 align-middle" />}
-              {!isTyping && activeTab !== 'cartridges' && <span className="animate-pulse">█</span>}
-            </pre>
-          )}
+              {SHORT_NAMES[insertingProject.id] || insertingProject.name}
+            </div>
+            <div className="text-white font-bold text-sm sm:text-lg max-w-md leading-snug font-sans">
+              "{insertingProject.originNote || insertingProject.tagline}"
+            </div>
+            <div className="w-40 sm:w-56 h-2 bg-[#142016] border border-[#5c8244] rounded overflow-hidden mt-1">
+              <div className="h-full bg-[#a6e26e] animate-romLoadBar" />
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
+            {fullText && (
+              <pre
+                className="whitespace-pre-wrap break-words text-[16px] sm:text-[20px] md:text-[23px] leading-[1.22] tracking-wide text-[#b5ec82] m-0 font-normal"
+                style={{
+                  fontFamily: "'VT323', monospace",
+                  textShadow: '0 0 8px rgba(166, 226, 110, 0.5)',
+                }}
+              >
+                {displayedText}
+                {isTyping && <span className="inline-block w-2.5 h-4 bg-[#b5ec82] ml-0.5 align-middle" />}
+                {!isTyping && activeTab !== 'cartridges' && <span className="animate-pulse">█</span>}
+              </pre>
+            )}
 
-          {/* Scrollable ROMs List when on ROMS channel (Always keeps selected option scrolled into view) */}
-          {!insertingProjectName && activeTab === 'cartridges' && (
-            <div className="flex-1 flex flex-col justify-between min-h-0 gap-2 overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1">
-                {projects.map((p, i) => {
-                  const isSelected = p.id === highlightedProject.id;
-                  const shortName = SHORT_NAMES[p.id] || p.name;
-                  return (
-                    <div
-                      key={p.id}
-                      ref={(el) => {
-                        itemRefs.current[i] = el;
-                      }}
-                      className={`px-2.5 py-1 border flex items-center justify-between transition-all duration-150 ${
-                        isSelected
-                          ? 'bg-[#a6e26e] text-[#0c140d] border-[#e2f9c8] font-bold shadow-[0_0_15px_rgba(166,226,110,0.45)]'
-                          : 'bg-[#121d13]/80 text-[#9cd66c] border-[#314a22] opacity-80'
-                      }`}
-                    >
-                      <span className="text-[16px] sm:text-[19px] md:text-[21px] tracking-wide">
-                        {isSelected ? '► ' : '  '}[{i + 1}] {shortName}
-                      </span>
-                      <span
-                        className={`text-[8px] sm:text-[9px] px-1.5 py-0.5 ${
-                          isSelected ? 'bg-[#0c140d] text-[#e6cf65]' : 'text-[#6c9e46]'
+            {/* Scrollable ROMs List when on ROMS channel (Mobile Handheld only) */}
+            {!hideRomsTab && activeTab === 'cartridges' && (
+              <div className="flex-1 flex flex-col justify-between min-h-0 gap-2 overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1">
+                  {projects.map((p, i) => {
+                    const isSelected = p.id === highlightedProject.id;
+                    const shortName = SHORT_NAMES[p.id] || p.name;
+                    return (
+                      <div
+                        key={p.id}
+                        ref={(el) => {
+                          itemRefs.current[i] = el;
+                        }}
+                        className={`px-2.5 py-1 border flex items-center justify-between transition-all duration-150 ${
+                          isSelected
+                            ? 'bg-[#a6e26e] text-[#0c140d] border-[#e2f9c8] font-bold shadow-[0_0_15px_rgba(166,226,110,0.45)]'
+                            : 'bg-[#121d13]/80 text-[#9cd66c] border-[#314a22] opacity-80'
                         }`}
-                        style={{ fontFamily: "'Press Start 2P', monospace" }}
                       >
-                        ROM
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                        <span className="text-[16px] sm:text-[19px] md:text-[21px] tracking-wide">
+                          {isSelected ? '► ' : '  '}[{i + 1}] {shortName}
+                        </span>
+                        <span
+                          className={`text-[8px] sm:text-[9px] px-1.5 py-0.5 ${
+                            isSelected ? 'bg-[#0c140d] text-[#e6cf65]' : 'text-[#6c9e46]'
+                          }`}
+                          style={{ fontFamily: "'Press Start 2P', monospace" }}
+                        >
+                          ROM
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
 
-              {/* Personal Origin Note for Highlighted Project */}
-              <div className="shrink-0 p-2 sm:p-2.5 bg-[#152216]/95 border border-[#5c8244] text-[#f0f7e6]">
-                <div className="text-[14px] sm:text-[18px] md:text-[20px] leading-tight">
-                  "{highlightedProject.originNote || highlightedProject.tagline}"
+                {/* Personal Origin Note for Highlighted Project */}
+                <div className="shrink-0 p-2 sm:p-2.5 bg-[#152216]/95 border border-[#5c8244] text-[#f0f7e6]">
+                  <div className="text-[14px] sm:text-[18px] md:text-[20px] leading-tight">
+                    "{highlightedProject.originNote || highlightedProject.tagline}"
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Contribution Matrix on Commits tab */}
-          {!insertingProjectName && activeTab === 'github' && stats && (
-            <div className="mt-2 pt-2 border-t border-[#375224] shrink-0">
-              <div className="flex flex-col gap-[3px]">
-                {stats.contributionGrid.slice(0, 5).map((row, rIdx) => (
-                  <div key={rIdx} className="flex gap-[3px]">
-                    {row.slice(0, 22).map((lvl, cIdx) => {
-                      const colors = ['#18261a', '#2f4d26', '#52803a', '#7ec252', '#c4f78b'];
-                      return (
-                        <div
-                          key={cIdx}
-                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[1px]"
-                          style={{ backgroundColor: colors[Math.min(4, lvl)] }}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
+            {/* Contribution Matrix on Commits tab */}
+            {activeTab === 'github' && stats && (
+              <div className="mt-2 pt-2 border-t border-[#375224] shrink-0">
+                <div className="flex flex-col gap-[3px]">
+                  {stats.contributionGrid.slice(0, 5).map((row, rIdx) => (
+                    <div key={rIdx} className="flex gap-[3px]">
+                      {row.slice(0, 22).map((lvl, cIdx) => {
+                        const colors = ['#18261a', '#2f4d26', '#52803a', '#7ec252', '#c4f78b'];
+                        return (
+                          <div
+                            key={cIdx}
+                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[1px]"
+                            style={{ backgroundColor: colors[Math.min(4, lvl)] }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        {/* Right Side Cartridge Label Artwork (Visible on larger screens in fullscreen mode) */}
-        {!insertingProjectName && !isTableZoomedOut && (
+        {/* Right Side Cartridge Label Artwork (Only when ROMs tab is enabled and not zoomed out) */}
+        {!insertingProject && !isTableZoomedOut && !hideRomsTab && (
           <div className="hidden md:flex w-52 lg:w-60 shrink-0 flex-col justify-between border-2 border-[#4b6e32] bg-[#101a11]/90 p-2 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
             <div className="relative flex-1 rounded border border-[#5c8244] overflow-hidden bg-[#0a100b] flex items-center justify-center">
               <img

@@ -193,9 +193,11 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   project,
   onEject,
 }) => {
-  // Show CRT vanish effect for the first 500ms as it transitions from the zoomed-in TV screen
+  // Brief ROM boot animation showing the ROM's logo and description before the demo starts
+  const [romBooting, setRomBooting] = useState(true);
+  // Show CRT vanish effect for the first 500ms after boot completes
   const [crtVanishing, setCrtVanishing] = useState(true);
-  // Show the top details/eject bar initially for 3.8s, then hide until mouse enters top/left corner
+  // Show the top details/eject bar initially for 4.5s, then hide until mouse enters top/left corner
   const [headerPinnedOpen, setHeaderPinnedOpen] = useState(true);
   const [cornerHovered, setCornerHovered] = useState(false);
   // Exclusively switch between Demo (false) and Gitingest Summary (true) via button only
@@ -204,9 +206,13 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   const [sentricSubRoute, setSentricSubRoute] = useState<'/vital' | '/' | '/docs'>('/vital');
 
   useEffect(() => {
-    const crtTimer = setTimeout(() => setCrtVanishing(false), 550);
-    const headerTimer = setTimeout(() => setHeaderPinnedOpen(false), 3800);
+    setRomBooting(true);
+    setCrtVanishing(true);
+    const bootTimer = setTimeout(() => setRomBooting(false), 1350);
+    const crtTimer = setTimeout(() => setCrtVanishing(false), 1850);
+    const headerTimer = setTimeout(() => setHeaderPinnedOpen(false), 4800);
     return () => {
+      clearTimeout(bootTimer);
       clearTimeout(crtTimer);
       clearTimeout(headerTimer);
     };
@@ -223,12 +229,50 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onEject]);
 
-  const isHeaderVisible = headerPinnedOpen || cornerHovered || showSummary;
+  const isHeaderVisible = !romBooting && (headerPinnedOpen || cornerHovered || showSummary);
   const gitingest = GITINGEST_TREES[project.id] || GITINGEST_TREES.murces;
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#090a0f] text-stone-100 flex flex-col relative selection:bg-emerald-500 selection:text-black">
-      {/* CRT-to-Clean Vanish Overlay (fades out over 550ms when entering fullscreen) */}
+      {/* BRIEF ROM LOADING SCREEN WITH LOGO & DESCRIPTION */}
+      {romBooting && (
+        <div className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center p-6 text-center select-none animate-fadeIn">
+          {/* Subtle Green Phosphor Glow Behind Logo */}
+          <div className="relative mb-6">
+            <div className="absolute -inset-6 bg-[#a6e26e]/20 rounded-full blur-2xl animate-tv-tingle" />
+            <img
+              src={project.labelSvg}
+              alt={project.name}
+              className="relative w-28 h-28 sm:w-36 sm:h-36 object-cover rounded-2xl border-2 border-[#a6e26e]/80 shadow-[0_0_35px_rgba(166,226,110,0.4)]"
+            />
+          </div>
+
+          <h1 className="text-white font-bold text-2xl sm:text-3xl tracking-tight mb-2">
+            {project.name}
+          </h1>
+
+          <p className="text-white font-bold text-base sm:text-xl max-w-xl leading-snug mb-2">
+            "{project.originNote || project.tagline}"
+          </p>
+
+          <p className="text-stone-400 text-xs sm:text-sm max-w-lg font-mono mb-6">
+            {project.tagline}
+          </p>
+
+          {/* Animated ROM Loading Progress Bar */}
+          <div className="w-56 sm:w-72 h-2 bg-stone-900 border border-[#a6e26e]/50 rounded-full overflow-hidden">
+            <div className="h-full bg-[#a6e26e] shadow-[0_0_12px_#a6e26e] animate-romLoadBar" />
+          </div>
+          <span
+            className="text-[9px] text-[#a6e26e] tracking-widest uppercase mt-2.5"
+            style={{ fontFamily: "'Press Start 2P', monospace" }}
+          >
+            LOADING ROM...
+          </span>
+        </div>
+      )}
+
+      {/* CRT-to-Clean Vanish Overlay (fades out after ROM boot completes) */}
       <div
         className={`fixed inset-0 z-50 pointer-events-none transition-opacity duration-500 ${
           crtVanishing ? 'opacity-90' : 'opacity-0'

@@ -10,7 +10,7 @@ interface CartridgeProps {
 
 const PLATE_LABELS: Record<string, string> = {
   murces: 'MURCES',
-  sentric: 'VITALLINK',
+  sentric: 'SENTRIC',
   cireu: 'CIREU',
   'cf-p-link': 'CF-P-LINK',
   aggregator: 'AGGREGATOR',

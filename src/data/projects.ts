@@ -107,8 +107,8 @@ Usage:
   },
   {
     id: 'sentric',
-    name: 'VitalLink',
-    title: 'VitalLink (Sentric Technologies)',
+    name: 'SentricTechnologies',
+    title: 'SentricTechnologies',
     tagline: 'A map dashboard that receives patient vitals from IoT hardware and dispatches ambulances.',
     badge: 'React • FastAPI • MQTT',
     accentColor: '#ef4444',

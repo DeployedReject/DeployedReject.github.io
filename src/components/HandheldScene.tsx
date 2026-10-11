@@ -13,6 +13,14 @@ interface HandheldSceneProps {
 
 const TABS: ScreenTab[] = ['status', 'cartridges', 'github', 'pings', 'hire'];
 
+const SCREEN_PALETTES = [
+  { name: 'PHOSPHOR', filter: 'none', dot: '#5ec299' },
+  { name: 'AMBER', filter: 'hue-rotate(-48deg) saturate(1.35)', dot: '#f59e0b' },
+  { name: 'ICE CYAN', filter: 'hue-rotate(72deg) saturate(1.15)', dot: '#38bdf8' },
+  { name: 'VIOLET', filter: 'hue-rotate(155deg) saturate(1.2)', dot: '#a855f7' },
+  { name: 'MONO', filter: 'grayscale(1) contrast(1.18) brightness(1.08)', dot: '#e5e7eb' },
+];
+
 export const HandheldScene: React.FC<HandheldSceneProps> = ({
   projects,
   cameraMode,
@@ -22,10 +30,12 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   const [screenTab, setScreenTab] = useState<ScreenTab>('cartridges');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
+  const [paletteIndex, setPaletteIndex] = useState<number>(0);
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
   const highlightedProject =
     projects[((selectedIndex % projects.length) + projects.length) % projects.length] || projects[0];
+  const currentPalette = SCREEN_PALETTES[paletteIndex] || SCREEN_PALETTES[0];
 
   const cycleTab = (dir: 'prev' | 'next') => {
     const idx = TABS.indexOf(screenTab);
@@ -45,6 +55,10 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         ? (prev + 1) % projects.length
         : (prev - 1 + projects.length) % projects.length
     );
+  };
+
+  const cyclePalette = () => {
+    setPaletteIndex((prev) => (prev + 1) % SCREEN_PALETTES.length);
   };
 
   const handleActionA = () => {
@@ -67,7 +81,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   // FULLSCREEN 50/50 SPLIT VIEW (Mobile always uses ROMs menu directly)
   // Top 50%: Dimensional recessed dark-slate lens bezel & live CRT/LCD screen
   // Bottom 50%: Sculpted 3D warm-putty handheld body with tactile D-Pad, A/B,
-  // Select/Start, and speaker grille
+  // Select (cycles screen palette), Start (loads ROM), and speaker grille
   // ============================================================================
   return (
     <div className="w-screen h-screen flex flex-col bg-[#1a1614] overflow-hidden select-none">
@@ -83,15 +97,21 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
           borderBottom: '4px solid #171412',
         }}
       >
-        {/* Top Lens Bezel Header: Battery LED + Active ROM Preview */}
+        {/* Top Lens Bezel Header: Battery LED + Active Palette + ROM Preview */}
         <div className="flex items-center justify-between px-2 mb-1.5 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#5ec299] shadow-[0_0_8px_#5ec299] border border-[#a8f0d2]/50 animate-pulse" />
+            <span
+              className="w-2.5 h-2.5 rounded-full animate-pulse"
+              style={{
+                backgroundColor: currentPalette.dot,
+                boxShadow: `0 0 8px ${currentPalette.dot}`,
+              }}
+            />
             <span
               className="text-[7px] text-[#b8aca3] tracking-wider uppercase"
               style={{ fontFamily: "'Press Start 2P', monospace" }}
             >
-              BATTERY
+              {currentPalette.name}
             </span>
           </div>
 
@@ -106,18 +126,19 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               className="text-[7px] text-[#e6cf65]"
               style={{ fontFamily: "'Press Start 2P', monospace" }}
             >
-              ROM: {highlightedProject.id.toUpperCase()}
+              ROM: {highlightedProject.name.toUpperCase()}
             </span>
           </div>
         </div>
 
         {/* Deep Recessed Screen Cavity */}
         <div
-          className="relative flex-1 w-full rounded-[14px] overflow-hidden bg-[#0c130d] crt-screen-container"
+          className="relative flex-1 w-full rounded-[14px] overflow-hidden bg-[#0c130d] crt-screen-container transition-all duration-300"
           style={{
             boxShadow:
               'inset 0 8px 24px rgba(0,0,0,0.95), 0 2px 0 rgba(255,255,255,0.12), 0 0 30px rgba(166,226,110,0.15)',
             border: '3px solid #181c18',
+            filter: currentPalette.filter,
           }}
         >
           <ConsoleScreenContent
@@ -126,9 +147,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             selectedIndex={selectedIndex}
             pingRefreshKey={pingRefreshKey}
             isTableZoomedOut={false}
-            insertingProjectName={
+            insertingProject={
               cameraMode === 'inserting' || cameraMode === 'zooming-in'
-                ? activeCartridge?.name
+                ? activeCartridge
                 : null
             }
           />
@@ -327,13 +348,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
           </div>
         </div>
 
-        {/* BOTTOM ROW: SELECT / START PILLS + SCULPTED SPEAKER GRILLE */}
+        {/* BOTTOM ROW: SELECT (DISPLAY PALETTE) / START (LOAD ROM) PILLS + SPEAKER GRILLE */}
         <div className="relative z-10 flex items-end justify-between px-2 pt-1">
           <div className="w-12 hidden sm:block" />
 
-          {/* Center: Molded Rubber SELECT (Channel) & START (Load ROM) Pill Buttons */}
+          {/* Center: Molded Rubber SELECT (Cycles Display Palette) & START (Loads ROM) Pill Buttons */}
           <div className="flex items-center gap-8 sm:gap-10">
-            {/* SELECT Pill */}
+            {/* SELECT Pill: Cycles Handheld Screen Color Palette */}
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className="p-1 rounded-full -rotate-24"
@@ -344,13 +365,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               >
                 <button
                   type="button"
-                  onClick={() => cycleTab('next')}
+                  onClick={cyclePalette}
                   className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
                   style={{
                     background: 'linear-gradient(180deg, #5c534d 0%, #38322e 100%)',
                     boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.3)',
                   }}
-                  title="Switch Channel"
+                  title="Cycle Screen Color Palette"
                 />
               </div>
               <span
