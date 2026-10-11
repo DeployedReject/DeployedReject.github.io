@@ -8,38 +8,47 @@ interface CartridgeProps {
   showTooltip?: boolean;
 }
 
+const PLATE_LABELS: Record<string, string> = {
+  murces: 'MURCES',
+  sentric: 'VITALLINK',
+  cireu: 'CIREU',
+  'cf-p-link': 'CF-P-LINK',
+  aggregator: 'AGGREGATOR',
+};
+
 export const Cartridge: React.FC<CartridgeProps> = ({
   project,
   onClick,
   className = 'w-full h-full',
   showShadow = true,
-  showTooltip = true,
 }) => {
+  const plateLabel = PLATE_LABELS[project.id] || project.name.toUpperCase().slice(0, 10);
+
   return (
     <div
       onClick={onClick}
-      className={`group relative cursor-pointer select-none transition-transform duration-300 ease-out hover:-translate-y-4 ${className}`}
+      className={`group relative cursor-pointer select-none transition-transform duration-300 ease-out hover:-translate-y-3 ${className}`}
     >
-      {/* Physical contact shadow on the wooden table surface */}
+      {/* Physical contact shadow on the shelf surface */}
       {showShadow && (
-        <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-[82%] h-4 bg-black/65 rounded-full blur-[5px] transition-all duration-300 group-hover:w-[68%] group-hover:bg-black/40 group-hover:blur-[8px] group-hover:translate-y-3 pointer-events-none" />
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[84%] h-3.5 bg-black/80 rounded-full blur-[4px] transition-all duration-300 group-hover:w-[70%] group-hover:bg-black/50 group-hover:blur-[7px] group-hover:translate-y-2 pointer-events-none" />
       )}
 
       {/* Cartridge Outer Shell (SVG) */}
       <svg
         viewBox="0 0 800 900"
-        className="w-full h-full overflow-visible drop-shadow-[0_10px_14px_rgba(0,0,0,0.65)]"
+        className="w-full h-full overflow-visible drop-shadow-[6px_10px_16px_rgba(0,0,0,0.8)]"
       >
         <defs>
           <linearGradient id={`body-${project.id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#D9D0C6" />
-            <stop offset="0.55" stopColor="#C4B9AE" />
-            <stop offset="1" stopColor="#A89C91" />
+            <stop offset="0" stopColor="#DFD7CE" />
+            <stop offset="0.5" stopColor="#C4B9AE" />
+            <stop offset="1" stopColor="#9E9287" />
           </linearGradient>
-          <linearGradient id={`light-${project.id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.38" />
-            <stop offset="0.45" stopColor="#fff" stopOpacity="0" />
-            <stop offset="1" stopColor="#2b2326" stopOpacity="0.22" />
+          <linearGradient id={`light-${project.id}`} x1="0" y1="0" x2="1" y2="0.8">
+            <stop offset="0" stopColor="#d6f8b8" stopOpacity="0.32" />
+            <stop offset="0.35" stopColor="#ffffff" stopOpacity="0.08" />
+            <stop offset="1" stopColor="#141112" stopOpacity="0.35" />
           </linearGradient>
           <linearGradient id={`recess-${project.id}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#7E746B" />
@@ -89,8 +98,8 @@ export const Cartridge: React.FC<CartridgeProps> = ({
             d="M 130 50 V 96 H 40"
             fill="none"
             stroke="#fff"
-            strokeOpacity="0.35"
-            strokeWidth="3"
+            strokeOpacity="0.45"
+            strokeWidth="4"
           />
 
           {/* grip ridges */}
@@ -128,14 +137,14 @@ export const Cartridge: React.FC<CartridgeProps> = ({
             clipPath={`url(#label-clip-${project.id})`}
           />
 
-          {/* Vintage moulded title plate */}
+          {/* Moulded title plate */}
           <rect
-            x="180"
+            x="160"
             y="640"
-            width="440"
+            width="480"
             height="72"
             rx="12"
-            fill="#2b2623"
+            fill="#231f1d"
             stroke="#8f847a"
             strokeWidth="4"
           />
@@ -143,12 +152,12 @@ export const Cartridge: React.FC<CartridgeProps> = ({
             x="400"
             y="688"
             textAnchor="middle"
-            fill="#e6cf65"
+            fill="#ffffff"
             fontFamily="'Press Start 2P', monospace"
-            fontSize="26"
+            fontSize="24"
             fontWeight="bold"
           >
-            {project.id.toUpperCase().slice(0, 10)}
+            {plateLabel}
           </text>
 
           {/* screws */}
@@ -158,7 +167,7 @@ export const Cartridge: React.FC<CartridgeProps> = ({
           <circle cx="714" cy="733" r="4" fill="#6F655D" />
         </g>
 
-        {/* light and shade */}
+        {/* Directional TV rim-light & shade across cartridge shell */}
         <rect
           x="0"
           y="0"
@@ -168,29 +177,6 @@ export const Cartridge: React.FC<CartridgeProps> = ({
           clipPath={`url(#clip-${project.id})`}
         />
       </svg>
-
-      {/* Retro 8-bit Pixel Tooltip on Hover */}
-      {showTooltip && (
-        <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-200 bg-[#161412]/95 border-2 border-[#d9d0c6] text-[#f5e4d7] px-3 py-2 shadow-[4px_4px_0px_#000] pointer-events-none z-50 w-64 sm:w-72 max-w-[85vw] text-center"
-        >
-          <div
-            className="text-[#e6cf65] text-[9px] font-bold mb-1 tracking-wider"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
-          >
-            ▶ {project.name.toUpperCase()}
-          </div>
-          <div className="text-[11px] leading-snug font-mono text-stone-200">
-            "{project.originNote || project.tagline}"
-          </div>
-          <div
-            className="text-[#a6e26e] text-[8px] mt-1.5 opacity-90"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
-          >
-            [CLICK TO INSERT]
-          </div>
-        </div>
-      )}
     </div>
   );
 };

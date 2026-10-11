@@ -45,15 +45,23 @@ export function App() {
   const handleSelectProject = (projectId: string) => {
     clearTimers();
     setActiveCartridgeId(projectId);
-    // Step 1: Slide cartridge into the console slot on the table (700ms)
+
+    if (deviceLayout === 'handheld') {
+      setCameraMode('inserting');
+      const t1 = window.setTimeout(() => {
+        setIsFullscreenProject(true);
+      }, 400);
+      timersRef.current.push(t1);
+      return;
+    }
+
+    // Desktop: Slide cartridge into the console slot (700ms), then zoom into the TV screen (700ms)
     setCameraMode('inserting');
 
-    // Step 2: Zoom camera into the CRT screen (700ms)
     const t1 = window.setTimeout(() => {
       setCameraMode('zooming-in');
     }, 700);
 
-    // Step 3: Transition into the fullscreen interactive project view
     const t2 = window.setTimeout(() => {
       setIsFullscreenProject(true);
     }, 1400);
@@ -63,8 +71,15 @@ export function App() {
 
   const handleEject = () => {
     clearTimers();
-    // Return from fullscreen to the table scene and play the cartridge eject animation
     setIsFullscreenProject(false);
+
+    if (deviceLayout === 'handheld') {
+      setCameraMode('closeup');
+      setActiveCartridgeId(null);
+      return;
+    }
+
+    // Desktop: Return from fullscreen to the shelf/console scene and play the cartridge eject animation
     setCameraMode('ejecting');
 
     const t1 = window.setTimeout(() => {

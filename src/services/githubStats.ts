@@ -17,7 +17,7 @@ export interface CommitTickerItem {
 export interface PingResult {
   name: string;
   target: string;
-  status: 'UP' | 'DOWN' | 'PINGING';
+  status: 'UP' | 'DOWN' | 'PINGING' | 'HIDDEN';
   latencyMs: number | null;
 }
 
@@ -48,16 +48,16 @@ const FALLBACK_STATS: DeveloperStats = {
   murcesStars: 16,
   followers: 12,
   languages: [
-    { name: 'JAVA / GRAAL', percent: 38, blocks: 8 },
+    { name: 'JAVA        ', percent: 38, blocks: 8 },
     { name: 'TYPESCRIPT  ', percent: 32, blocks: 7 },
-    { name: 'PYTHON / IOT', percent: 18, blocks: 4 },
-    { name: 'SHELL / SYS ', percent: 12, blocks: 3 },
+    { name: 'PYTHON      ', percent: 18, blocks: 4 },
+    { name: 'SHELL       ', percent: 12, blocks: 3 },
   ],
   recentCommits: [
-    { repo: 'murces', message: 'feat(tui): native AOT GraalVM & Modrinth sync', date: 'RECENT' },
-    { repo: 'SentricTechnologies', message: 'feat(vital): AP H3 hex map & MQTT dispatch', date: 'RECENT' },
-    { repo: 'Cireu', message: 'feat(graph): Fleury bridge check & step player', date: 'RECENT' },
-    { repo: 'cf-p-link', message: 'feat(daemon): auto-redeploy Worker on tunnel crash', date: 'RECENT' },
+    { repo: 'murces', message: 'drop windows support, wsl only', date: 'RECENT' },
+    { repo: 'SentricTechnologies', message: 'update map view and mqtt handler', date: 'RECENT' },
+    { repo: 'Cireu', message: 'fix light theme colors', date: 'RECENT' },
+    { repo: 'cf-p-link', message: 'restart tunnel on process exit', date: 'RECENT' },
   ],
   contributionGrid: [
     [0, 1, 2, 0, 1, 3, 2, 1, 0, 2, 3, 4, 2, 1, 0, 1, 2, 3, 4, 3],
@@ -250,25 +250,45 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
 }
 
 export async function measureEndpointPings(): Promise<PingResult[]> {
-  const endpoints = [
-    { name: 'MURCES.CODEBERG', target: 'https://codeberg.org/api/v1/version' },
-    { name: 'GITHUB.REST.API', target: 'https://api.github.com/zen' },
-    { name: 'CIREU.GH.PAGES ', target: 'https://deployedreject.github.io/cireu/' },
-    { name: 'ARCHIVE.ORG.API', target: 'https://archive.org/metadata/VoyageDansLaLune' },
+  const servers = [
+    { name: 'Aggregator Server', ip: '144.24.141.13' },
+    { name: 'Sentric Technologies', ip: '150.230.141.102' },
   ];
 
-  const results = await Promise.all(
-    endpoints.map(async (ep) => {
+  const liveChecks = await Promise.all(
+    servers.map(async (srv) => {
       const t0 = performance.now();
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 3500);
       try {
-        await fetch(ep.target, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' });
-        const ms = Math.max(4, Math.round(performance.now() - t0));
-        return { name: ep.name, target: ep.target, status: 'UP' as const, latencyMs: ms };
+        await fetch(`https://${srv.ip}`, {
+          method: 'HEAD',
+          mode: 'no-cors',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeout);
+        const ms = Math.max(8, Math.round(performance.now() - t0));
+        return { name: srv.name, target: srv.ip, status: 'UP' as const, latencyMs: ms };
       } catch {
-        return { name: ep.name, target: ep.target, status: 'DOWN' as const, latencyMs: null };
+        window.clearTimeout(timeout);
+        const elapsed = Math.round(performance.now() - t0);
+        // If connection reset / TLS handshake rejected quickly (< 2500ms), host is reachable on the network
+        if (elapsed < 2500) {
+          return { name: srv.name, target: srv.ip, status: 'UP' as const, latencyMs: Math.max(12, elapsed) };
+        }
+        return { name: srv.name, target: srv.ip, status: 'DOWN' as const, latencyMs: null };
       }
     })
   );
 
-  return results;
+  return [
+    ...liveChecks,
+    {
+      name: 'Home Server',
+      target: '[API NOT REVEALED]',
+      status: 'HIDDEN',
+      latencyMs: null,
+    },
+  ];
 }

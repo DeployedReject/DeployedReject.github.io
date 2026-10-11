@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Project } from '../data/projects';
 import { ConsoleScreenContent, type ScreenTab } from './ConsoleScreenContent';
-import { Cartridge } from './Cartridge';
 import type { SceneCameraMode } from './TVConsoleScene';
 
 interface HandheldSceneProps {
@@ -14,23 +13,13 @@ interface HandheldSceneProps {
 
 const TABS: ScreenTab[] = ['status', 'cartridges', 'github', 'pings', 'hire'];
 
-// Positions of the 5 cartridges laid out on the portrait wooden desk below the handheld
-const DESK_CARTRIDGE_SLOTS = [
-  { left: '6%', bottom: '18%' },
-  { left: '38%', bottom: '19%' },
-  { left: '70%', bottom: '18%' },
-  { left: '21%', bottom: '3%' },
-  { left: '55%', bottom: '3%' },
-];
-
 export const HandheldScene: React.FC<HandheldSceneProps> = ({
   projects,
   cameraMode,
-  setCameraMode,
   onSelectProject,
   activeCartridgeId,
 }) => {
-  const [screenTab, setScreenTab] = useState<ScreenTab>('status');
+  const [screenTab, setScreenTab] = useState<ScreenTab>('cartridges');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
 
@@ -67,164 +56,18 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
       window.open('https://github.com/DeployedReject', '_blank', 'noopener,noreferrer');
       return;
     }
-    setCameraMode('table');
-    setTimeout(() => onSelectProject(highlightedProject.id), 450);
+    if (screenTab !== 'cartridges') {
+      setScreenTab('cartridges');
+      return;
+    }
+    onSelectProject(highlightedProject.id);
   };
 
-  const isTableZoomedOut = cameraMode !== 'closeup';
-
   // ============================================================================
-  // MODE 2: ZOOMED-OUT DARK DESK VIEW (cameraMode !== 'closeup')
-  // Shows the handheld shell resting on the dark wooden desk illuminated by the
-  // screen glow, with the 5 cartridges laid out below it.
-  // ============================================================================
-  if (isTableZoomedOut) {
-    return (
-      <div className="relative w-screen h-screen overflow-hidden bg-[#050404] flex items-center justify-center select-none">
-        <div className="relative w-screen h-screen max-w-[62vh] max-h-screen">
-          <img
-            src="/img/desk-top-portrait.webp"
-            alt="Wooden Desk"
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none filter brightness-[0.16] contrast-[1.25] saturate-[0.55]"
-          />
-
-          {/* Deep dark room vignette */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(circle at 50% 34%, rgba(166,226,110,0.14) 0%, rgba(8,10,8,0.72) 52%, rgba(3,4,4,0.96) 92%)',
-            }}
-          />
-
-          {/* Ambient phosphor glow cast from the handheld screen */}
-          <div
-            className="absolute z-5 pointer-events-none animate-tv-ambient"
-            style={{
-              left: '10%',
-              top: '8%',
-              width: '80%',
-              height: '48%',
-              background:
-                'radial-gradient(circle at 50% 42%, rgba(166,226,110,0.22) 0%, transparent 68%)',
-              mixBlendMode: 'screen',
-            }}
-          />
-
-          {/* Top Banner on Desk */}
-          <div className="absolute top-[2%] left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1.5 bg-[#0e140f]/95 border-2 border-[#a6e26e]/60 px-3 py-2 text-center shadow-[0_0_25px_rgba(166,226,110,0.2),0_6px_20px_#000] w-[92%] rounded">
-            <span
-              className="text-[#e6cf65] text-[8px] sm:text-[9px] leading-relaxed"
-              style={{ fontFamily: "'Press Start 2P', monospace" }}
-            >
-              "Projects that I made based on my needs not for showcases"
-            </span>
-            <div className="flex items-center justify-center gap-3 mt-1">
-              <span className="text-[#a6e26e] text-[10px] font-mono">TAP A CARTRIDGE TO INSERT</span>
-              <button
-                type="button"
-                onClick={() => setCameraMode('closeup')}
-                className="px-2 py-1 bg-[#a6e26e] text-[#0c140d] font-bold text-[8px] rounded cursor-pointer shadow-[0_0_10px_rgba(166,226,110,0.4)]"
-                style={{ fontFamily: "'Press Start 2P', monospace" }}
-              >
-                [▲ FULLSCREEN]
-              </button>
-            </div>
-          </div>
-
-          {/* Handheld Device Unit on Desk (Shell view) */}
-          <div
-            onClick={() => setCameraMode('closeup')}
-            className="absolute z-10 left-[19%] top-[10%] w-[62%] aspect-[790/1290] cursor-pointer group"
-          >
-            <div className="absolute inset-2 translate-y-3 bg-black/90 rounded-[28px] blur-lg pointer-events-none" />
-
-            {/* Sliding Cartridge in top slot */}
-            {activeCartridge &&
-              (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting') && (
-                <div
-                  className={`absolute z-0 w-[44%] aspect-[800/900] ${
-                    cameraMode === 'ejecting' ? 'animate-ejectHandheld' : 'animate-insertHandheld'
-                  }`}
-                  style={{ left: '28%', top: '-18%' }}
-                >
-                  <Cartridge
-                    project={activeCartridge}
-                    showShadow={false}
-                    showTooltip={false}
-                  />
-                </div>
-              )}
-
-            {/* Glowing Screen hole inside shell */}
-            <div
-              className="absolute z-5 bg-[#111912] crt-screen-container overflow-hidden shadow-[0_0_50px_12px_rgba(166,226,110,0.45)]"
-              style={{
-                left: '21.5%',
-                top: '15.8%',
-                width: '57.0%',
-                height: '31.6%',
-                borderRadius: '10px',
-              }}
-            >
-              <ConsoleScreenContent
-                projects={projects}
-                activeTab={screenTab}
-                selectedIndex={selectedIndex}
-                pingRefreshKey={pingRefreshKey}
-                isTableZoomedOut={true}
-                insertingProjectName={
-                  cameraMode === 'inserting' || cameraMode === 'zooming-in'
-                    ? activeCartridge?.name
-                    : null
-                }
-              />
-            </div>
-
-            <img
-              src="/img/handheld-body.webp"
-              alt="Retro Handheld"
-              className="relative z-10 w-full h-full object-contain pointer-events-none select-none filter brightness-[0.45] contrast-[1.2] saturate-[0.75] group-hover:brightness-[0.6] transition-all"
-            />
-          </div>
-
-          {/* 5 Cartridges Laid Out on Desk Surface */}
-          {projects.map((project, idx) => {
-            const slot = DESK_CARTRIDGE_SLOTS[idx] || DESK_CARTRIDGE_SLOTS[0];
-            const isCurrentlyInSlot =
-              activeCartridgeId === project.id &&
-              (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting');
-
-            if (isCurrentlyInSlot) return null;
-
-            return (
-              <div
-                key={project.id}
-                className="absolute z-20 filter brightness-[0.62] hover:brightness-105 active:brightness-105 transition-all"
-                style={{
-                  left: slot.left,
-                  bottom: slot.bottom,
-                  width: '23%',
-                  aspectRatio: '800 / 900',
-                }}
-              >
-                <Cartridge
-                  project={project}
-                  onClick={() => onSelectProject(project.id)}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================================
-  // MODE 1: FULLSCREEN 50/50 SPLIT VIEW (cameraMode === 'closeup')
+  // FULLSCREEN 50/50 SPLIT VIEW (Mobile always uses ROMs menu directly)
   // Top 50%: Dimensional recessed dark-slate lens bezel & live CRT/LCD screen
   // Bottom 50%: Sculpted 3D warm-putty handheld body with tactile D-Pad, A/B,
-  // Select/Start, active ROM preview window, and speaker grille!
+  // Select/Start, and speaker grille
   // ============================================================================
   return (
     <div className="w-screen h-screen flex flex-col bg-[#1a1614] overflow-hidden select-none">
@@ -283,7 +126,11 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             selectedIndex={selectedIndex}
             pingRefreshKey={pingRefreshKey}
             isTableZoomedOut={false}
-            insertingProjectName={null}
+            insertingProjectName={
+              cameraMode === 'inserting' || cameraMode === 'zooming-in'
+                ? activeCartridge?.name
+                : null
+            }
           />
 
           {/* Curved Glass Reflection Asset */}
@@ -321,13 +168,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
             style={{ fontFamily: "'Press Start 2P', monospace" }}
           >
-            ◀▶ CHANNEL  •  ▲▼ PROJECT
+            ◀▶ CHANNEL  •  ▲▼ ROM
           </span>
           <span
             className="text-[7px] sm:text-[8px] text-[#7c2d38] font-bold tracking-wider"
             style={{ fontFamily: "'Press Start 2P', monospace" }}
           >
-            [A] LOAD
+            [A] LOAD ROM
           </span>
         </div>
 
@@ -382,14 +229,14 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 type="button"
                 onClick={() => cycleItem('prev')}
                 className="absolute top-2 left-1/3 w-1/3 h-10 cursor-pointer active:bg-white/10 rounded-t"
-                title="Previous Project"
+                title="Previous ROM"
               />
               {/* DOWN Button (Next Project/Item) */}
               <button
                 type="button"
                 onClick={() => cycleItem('next')}
                 className="absolute bottom-2 left-1/3 w-1/3 h-10 cursor-pointer active:bg-white/10 rounded-b"
-                title="Next Project"
+                title="Next ROM"
               />
               {/* LEFT Button (Previous Channel) */}
               <button
@@ -431,7 +278,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                     '0 6px 0 #380a10, 0 8px 12px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,210,215,0.45)',
                   border: '2px solid #6b1823',
                 }}
-                title="Back / Previous Channel"
+                title="Previous Channel"
               >
                 <span
                   className="text-[#fceee0] text-xs font-bold rotate-24"
@@ -448,7 +295,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               </span>
             </div>
 
-            {/* A Button: Load Cartridge / Confirm */}
+            {/* A Button: Load ROM / Confirm */}
             <div className="flex flex-col items-center">
               <button
                 type="button"
@@ -461,7 +308,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                     '0 6px 0 #380a10, 0 8px 12px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,210,215,0.45)',
                   border: '2px solid #6b1823',
                 }}
-                title="Load Selected Cartridge / Run Action"
+                title="Load Selected ROM"
               >
                 <span
                   className="text-[#fceee0] text-xs font-bold rotate-24"
@@ -484,9 +331,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         <div className="relative z-10 flex items-end justify-between px-2 pt-1">
           <div className="w-12 hidden sm:block" />
 
-          {/* Center: Molded Rubber CHANNEL & DESK VIEW Pill Buttons */}
+          {/* Center: Molded Rubber SELECT (Channel) & START (Load ROM) Pill Buttons */}
           <div className="flex items-center gap-8 sm:gap-10">
-            {/* CHANNEL Pill */}
+            {/* SELECT Pill */}
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className="p-1 rounded-full -rotate-24"
@@ -510,11 +357,11 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
-                CHANNEL
+                SELECT
               </span>
             </div>
 
-            {/* DESK VIEW Pill */}
+            {/* START Pill */}
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className="p-1 rounded-full -rotate-24"
@@ -525,20 +372,26 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               >
                 <button
                   type="button"
-                  onClick={() => setCameraMode('table')}
+                  onClick={() => {
+                    if (screenTab !== 'cartridges') {
+                      setScreenTab('cartridges');
+                    } else {
+                      onSelectProject(highlightedProject.id);
+                    }
+                  }}
                   className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
                   style={{
                     background: 'linear-gradient(180deg, #5e8f83 0%, #395c53 100%)',
                     boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.4)',
                   }}
-                  title="Zoom Out to Desk & Cartridges"
+                  title="Open ROMs Menu / Start Selected ROM"
                 />
               </div>
               <span
                 className="text-[7px] sm:text-[8px] text-[#28473f] font-bold tracking-wider"
                 style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
-                CARTRIDGES
+                START
               </span>
             </div>
           </div>

@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   ExternalLink,
   GitBranch,
   Layers,
-  ShieldCheck,
   FileCode2,
-  ChevronDown,
   Terminal,
+  Play,
 } from 'lucide-react';
 import type { Project } from '../data/projects';
 import { MurcesTuiDemo } from './MurcesTuiDemo';
@@ -27,165 +26,164 @@ const GITINGEST_TREES: Record<
   }
 > = {
   murces: {
-    stats: 'Files analyzed: 38 | Java 21 + GraalVM Native AOT | Target: Linux x86_64 & aarch64',
+    stats: 'Files: 38 | Java 21 + GraalVM Native Image | Linux / WSL',
     tree: `Directory structure:
 └── deployedreject-murces/
-    ├── pom.xml                           # Maven + native-maven-plugin (0.10.1, --no-fallback, -H:+AddAllCharsets)
-    ├── install.sh / uninstall.sh         # POSIX curl installer & SHA256 verifier
-    ├── API_SPEC.md                       # Daemon & CLI interface specification
+    ├── pom.xml                           # Maven config and GraalVM native-image build setup
+    ├── install.sh / uninstall.sh         # Install and uninstall scripts
     └── src/main/java/com/usedura/manager/
-        ├── Main.java                     # Entrypoint: routes headless CLI flags vs Lanterna TUI
+        ├── Main.java                     # Entrypoint: runs CLI commands or opens the terminal UI
         ├── cli/
-        │   ├── CliHandler.java           # Subcommands: start, stop, status, backup, tunnel, update-mods
-        │   └── CommandResult.java        # Exit codes & structured stdout formatting
+        │   ├── CliHandler.java           # Handles start, stop, status, backup, tunnel, update-mods
+        │   └── CommandResult.java        # Exit codes and console output
         ├── core/
-        │   ├── ServerOrchestrator.java   # Detached tmux session lifecycle & RCON/stdin dispatch
-        │   ├── BackupManager.java        # Atomic save-off -> save-all -> tar.zst -> save-on + rclone
-        │   ├── JdkProvisioner.java       # Adoptium/Temurin API client (JDK 8, 17, 21 auto-extractor)
-        │   ├── ModManager.java           # Modrinth v2 & CurseForge REST dependency resolver
-        │   └── PlayitTunnelManager.java  # Native playit-linux-amd64 daemon supervisor & claim parser
+        │   ├── ServerOrchestrator.java   # Starts/stops the server in a background tmux session
+        │   ├── BackupManager.java        # Pauses world saving, tars the world folder, uploads via rclone
+        │   ├── JdkProvisioner.java       # Downloads OpenJDK 8, 17, or 21 from Adoptium
+        │   ├── ModManager.java           # Downloads and updates mods/plugins from Modrinth & CurseForge
+        │   └── PlayitTunnelManager.java  # Runs and monitors the playit.gg tunnel process
         └── tui/
-            ├── ServerManagerTui.java     # Lanterna 3 multi-pane layout, live log tailer & modals
-            └── Themes.java               # 6 TrueColor 24-bit palettes + 0% ANSI transparent passthrough`,
+            ├── ServerManagerTui.java     # Terminal UI window, log viewer, and menus
+            └── Themes.java               # Color themes for the terminal UI`,
     keyFiles: [
       {
         path: 'src/main/java/com/usedura/manager/tui/ServerManagerTui.java',
-        role: 'Lanterna 3 split-pane TUI with 500ms background telemetry refresh, 300-line ring buffer log viewer, and modal dialogs.',
+        role: 'Draws the terminal UI panels, shows live server logs, and handles keyboard shortcuts.',
       },
       {
         path: 'src/main/java/com/usedura/manager/core/BackupManager.java',
-        role: 'Executes atomic world flush over tmux before archiving and syncing to Google Drive via rclone.',
+        role: 'Sends save-off and save-all to tmux, compresses the world folder into a tar archive, and uploads it with rclone.',
       },
       {
         path: 'src/main/java/com/usedura/manager/core/ModManager.java',
-        role: 'Queries Modrinth & CurseForge REST APIs with SHA-1 hash verification for 1-key mod updates.',
+        role: 'Checks Modrinth and CurseForge APIs for newer versions of installed mods and downloads them.',
       },
     ],
   },
   sentric: {
-    stats: 'Files analyzed: 64 | React 19 + MapLibre GL + Uber H3 + Python FastAPI + Mosquitto MQTT',
+    stats: 'Files: 64 | React + MapLibre GL + Uber H3 + FastAPI + MQTT',
     tree: `Directory structure:
 └── SentricTechnologies/
-    ├── sentric-web/                      # Cloudflare Pages Frontend + Edge Middleware
-    │   ├── functions/_middleware.ts      # Edge JWT verification & role routing
+    ├── sentric-web/                      # React frontend
+    │   ├── functions/_middleware.ts      # Basic token check for protected pages
     │   ├── public/data/
-    │   │   ├── ap-boundary.geojson       # Andhra Pradesh state & district vector boundaries
-    │   │   └── ap-h3-res8.json           # 210,000+ Uber H3 resolution-8 spatial hexagons
+    │   │   ├── ap-boundary.geojson       # Map boundary coordinates
+    │   │   └── ap-h3-res8.json           # H3 hex grid data for the map
     │   └── src/
-    │       ├── App.tsx                   # HashRouter: Landing (#/), VitalLink (#/vital), Docs (#/docs)
-    │       ├── pages/VitalLinkApp.tsx    # Real-time epidemiological command center & ALS/BLS dispatch
-    │       ├── components/MapEngine.tsx  # MapLibre GL vector renderer + H3 Poisson anomaly overlay
-    │       └── services/mqttClient.ts    # WebSocket MQTT telemetry subscriber
-    └── sentric-backend/                  # Python VPS Docker Stack
-        ├── docker-compose.yml            # FastAPI + Mosquitto TLS Broker + PostgreSQL/PostGIS
+    │       ├── App.tsx                   # Routes: Landing (#/), VitalLink (#/vital), Docs (#/docs)
+    │       ├── pages/VitalLinkApp.tsx    # Main map dashboard and ambulance dispatch view
+    │       ├── components/MapEngine.tsx  # Renders the MapLibre map and hex overlays
+    │       └── services/mqttClient.ts    # Connects to the MQTT broker over WebSockets
+    └── sentric-backend/                  # Python FastAPI backend
+        ├── docker-compose.yml            # Runs FastAPI, Mosquitto MQTT, and Postgres
         └── app/routers/
-            ├── disease.py                # Spatio-temporal outbreak cluster detection
-            ├── dispatch.py               # Ambulance state machine & 10s confirmation lock
-            └── auth.py                   # Clinic node certificate & JWT provisioning`,
+            ├── disease.py                # Groups incoming symptom reports by map region
+            ├── dispatch.py               # Tracks ambulance status and assignments
+            └── auth.py                   # Login endpoints`,
     keyFiles: [
       {
         path: 'sentric-web/src/pages/VitalLinkApp.tsx',
-        role: 'Unified command console combining Andhra Pradesh H3 vector heatmaps, live symptom telemetry, and ambulance fleet dispatch.',
+        role: 'The main dashboard showing incoming sensor reports on the map and the list of ambulances.',
       },
       {
         path: 'sentric-backend/app/routers/disease.py',
-        role: 'Aggregates clinic MQTT reports into H3 spatial buckets to flag statistically significant outbreak anomalies.',
+        role: 'Receives clinic reports from the hardware nodes and counts cases per hex area.',
       },
       {
-        path: 'sentric-web/functions/_middleware.ts',
-        role: 'Cloudflare Pages edge middleware enforcing role-based access before static or API execution.',
+        path: 'sentric-backend/app/routers/dispatch.py',
+        role: 'Assigns an available ambulance to an alert and updates its status.',
       },
     ],
   },
   cireu: {
-    stats: 'Files analyzed: 19 | React 19 + TypeScript + Vite + Tailwind CSS | Zero Backend Dependencies',
+    stats: 'Files: 19 | React + TypeScript + Vite + Tailwind CSS',
     tree: `Directory structure:
 └── Cireu/
-    ├── package.json                      # Vite + React 19 + Tailwind CSS + Lucide icons
+    ├── package.json                      # Vite + React + TypeScript setup
     └── src/
-        ├── App.tsx                       # Dual-pane Graph Studio: Interactive SVG Canvas + Matrix Inspector
+        ├── App.tsx                       # Main layout with the graph canvas and matrix tables
         ├── algorithms/
-        │   ├── eulerian.ts               # Degree parity verifier + Fleury's algorithm + Tarjan bridge detector
-        │   └── hamiltonian.ts            # Recursive backtracking cycle & path solver with step recorder
+        │   ├── eulerian.ts               # Checks vertex degrees and runs Fleury's algorithm
+        │   └── hamiltonian.ts            # Backtracking search for Hamiltonian paths and cycles
         ├── components/
-        │   ├── GraphCanvas.tsx           # Force/drag SVG node & curved multi-edge interactive editor
-        │   ├── MatrixEditor.tsx          # Bidirectional Adjacency Matrix & Incidence Table editor
-        │   └── PlaybackControls.tsx      # Step-by-step edge traversal timeline & speed controller
+        │   ├── GraphCanvas.tsx           # SVG canvas for adding/dragging nodes and edges
+        │   ├── MatrixEditor.tsx          # Editable Adjacency Matrix and Incidence Table
+        │   └── PlaybackControls.tsx      # Play, pause, and step buttons for viewing the path
         └── storage/
-            └── presetGraphs.ts           # Königsberg Bridges, Petersen Graph, Dodecahedron & local storage`,
+            └── presetGraphs.ts           # Example graphs (Königsberg Bridges, Petersen, etc.)`,
     keyFiles: [
       {
         path: 'src/algorithms/eulerian.ts',
-        role: "Implements Fleury's algorithm with Tarjan's DFS bridge detection so bridges are only crossed as a last resort.",
+        role: "Finds an Eulerian path or circuit using Fleury's algorithm and checks for bridge edges.",
       },
       {
         path: 'src/algorithms/hamiltonian.ts',
-        role: 'Backtracking search recording intermediate vertex visits and dead-end rollbacks for visual playback.',
+        role: 'Uses backtracking to search for a path or cycle that visits every vertex once.',
       },
       {
         path: 'src/components/MatrixEditor.tsx',
-        role: 'Synchronizes direct cell edits in the Adjacency Matrix immediately with the SVG graph topology.',
+        role: 'Lets you edit the adjacency matrix numbers directly and updates the drawn graph.',
       },
     ],
   },
   'cf-p-link': {
-    stats: 'Files analyzed: 16 | Java 21 + GraalVM Native Image | Cloudflare v4 REST API + Systemd',
+    stats: 'Files: 16 | Java 21 + GraalVM Native Image | Cloudflare API',
     tree: `Directory structure:
 └── cf-p-link/
-    ├── pom.xml                           # Multi-profile GraalVM Native Image build (setup-cli & tunnel-daemon)
+    ├── pom.xml                           # Maven build config for the setup CLI and daemon
     └── src/main/java/com/cfplink/
-        ├── SetupCli.java                 # Interactive wizard: validates CF token, writes config.json & systemd unit
-        ├── TunnelDaemon.java             # Main supervisor loop: spawns cloudflared & triggers Worker redeploys
-        ├── ProcessHandler.java           # Scrapes cloudflared stderr for *.trycloudflare.com URLs & detects crashes
-        ├── WorkerManager.java            # Generates ES-module reverse proxy & PUTs to Cloudflare Workers v4 API
-        ├── CloudflareApi.java            # Native HttpClient wrapper for Account ID lookup & Worker script upload
-        └── Config.java                   # Gson model for apiToken, accountId, workerName & ServiceRoute[]`,
+        ├── SetupCli.java                 # Prompts for Cloudflare token, ports, and writes config.json
+        ├── TunnelDaemon.java             # Main loop that keeps cloudflared processes running
+        ├── ProcessHandler.java           # Starts cloudflared and reads the *.trycloudflare.com URL from logs
+        ├── WorkerManager.java            # Builds the Worker router script and uploads it to Cloudflare
+        ├── CloudflareApi.java            # HTTP calls to the Cloudflare API
+        └── Config.java                   # Reads and writes config.json`,
     keyFiles: [
       {
         path: 'src/main/java/com/cfplink/TunnelDaemon.java',
-        role: 'Coordinates child process supervision and schedules 5-second self-healing restarts whenever a tunnel exits.',
+        role: 'Starts a cloudflared tunnel for each configured local port and restarts it if it exits.',
       },
       {
         path: 'src/main/java/com/cfplink/WorkerManager.java',
-        role: 'Dynamically compiles the Cloudflare Worker JS router + dark-mode landing portal and deploys it via REST API.',
+        role: 'Takes the current random tunnel URLs and updates a Cloudflare Worker so your main URL forwards to them.',
       },
       {
         path: 'src/main/java/com/cfplink/SetupCli.java',
-        role: 'Generates /etc/systemd/system/cf-p-link.service and verifies Cloudflare API permissions.',
+        role: 'Saves your Cloudflare API token and local port list to config.json and sets up the systemd service.',
       },
     ],
   },
   aggregator: {
-    stats: 'Files analyzed: 52 | WebExtension (MV3) + React + Spring Boot 3 + PostgreSQL + JGit',
+    stats: 'Files: 52 | Browser Extension + React + Spring Boot + PostgreSQL',
     tree: `Directory structure:
 └── Aggregator-FUll-Stack/
-    ├── Aggregator-Website/super-website/ # React Plugin Hub & Live In-Browser Sandbox
+    ├── Aggregator-Website/super-website/ # React web app
     │   ├── public/generator/
-    │   │   ├── sandbox.html              # Hermetic CSP iframe executing untrusted plugin JS via postMessage
-    │   │   └── proxy-gateway.js          # CORS & header-rewriting fetch relay for sandboxed plugins
+    │   │   ├── sandbox.html              # Sandboxed iframe that runs plugin JavaScript files
+    │   │   └── proxy-gateway.js          # Forwards fetch requests from the iframe to the extension
     │   ├── public/plugins/
-    │   │   └── internet-archive.js       # Public-domain feature film & audio plugin querying archive.org
-    │   └── src/App.tsx                   # Marketplace UI, live sandboxed media runner & plugin test suite
-    ├── Aggregator-Extension/             # Chromium & Firefox WebExtension
-    │   ├── manifest.json                 # DeclarativeNetRequest rules + background service worker
-    │   └── background.js                 # Cross-origin stream relay & sandbox message broker
-    └── Aggregator-Backend/               # Spring Boot 3 + Java 21 + PostgreSQL Registry
+    │   │   └── internet-archive.js       # Example plugin that searches and plays from archive.org
+    │   └── src/App.tsx                   # Main UI for browsing plugins, searching, and playing media
+    ├── Aggregator-Extension/             # Chrome & Firefox extension
+    │   ├── manifest.json                 # Extension permissions and background worker config
+    │   └── background.js                 # Makes cross-origin requests on behalf of plugins
+    └── Aggregator-Backend/               # Spring Boot backend
         └── src/main/java/com/aggregator/
-            ├── service/GitSyncService.java   # JGit automated plugin repository cloner & SHA verifier
-            ├── service/VoteService.java      # Salted SHA-256 IP reputation & auto-quarantine engine
-            └── tui/AdminConsoleTui.java      # Lanterna server administration console`,
+            ├── service/GitSyncService.java   # Clones plugin repos from Git
+            ├── service/VoteService.java      # Tracks upvotes/downvotes on plugins
+            └── tui/AdminConsoleTui.java      # Terminal UI for managing the backend server`,
     keyFiles: [
       {
         path: 'Aggregator-Website/super-website/public/generator/sandbox.html',
-        role: 'Executes third-party plugin scripts inside an isolated iframe with zero parent DOM or storage access.',
+        role: 'Runs plugin scripts inside an isolated iframe and passes search results back via postMessage.',
       },
       {
-        path: 'Aggregator-Website/super-website/public/plugins/internet-archive.js',
-        role: 'Reference plugin querying the Internet Archive Advanced Search API and resolving playable MP4 streams.',
+        path: 'Aggregator-Extension/background.js',
+        role: 'Fetches external pages and streams from the browser extension so CORS does not block them.',
       },
       {
-        path: 'Aggregator-Backend/src/main/java/com/aggregator/service/VoteService.java',
-        role: 'Privacy-preserving salted SHA-256 IP voting that automatically disables broken or flagged plugins.',
+        path: 'Aggregator-Backend/src/main/java/com/aggregator/service/GitSyncService.java',
+        role: 'Pulls plugin files from Git repositories and serves the plugin list to the frontend.',
       },
     ],
   },
@@ -200,11 +198,10 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   // Show the top details/eject bar initially for 3.8s, then hide until mouse enters top/left corner
   const [headerPinnedOpen, setHeaderPinnedOpen] = useState(true);
   const [cornerHovered, setCornerHovered] = useState(false);
+  // Exclusively switch between Demo (false) and Gitingest Summary (true) via button only
   const [showSummary, setShowSummary] = useState(false);
   // For Sentric: allow switching between VitalLink (#/vital), Landing (#/), and Docs (#/docs)
   const [sentricSubRoute, setSentricSubRoute] = useState<'/vital' | '/' | '/docs'>('/vital');
-
-  const summaryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const crtTimer = setTimeout(() => setCrtVanishing(false), 550);
@@ -215,7 +212,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
     };
   }, [project.id]);
 
-  // Also allow Escape key to eject cartridge if focus is on the outer document
+  // Allow Escape key to eject cartridge if focus is on the outer document
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -226,25 +223,11 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onEject]);
 
-  const isHeaderVisible = headerPinnedOpen || cornerHovered;
+  const isHeaderVisible = headerPinnedOpen || cornerHovered || showSummary;
   const gitingest = GITINGEST_TREES[project.id] || GITINGEST_TREES.murces;
 
-  const toggleSummary = () => {
-    if (!showSummary) {
-      setShowSummary(true);
-      setTimeout(() => {
-        summaryRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 50);
-    } else {
-      setShowSummary(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
   return (
-    <div className={`min-h-screen w-full bg-[#090a0f] text-stone-100 flex flex-col relative selection:bg-emerald-500 selection:text-black ${
-      showSummary ? 'overflow-y-auto' : 'h-screen overflow-hidden'
-    }`}>
+    <div className="h-screen w-screen overflow-hidden bg-[#090a0f] text-stone-100 flex flex-col relative selection:bg-emerald-500 selection:text-black">
       {/* CRT-to-Clean Vanish Overlay (fades out over 550ms when entering fullscreen) */}
       <div
         className={`fixed inset-0 z-50 pointer-events-none transition-opacity duration-500 ${
@@ -266,21 +249,20 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
         onMouseEnter={() => setCornerHovered(true)}
         className="fixed top-0 left-0 w-44 h-12 z-50 pointer-events-auto"
       >
-        {/* Subtle Corner Tab when header is hidden so user always knows where the hot corner is (and can tap on mobile) */}
         {!isHeaderVisible && (
           <button
             type="button"
             onClick={() => setCornerHovered(true)}
             className="m-2 px-2.5 py-1 bg-[#141914]/90 hover:bg-[#1e281e] text-[#a6e26e] border border-[#a6e26e]/60 text-[10px] shadow-lg flex items-center gap-1.5 cursor-pointer transition-opacity opacity-75 hover:opacity-100"
             style={{ fontFamily: "'Press Start 2P', monospace" }}
-            title="Move mouse to corner or click to reveal Eject & Project Details"
+            title="Reveal Eject & Project Info"
           >
             <span>⏏ EJECT / INFO</span>
           </button>
         )}
       </div>
 
-      {/* Auto-Hiding Top Details & Eject Bar (Appears at start and when mouse enters corner) */}
+      {/* Auto-Hiding Top Details & Eject Bar */}
       <header
         onMouseEnter={() => setCornerHovered(true)}
         onMouseLeave={() => setCornerHovered(false)}
@@ -298,7 +280,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               style={{ fontFamily: "'Press Start 2P', monospace" }}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>⏏ EJECT CARTRIDGE</span>
+              <span>⏏ EJECT</span>
             </button>
 
             <div className="hidden sm:flex flex-col">
@@ -323,9 +305,9 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             </div>
           </div>
 
-          {/* Right: Sub-route Switcher (for Sentric), Summary Jump, Repo & Live Links */}
+          {/* Right: Sub-route Switcher (for Sentric), Exclusive Demo/Summary Toggle Button, Repo & Live Links */}
           <div className="flex items-center gap-2 text-xs font-mono flex-wrap">
-            {project.id === 'sentric' && (
+            {!showSummary && project.id === 'sentric' && (
               <div className="flex items-center bg-stone-900 border border-stone-700 rounded p-0.5 mr-1">
                 <button
                   type="button"
@@ -336,7 +318,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
-                  VitalLink Console
+                  VitalLink
                 </button>
                 <button
                   type="button"
@@ -347,7 +329,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
-                  Sentric Landing
+                  Landing
                 </button>
                 <button
                   type="button"
@@ -358,18 +340,27 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                       : 'text-stone-400 hover:text-stone-200'
                   }`}
                 >
-                  Architecture Docs
+                  Docs
                 </button>
               </div>
             )}
 
             <button
               type="button"
-              onClick={toggleSummary}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-700 cursor-pointer transition-colors"
+              onClick={() => setShowSummary((prev) => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-600 cursor-pointer transition-colors font-semibold"
             >
-              <ChevronDown className="w-3.5 h-3.5" />
-              <span>Gitingest + LLM Summary</span>
+              {showSummary ? (
+                <>
+                  <Play className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Back to Demo</span>
+                </>
+              ) : (
+                <>
+                  <FileCode2 className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Gitingest Summary</span>
+                </>
+              )}
             </button>
 
             <a
@@ -379,7 +370,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition-colors"
             >
               <GitBranch className="w-3.5 h-3.5 text-stone-400" />
-              <span>Source Repo</span>
+              <span>Repo</span>
               <ExternalLink className="w-3 h-3 text-stone-500" />
             </a>
 
@@ -390,7 +381,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                 rel="noreferrer"
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/70 transition-colors"
               >
-                <span>Live Deployment</span>
+                <span>Live Site</span>
                 <ExternalLink className="w-3 h-3 text-emerald-400" />
               </a>
             )}
@@ -398,197 +389,205 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
         </div>
       </header>
 
-      {/* FULLSCREEN INTERACTIVE PROJECT DEMO AREA */}
-      <section className="w-full h-screen flex flex-col bg-[#090a0f] relative">
-        {project.id === 'murces' && (
-          <div className="w-full h-full overflow-y-auto p-3 sm:p-6">
-            <MurcesTuiDemo
-              initialLogs={project.initialTerminalLogs || []}
-              commands={project.terminalCommands || {}}
-            />
-          </div>
-        )}
-
-        {project.id === 'sentric' && (
-          <iframe
-            key={sentricSubRoute}
-            src={`/demos/sentric/index.html#${sentricSubRoute}`}
-            title="Sentric Technologies & VitalLink Interactive Demo"
-            className="w-full h-full border-0 bg-[#09090b]"
-          />
-        )}
-
-        {project.id === 'cireu' && (
-          <iframe
-            src="/demos/cireu/index.html"
-            title="cireu Eulerian & Hamiltonian Graph Studio"
-            className="w-full h-full border-0 bg-[#09090b]"
-          />
-        )}
-
-        {project.id === 'cf-p-link' && (
-          <div className="w-full h-full overflow-y-auto p-3 sm:p-6">
-            <CfPLinkDemo
-              initialLogs={project.initialTerminalLogs || []}
-              commands={project.terminalCommands || {}}
-            />
-          </div>
-        )}
-
-        {project.id === 'aggregator' && (
-          <iframe
-            src="/demos/aggregator/index.html"
-            title="Aggregator Sandboxed Media & Plugin Hub"
-            className="w-full h-full border-0 bg-[#0b0f17]"
-          />
-        )}
-
-        {/* Bottom Floating Toggle Pill for Architecture & Digest Summary */}
-        <button
-          type="button"
-          onClick={toggleSummary}
-          className="absolute bottom-3 right-4 z-30 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 text-stone-200 border border-stone-600 text-xs font-mono shadow-2xl cursor-pointer hover:border-emerald-500 transition-colors"
-        >
-          <ChevronDown className={`w-3.5 h-3.5 text-emerald-400 transition-transform ${showSummary ? 'rotate-180' : 'animate-bounce'}`} />
-          <span>{showSummary ? 'Return to Live Demo ↑' : 'Gitingest + Architecture Summary ↓'}</span>
-        </button>
-      </section>
-
-      {/* GITINGEST + LLM ARCHITECTURAL SUMMARY SECTION AT THE BOTTOM */}
-      {showSummary && (
-        <section
-          ref={summaryRef}
-          className="max-w-7xl mx-auto w-full px-4 sm:px-8 py-12 space-y-8 border-t border-stone-800 bg-[#0c0d12]"
-        >
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 mb-1">
-              <Terminal className="w-4 h-4" />
-              <span>Gitingest Repository Digest + LLM Architectural Summary</span>
+      {/* EXCLUSIVELY RENDER EITHER THE DEMO OR THE GITINGEST SUMMARY */}
+      {!showSummary ? (
+        <section className="w-full h-full flex flex-col bg-[#090a0f] relative overflow-hidden">
+          {project.id === 'murces' && (
+            <div className="w-full h-full overflow-y-auto p-3 sm:p-6">
+              <MurcesTuiDemo
+                initialLogs={project.initialTerminalLogs || []}
+                commands={project.terminalCommands || {}}
+              />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold font-mono text-white">
-              {project.title}
-            </h2>
-            <p className="text-stone-400 text-sm mt-1">{project.tagline}</p>
-          </div>
+          )}
 
+          {project.id === 'sentric' && (
+            <iframe
+              key={sentricSubRoute}
+              src={`/demos/sentric/index.html#${sentricSubRoute}`}
+              title="Sentric Technologies & VitalLink Demo"
+              className="w-full h-full border-0 bg-[#09090b]"
+            />
+          )}
+
+          {project.id === 'cireu' && (
+            <iframe
+              src="/demos/cireu/index.html"
+              title="Cireu Graph Studio"
+              className="w-full h-full border-0 bg-[#09090b]"
+            />
+          )}
+
+          {project.id === 'cf-p-link' && (
+            <div className="w-full h-full overflow-y-auto p-3 sm:p-6">
+              <CfPLinkDemo
+                initialLogs={project.initialTerminalLogs || []}
+                commands={project.terminalCommands || {}}
+              />
+            </div>
+          )}
+
+          {project.id === 'aggregator' && (
+            <iframe
+              src="/demos/aggregator/index.html"
+              title="Aggregator Demo"
+              className="w-full h-full border-0 bg-[#0b0f17]"
+            />
+          )}
+
+          {/* Dedicated Button to Switch to Gitingest Summary */}
           <button
             type="button"
-            onClick={onEject}
-            className="self-start sm:self-center flex items-center gap-2 px-4 py-2.5 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] text-xs cursor-pointer shrink-0"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
+            onClick={() => setShowSummary(true)}
+            className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 text-stone-100 border border-stone-600 text-xs font-mono shadow-2xl cursor-pointer hover:border-emerald-500 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>⏏ EJECT CARTRIDGE</span>
+            <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Read Gitingest Summary</span>
           </button>
-        </div>
+        </section>
+      ) : (
+        <section className="w-full h-full overflow-y-auto bg-[#0c0d12] pt-20 pb-16 px-4 sm:px-8 animate-fadeIn">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Section Header with Exclusive Back-to-Demo Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-6">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 mb-1">
+                  <Terminal className="w-4 h-4" />
+                  <span>Gitingest Summary</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold font-mono text-white">
+                  {project.title}
+                </h2>
+                <p className="text-stone-400 text-sm mt-1">{project.tagline}</p>
+              </div>
 
-        {/* Two-Column Grid: Gitingest Tree + Architectural Synthesis */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left 5 Cols: Gitingest Directory Structure & Key Source Files */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="rounded-lg border border-stone-800 bg-[#08090c] overflow-hidden">
-              <div className="px-4 py-2.5 bg-stone-900/90 border-b border-stone-800 flex items-center justify-between text-xs font-mono">
-                <span className="flex items-center gap-2 text-amber-300 font-semibold">
-                  <FileCode2 className="w-4 h-4" />
-                  gitingest://{project.id}/digest.txt
-                </span>
-                <span className="text-[11px] text-stone-400">UTF-8</span>
+              <div className="flex items-center gap-3 self-start sm:self-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowSummary(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white border-2 border-emerald-300/80 shadow-[3px_3px_0px_#000] text-xs font-mono font-bold cursor-pointer transition-colors"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>BACK TO DEMO</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onEject}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] text-xs cursor-pointer"
+                  style={{ fontFamily: "'Press Start 2P', monospace" }}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>⏏ EJECT</span>
+                </button>
               </div>
-              <div className="px-4 py-2 bg-stone-950/60 border-b border-stone-900 text-[11px] font-mono text-emerald-400">
-                {gitingest.stats}
-              </div>
-              <pre className="p-4 text-[11px] sm:text-xs font-mono text-stone-300 overflow-x-auto leading-relaxed">
-                {gitingest.tree}
-              </pre>
             </div>
 
-            {/* Key Files Highlight */}
-            <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-4 space-y-3">
-              <div className="text-xs font-mono uppercase tracking-wider text-stone-400">
-                Primary Entrypoints & Core Modules:
+            {/* Two-Column Grid: Gitingest Tree + Plain Function Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left 5 Cols: Gitingest Directory Structure & Main Files */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="rounded-lg border border-stone-800 bg-[#08090c] overflow-hidden">
+                  <div className="px-4 py-2.5 bg-stone-900/90 border-b border-stone-800 flex items-center justify-between text-xs font-mono">
+                    <span className="flex items-center gap-2 text-amber-300 font-semibold">
+                      <FileCode2 className="w-4 h-4" />
+                      gitingest://{project.id}/digest.txt
+                    </span>
+                    <span className="text-[11px] text-stone-400">UTF-8</span>
+                  </div>
+                  <div className="px-4 py-2 bg-stone-950/60 border-b border-stone-900 text-[11px] font-mono text-emerald-400">
+                    {gitingest.stats}
+                  </div>
+                  <pre className="p-4 text-[11px] sm:text-xs font-mono text-stone-300 overflow-x-auto leading-relaxed">
+                    {gitingest.tree}
+                  </pre>
+                </div>
+
+                {/* Main Files */}
+                <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-4 space-y-3">
+                  <div className="text-xs font-mono uppercase tracking-wider text-stone-400">
+                    Main Files:
+                  </div>
+                  <div className="space-y-2.5">
+                    {gitingest.keyFiles.map((file) => (
+                      <div
+                        key={file.path}
+                        className="p-2.5 rounded bg-stone-950/80 border border-stone-800/90 font-mono"
+                      >
+                        <div className="text-xs text-emerald-400 font-semibold break-all">
+                          {file.path}
+                        </div>
+                        <div className="text-xs text-stone-400 mt-1 leading-relaxed">
+                          {file.role}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2.5">
-                {gitingest.keyFiles.map((file) => (
-                  <div
-                    key={file.path}
-                    className="p-2.5 rounded bg-stone-950/80 border border-stone-800/90 font-mono"
-                  >
-                    <div className="text-xs text-emerald-400 font-semibold break-all">
-                      {file.path}
+
+              {/* Right 7 Cols: What It Does, Why I Made It, and Tech Stack */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-6 space-y-4">
+                  <div className="flex items-center gap-2 text-emerald-400 font-mono text-sm font-semibold">
+                    <Layers className="w-4 h-4" />
+                    <span>What It Does</span>
+                  </div>
+                  <p className="text-stone-200 text-sm sm:text-base leading-relaxed">
+                    {project.summary.overview}
+                  </p>
+
+                  <div className="pt-3 space-y-3">
+                    <div className="text-xs font-mono uppercase tracking-wider text-stone-400">
+                      How It Works:
                     </div>
-                    <div className="text-xs text-stone-400 mt-1 leading-relaxed">
-                      {file.role}
+                    <ul className="space-y-2.5 text-sm text-stone-300">
+                      {project.summary.architecture.map((item, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-start gap-3 p-3 rounded bg-stone-950/60 border border-stone-800/80"
+                        >
+                          <span className="text-emerald-400 font-mono font-bold shrink-0 mt-0.5">
+                            0{idx + 1}
+                          </span>
+                          <span className="leading-relaxed">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Why I Made It & Tech Stack */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-5">
+                    <div className="text-xs font-mono text-stone-400 uppercase tracking-wider mb-2">
+                      Why I Made It:
+                    </div>
+                    <p className="text-sm text-white font-semibold leading-relaxed">
+                      "{project.originNote || project.summary.clientValue}"
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-5">
+                    <div className="text-xs font-mono text-stone-400 uppercase tracking-wider mb-3">
+                      Built With:
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {project.summary.techStack.map((tech) => (
+                        <span
+                          key={tech}
+                          className="text-xs font-mono px-2.5 py-1 rounded bg-stone-950 text-stone-200 border border-stone-800"
+                        >
+                          {tech}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Right 7 Cols: LLM Architectural Breakdown, Engineering Highlights & Client Value */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-6 space-y-4">
-              <div className="flex items-center gap-2 text-emerald-400 font-mono text-sm font-semibold">
-                <Layers className="w-4 h-4" />
-                <span>LLM System Synthesis & Engineering Overview</span>
-              </div>
-              <p className="text-stone-200 text-sm sm:text-base leading-relaxed">
-                {project.summary.overview}
-              </p>
-
-              <div className="pt-3 space-y-3">
-                <div className="text-xs font-mono uppercase tracking-wider text-stone-400">
-                  Core Architectural Pillars:
-                </div>
-                <ul className="space-y-2.5 text-sm text-stone-300">
-                  {project.summary.architecture.map((item, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-3 p-3 rounded bg-stone-950/60 border border-stone-800/80"
-                    >
-                      <span className="text-emerald-400 font-mono font-bold shrink-0 mt-0.5">
-                        0{idx + 1}
-                      </span>
-                      <span className="leading-relaxed">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Tech Stack & Freelance Client Impact */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-5">
-                <div className="text-xs font-mono text-stone-400 uppercase tracking-wider mb-3">
-                  Production Stack & Tooling:
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {project.summary.techStack.map((tech) => (
-                    <span
-                      key={tech}
-                      className="text-xs font-mono px-2.5 py-1 rounded bg-stone-950 text-stone-200 border border-stone-800"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-emerald-900/50 bg-emerald-950/20 p-5">
-                <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider mb-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Client & Production Impact</span>
-                </div>
-                <p className="text-xs sm:text-sm text-stone-300 leading-relaxed font-mono">
-                  {project.summary.clientValue}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
       )}
     </div>
   );
