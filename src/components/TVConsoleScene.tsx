@@ -460,43 +460,10 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     }
   };
 
-  // Keyboard navigation
+  // Keyboard navigation removed per user request: navigation is purely via mouse clicks and knob scrolling
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '1') {
-        setScreenTab('status');
-        setOptionIndex(0);
-      }
-      if (e.key === '2') {
-        setScreenTab('github');
-        setOptionIndex(0);
-      }
-      if (e.key === '3') {
-        setScreenTab('pings');
-        setOptionIndex(0);
-      }
-      if (e.key === '4') {
-        setScreenTab('hire');
-        setOptionIndex(0);
-      }
-      if (e.key === 'ArrowRight') turnChannel('next');
-      if (e.key === 'ArrowLeft') turnChannel('prev');
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        turnScroll('next');
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        turnScroll('prev');
-      }
-      if (e.key === 'Enter' && cameraMode === 'closeup') {
-        e.preventDefault();
-        handlePressSelectButton();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  });
+    // No keyboard hotkeys active
+  }, []);
 
   // ============================================================================
   // MODE 1: FULLSCREEN CRT VIEW (cameraMode === 'closeup')

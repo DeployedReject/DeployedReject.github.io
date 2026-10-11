@@ -376,20 +376,20 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
     >
       {/* Top CRT On-Screen Display (OSD) Channel Bar */}
       <div
-        className={`border-b-2 pb-2 flex items-center justify-between gap-2 shrink-0 pointer-events-none ${
+        className={`border-b-2 pb-2.5 flex items-center justify-between gap-2 shrink-0 pointer-events-none ${
           isLightMode ? 'border-[#5c8754]/70' : 'border-[#4b6e32]/80'
         }`}
       >
         <div
-          className="flex flex-wrap gap-1.5 sm:gap-2"
+          className="flex flex-wrap gap-2 sm:gap-2.5"
           style={{ fontFamily: "var(--font-pixel)" }}
         >
-          {tabs.map((t, idx) => {
+          {tabs.map((t) => {
             const active = activeTab === t.id;
             return (
               <div
                 key={t.id}
-                className={`px-2 py-1 text-[8px] sm:text-[10px] leading-none uppercase border transition-all duration-200 ${
+                className={`px-2.5 py-1.5 text-[10px] sm:text-[12px] md:text-[13px] leading-none uppercase border transition-all duration-200 ${
                   active
                     ? isLightMode
                       ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold shadow-sm scale-105'
@@ -399,7 +399,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                     : 'bg-[#121c13]/90 text-[#6ca144] border-[#355224] opacity-75'
                 }`}
               >
-                {idx + 1}.{t.label}
+                {t.label}
               </div>
             );
           })}
@@ -421,7 +421,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               }`}
             />
             <div
-              className={`text-xs sm:text-sm tracking-wide ${
+              className={`text-sm sm:text-base tracking-wide ${
                 isLightMode ? 'text-[#142918] font-bold' : 'pixel-dull-white'
               }`}
               style={{ fontFamily: 'var(--font-pixel)' }}
@@ -429,7 +429,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               {SHORT_NAMES[insertingProject.id] || insertingProject.name}
             </div>
             <div
-              className={`w-40 sm:w-56 h-2 border rounded overflow-hidden mt-1 ${
+              className={`w-44 sm:w-64 h-3 border rounded overflow-hidden mt-1 ${
                 isLightMode
                   ? 'bg-[#cfe0cd] border-[#5c8754]'
                   : 'bg-[#142016] border-[#5c8244]'
@@ -443,16 +443,16 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col justify-between min-h-0 overflow-hidden gap-2">
+          <div className="flex-1 flex flex-col justify-between min-h-0 overflow-hidden gap-2.5">
             {/* Highlighted Channel Options (AT TOP for instant visibility, scrolled via SCROLL / D-pad, triggered via SELECT) */}
             {!isTableZoomedOut && activeTab !== 'cartridges' && channelOptions.length > 0 && (
               <div
-                className={`pb-2 border-b shrink-0 space-y-1 overflow-y-auto max-h-[46%] pointer-events-none ${
+                className={`pb-2 border-b shrink-0 space-y-1.5 overflow-y-auto max-h-[46%] pointer-events-none ${
                   isLightMode ? 'border-[#6d9666]' : 'border-[#375224]/90'
                 }`}
               >
                 <div
-                  className={`text-[8px] sm:text-[9px] uppercase tracking-wider mb-1 font-bold ${
+                  className={`text-[10px] sm:text-[11px] md:text-[12px] uppercase tracking-wider mb-1.5 font-bold ${
                     isLightMode ? 'text-[#2d5434]' : 'text-[#7ec252]'
                   }`}
                   style={{ fontFamily: 'var(--font-pixel)' }}
@@ -467,11 +467,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                       ref={(el) => {
                         optionRefs.current[idx] = el;
                       }}
-                      className={`px-2.5 py-1 border text-[14px] sm:text-[17px] md:text-[18px] flex items-center justify-between transition-all ${
+                      className={`px-3 py-1.5 border text-[17px] sm:text-[21px] md:text-[23px] flex items-center justify-between transition-all ${
                         isSel
                           ? isLightMode
                             ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold shadow-sm'
-                            : 'bg-[#a6e26e] text-[#09120a] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.45)]'
+                            : 'bg-[#a6e26e] text-[#09120a] border-[#d4f7b5] font-bold shadow-[0_0_14px_rgba(166,226,110,0.55)]'
                           : isLightMode
                           ? 'bg-[#d5e4d2]/90 text-[#1c3b22] border-[#8ab083]'
                           : 'bg-[#101a11]/85 text-[#9cd66c] border-[#2d4520]'
@@ -492,18 +492,18 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-between pr-1">
                 {fullText && (
                   <pre
-                    className={`whitespace-pre-wrap break-words text-[15px] sm:text-[19px] md:text-[21px] leading-[1.2] tracking-wide m-0 font-normal pointer-events-none flex-1 ${
+                    className={`whitespace-pre-wrap break-words text-[18px] sm:text-[23px] md:text-[25px] leading-[1.25] tracking-wide m-0 font-normal pointer-events-none flex-1 ${
                       isLightMode ? 'text-[#142918]' : 'text-[#b5ec82]'
                     }`}
                     style={{
                       fontFamily: "var(--font-crt)",
-                      textShadow: isLightMode ? 'none' : '0 0 8px rgba(166, 226, 110, 0.5)',
+                      textShadow: isLightMode ? 'none' : '0 0 10px rgba(166, 226, 110, 0.55)',
                     }}
                   >
                     {displayedText}
                     {isTyping && (
                       <span
-                        className={`inline-block w-2.5 h-4 ml-0.5 align-middle ${
+                        className={`inline-block w-3 h-5 ml-0.5 align-middle ${
                           isLightMode ? 'bg-[#142918]' : 'bg-[#b5ec82]'
                         }`}
                       />
