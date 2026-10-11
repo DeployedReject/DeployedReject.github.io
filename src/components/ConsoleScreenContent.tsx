@@ -138,18 +138,12 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
     text: '',
     count: 0,
   });
-  const [channelStatic, setChannelStatic] = useState<boolean>(false);
   const prevTabRef = useRef<ScreenTab>(activeTab);
 
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   useEffect(() => {
-    if (prevTabRef.current !== activeTab) {
-      prevTabRef.current = activeTab;
-      setChannelStatic(true);
-      const timer = window.setTimeout(() => setChannelStatic(false), 240);
-      return () => window.clearTimeout(timer);
-    }
+    prevTabRef.current = activeTab;
   }, [activeTab]);
 
   useEffect(() => {
@@ -626,16 +620,6 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
         )}
       </div>
 
-      {/* Real Analog CRT TV Static Flash when Switching Channels */}
-      {channelStatic && (
-        <div className="absolute inset-0 z-50 pointer-events-none overflow-hidden select-none animate-tvStaticBurst">
-          <img
-            src="/img/tv-static.gif"
-            alt=""
-            className="w-full h-full object-cover opacity-85 mix-blend-screen"
-          />
-        </div>
-      )}
     </div>
   );
 };

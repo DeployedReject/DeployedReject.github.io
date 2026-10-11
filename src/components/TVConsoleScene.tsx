@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { flushSync } from 'react-dom';
 import type { Project } from '../data/projects';
 import {
   ConsoleScreenContent,
@@ -167,16 +167,22 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
   const [hoveredConsole, setHoveredConsole] = useState<boolean>(false);
   const [hoveredBulb, setHoveredBulb] = useState<boolean>(false);
-  const [lightTransition, setLightTransition] = useState<'turning-on' | 'turning-off' | null>(null);
   const [isYankingChain, setIsYankingChain] = useState<boolean>(false);
   const [staticBurst, setStaticBurst] = useState<boolean>(false);
+  const [showGuideTooltip, setShowGuideTooltip] = useState<boolean>(true);
   const [stats, setStats] = useState<DeveloperStats | null>(null);
 
+  const bulbRef = useRef<SVGGElement | null>(null);
   const zoomCooldownRef = useRef<number>(0);
   const bulbCooldownRef = useRef<number>(0);
 
   useEffect(() => {
     fetchDeveloperStats().then(setStats);
+    // Dismiss directed guidance tooltip after 5 seconds
+    const guideTimer = window.setTimeout(() => {
+      setShowGuideTooltip(false);
+    }, 5000);
+    return () => window.clearTimeout(guideTimer);
   }, []);
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
@@ -232,26 +238,112 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     triggerOption(currentChannelOptions[safeOptionIndex]);
   };
 
-  const handleTouchBulb = () => {
+  const handleTouchBulb = async () => {
     if (Date.now() < bulbCooldownRef.current) return;
-    bulbCooldownRef.current = Date.now() + 1150;
     
     // Tactile pull-chain spring bounce
     setIsYankingChain(true);
     window.setTimeout(() => setIsYankingChain(false), 460);
 
-    // Expanding ball of light (dark -> light) or contracting dark orb (light -> dark)
     const willBeLight = !isLightMode;
-    setLightTransition(willBeLight ? 'turning-on' : 'turning-off');
-    onToggleLightMode?.();
+    bulbCooldownRef.current = Date.now() + (willBeLight ? 750 : 450);
 
-    window.setTimeout(() => {
-      setLightTransition(null);
-    }, 1100);
+    /**
+     * Return early if View Transition API is not supported
+     * or user prefers reduced motion
+     */
+    if (
+      !document.startViewTransition ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      onToggleLightMode?.();
+      return;
+    }
+
+    // Get origin coordinates from bulbRef or calculate from SVG coordinates
+    let x = window.innerWidth * 0.435;
+    let y = window.innerHeight * 0.287;
+    let left = x;
+    let top = y;
+
+    if (bulbRef.current) {
+      const rect = bulbRef.current.getBoundingClientRect();
+      left = rect.left;
+      top = rect.top;
+      x = rect.left + rect.width / 2;
+      y = rect.top + rect.height / 2;
+    }
+
+    const right = window.innerWidth - left;
+    const bottom = window.innerHeight - top;
+    const maxRadius = Math.hypot(
+      Math.max(left, right),
+      Math.max(top, bottom),
+    );
+
+    const transition = document.startViewTransition(() => {
+      flushSync(() => {
+        onToggleLightMode?.();
+      });
+    });
+
+    await transition.ready;
+
+    if (willBeLight) {
+      // Turning ON: Expanding circle of light
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${maxRadius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 650,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        }
+      );
+    } else {
+      // Turning OFF: Quick reverse animation (contracting light / expanding dark)
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(${maxRadius}px at ${x}px ${y}px)`,
+            `circle(0px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 380,
+          easing: 'cubic-bezier(0.4, 0, 1, 1)',
+          pseudoElement: '::view-transition-old(root)',
+        }
+      );
+    }
   };
 
-  // Switch directly to room view when mouse touches the outer screen edge with TV static burst cut
-  const handleEdgeZoomOut = () => {
+  const zoomInTimerRef = useRef<number | null>(null);
+  const zoomOutTimerRef = useRef<number | null>(null);
+
+  // Clear pending hover timers
+  const clearZoomTimers = () => {
+    if (zoomInTimerRef.current !== null) {
+      window.clearTimeout(zoomInTimerRef.current);
+      zoomInTimerRef.current = null;
+    }
+    if (zoomOutTimerRef.current !== null) {
+      window.clearTimeout(zoomOutTimerRef.current);
+      zoomOutTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => clearZoomTimers();
+  }, []);
+
+  // Trigger zoom out to table/room view
+  const triggerZoomOut = () => {
+    clearZoomTimers();
     if (cameraMode !== 'closeup') return;
     if (Date.now() < zoomCooldownRef.current) return;
     zoomCooldownRef.current = Date.now() + 500;
@@ -260,14 +352,49 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     window.setTimeout(() => setStaticBurst(false), 320);
   };
 
-  // Switch directly to fullscreen TV view when hovering or clicking the TV with TV static burst cut
-  const handleTvZoomIn = () => {
+  // Trigger zoom in to fullscreen closeup TV view
+  const triggerZoomIn = () => {
+    clearZoomTimers();
     if (cameraMode !== 'table') return;
     if (Date.now() < zoomCooldownRef.current) return;
     zoomCooldownRef.current = Date.now() + 500;
     setStaticBurst(true);
     setCameraMode('closeup');
     window.setTimeout(() => setStaticBurst(false), 320);
+  };
+
+  // Hover 2s over the outer screen edges to zoom out to table view
+  const handleEdgeMouseEnter = () => {
+    if (cameraMode !== 'closeup') return;
+    if (zoomOutTimerRef.current !== null) return;
+    zoomOutTimerRef.current = window.setTimeout(() => {
+      zoomOutTimerRef.current = null;
+      triggerZoomOut();
+    }, 2000);
+  };
+
+  const handleEdgeMouseLeave = () => {
+    if (zoomOutTimerRef.current !== null) {
+      window.clearTimeout(zoomOutTimerRef.current);
+      zoomOutTimerRef.current = null;
+    }
+  };
+
+  // Hover 2s over the TV in room view to zoom into fullscreen TV view (or instant on click)
+  const handleTvMouseEnter = () => {
+    if (cameraMode !== 'table') return;
+    if (zoomInTimerRef.current !== null) return;
+    zoomInTimerRef.current = window.setTimeout(() => {
+      zoomInTimerRef.current = null;
+      triggerZoomIn();
+    }, 2000);
+  };
+
+  const handleTvMouseLeave = () => {
+    if (zoomInTimerRef.current !== null) {
+      window.clearTimeout(zoomInTimerRef.current);
+      zoomInTimerRef.current = null;
+    }
   };
 
   // Keyboard navigation
@@ -331,11 +458,49 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           </div>
         )}
 
-        {/* Invisible Screen-Edge Sensors: Moving mouse to the edge returns to room view */}
-        <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 bottom-0 left-0 w-4 z-50" />
-        <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 bottom-0 right-0 w-4 z-50" />
-        <div onMouseEnter={handleEdgeZoomOut} className="fixed bottom-0 left-0 right-0 h-4 z-50" />
-        <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 left-0 right-0 h-3 z-50" />
+        {/* Directed Tooltip & Edge Highlight on Load (Active for 5s) */}
+        {showGuideTooltip && (
+          <>
+            {/* Visual Edge Highlight Border */}
+            <div className="fixed inset-0 z-40 pointer-events-none border-4 border-[#a6e26e]/80 animate-edgeGuidePulse" />
+
+            {/* Directed Tooltip Banner at top */}
+            <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[60] pointer-events-none flex flex-col items-center gap-1.5 animate-bounce">
+              <div className="px-3.5 py-1.5 rounded-md bg-[#0a120d]/95 border border-[#a6e26e] text-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.5)] flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#a6e26e] animate-ping" />
+                <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase">
+                  Hover edges for 2s to return to room view
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Invisible Screen-Edge Sensors: Hovering 2s at the edge returns to room view */}
+        <div
+          onMouseEnter={handleEdgeMouseEnter}
+          onMouseLeave={handleEdgeMouseLeave}
+          className="fixed top-0 bottom-0 left-0 w-4 z-50 cursor-zoom-out"
+          title="Hold 2s to return to room view"
+        />
+        <div
+          onMouseEnter={handleEdgeMouseEnter}
+          onMouseLeave={handleEdgeMouseLeave}
+          className="fixed top-0 bottom-0 right-0 w-4 z-50 cursor-zoom-out"
+          title="Hold 2s to return to room view"
+        />
+        <div
+          onMouseEnter={handleEdgeMouseEnter}
+          onMouseLeave={handleEdgeMouseLeave}
+          className="fixed bottom-0 left-0 right-0 h-4 z-50 cursor-zoom-out"
+          title="Hold 2s to return to room view"
+        />
+        <div
+          onMouseEnter={handleEdgeMouseEnter}
+          onMouseLeave={handleEdgeMouseLeave}
+          className="fixed top-0 left-0 right-0 h-3 z-50 cursor-zoom-out"
+          title="Hold 2s to return to room view"
+        />
 
         {/* Outer 3D Moulded Blue CRT Television Cabinet */}
         <div
@@ -870,6 +1035,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           {/*     Touching toggles Light Mode with an expanding ball of light! */}
           {/* ================================================================ */}
           <g
+            ref={bulbRef}
             onMouseEnter={() => setHoveredBulb(true)}
             onMouseLeave={() => setHoveredBulb(false)}
             onClick={handleTouchBulb}
@@ -972,11 +1138,10 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               />
             )}
 
-            {/* Internal Tungsten Filament with Ignition Burst Animation */}
+            {/* Internal Tungsten Filament */}
             <path
               d="M 829,276 L 829,304 L 823,316 L 835,308 L 847,316 L 841,304 L 841,276"
               fill="none"
-              className={lightTransition === 'turning-on' ? 'animate-filamentIgnite' : ''}
               stroke={isLightMode ? '#ffffff' : hoveredBulb ? '#a6e26e' : '#465949'}
               strokeWidth={isLightMode ? '2.4' : '1.6'}
               strokeLinejoin="round"
@@ -1019,8 +1184,9 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           {/* 3. BLUE CRT TV SITTING 100% INSIDE THE REAR CONSOLE DECK         */}
           {/* ================================================================ */}
           <g
-            onMouseEnter={handleTvZoomIn}
-            onClick={handleTvZoomIn}
+            onMouseEnter={handleTvMouseEnter}
+            onMouseLeave={handleTvMouseLeave}
+            onClick={triggerZoomIn}
             className="cursor-zoom-in"
           >
             {/* 3D Top Roof of Blue TV */}
@@ -1165,6 +1331,59 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 strokeLinecap="round"
               />
             ))}
+
+            {/* Directed Tooltip & TV Highlight on Load (Active for 5s in Room View) */}
+            {showGuideTooltip && (
+              <g className="pointer-events-none">
+                {/* Pulsing highlight around the TV cabinet */}
+                <polygon
+                  points="164,282 622,267 622,645 164,660"
+                  fill="none"
+                  stroke="#a6e26e"
+                  strokeWidth="3.5"
+                  strokeDasharray="8,6"
+                  className="animate-pulse"
+                  filter="url(#rtGlow)"
+                />
+                {/* Floating directed speech bubble pointing to TV */}
+                <g transform="translate(393, 220)" className="animate-bounce">
+                  {/* Tooltip background pill */}
+                  <rect
+                    x="-140"
+                    y="-38"
+                    width="280"
+                    height="32"
+                    rx="6"
+                    fill="#0a120d"
+                    fillOpacity="0.95"
+                    stroke="#a6e26e"
+                    strokeWidth="1.5"
+                    filter="url(#rtFineBlur)"
+                  />
+                  {/* Speech bubble pointer arrow pointing down to TV */}
+                  <polygon
+                    points="-8,-6 8,-6 0,4"
+                    fill="#0a120d"
+                    stroke="#a6e26e"
+                    strokeWidth="1.5"
+                  />
+                  <line x1="-7" y1="-6" x2="7" y2="-6" stroke="#0a120d" strokeWidth="2.5" />
+                  {/* Tooltip text */}
+                  <text
+                    x="0"
+                    y="-18"
+                    fill="#a6e26e"
+                    fontSize="11"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    letterSpacing="0.05em"
+                  >
+                    HOVER 2s (OR CLICK) TO ENTER TV
+                  </text>
+                </g>
+              </g>
+            )}
           </g>
 
           {/* ================================================================ */}
@@ -1767,52 +1986,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             </g>
           )}
         </svg>
-
-        {/* ================================================================== */}
-        {/* FRAMER-MOTION SMOOTH EXPANDING & CONTRACTING CIRCLE TRANSITION     */}
-        {/* Centered directly at the light bulb (43.5% horizontal, 28.7% vertical) */}
-        {/* ================================================================== */}
-        <AnimatePresence>
-          {lightTransition === 'turning-on' && (
-            <motion.div
-              key="expanding-light"
-              initial={{
-                clipPath: 'circle(0% at 43.5% 28.7%)',
-                opacity: 0.95,
-              }}
-              animate={{
-                clipPath: 'circle(150% at 43.5% 28.7%)',
-                opacity: [0.95, 0.85, 0],
-              }}
-              transition={{
-                duration: 1.05,
-                ease: [0.22, 1, 0.36, 1],
-                times: [0, 0.7, 1],
-              }}
-              className="fixed inset-0 z-50 pointer-events-none bg-[#ded3be]"
-            />
-          )}
-
-          {lightTransition === 'turning-off' && (
-            <motion.div
-              key="contracting-dark"
-              initial={{
-                clipPath: 'circle(150% at 43.5% 28.7%)',
-                opacity: 0,
-              }}
-              animate={{
-                clipPath: 'circle(0% at 43.5% 28.7%)',
-                opacity: [0, 0.85, 0],
-              }}
-              transition={{
-                duration: 0.95,
-                ease: [0.32, 0, 0.67, 0],
-                times: [0, 0.35, 1],
-              }}
-              className="fixed inset-0 z-50 pointer-events-none bg-[#020302]"
-            />
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );

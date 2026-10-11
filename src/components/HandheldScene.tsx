@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import type { Project } from '../data/projects';
 import { ConsoleScreenContent, type ScreenTab } from './ConsoleScreenContent';
 import type { SceneCameraMode } from './TVConsoleScene';
@@ -27,6 +28,78 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
+  const lightButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  const toggleLightModeWithTransition = async (btnEl?: HTMLButtonElement | null) => {
+    const willBeLight = !isLightMode;
+
+    if (
+      !document.startViewTransition ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      onToggleLightMode?.();
+      return;
+    }
+
+    const targetEl = btnEl || lightButtonRef.current;
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight * 0.75;
+    let left = x;
+    let top = y;
+
+    if (targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      left = rect.left;
+      top = rect.top;
+      x = rect.left + rect.width / 2;
+      y = rect.top + rect.height / 2;
+    }
+
+    const right = window.innerWidth - left;
+    const bottom = window.innerHeight - top;
+    const maxRadius = Math.hypot(
+      Math.max(left, right),
+      Math.max(top, bottom),
+    );
+
+    const transition = document.startViewTransition(() => {
+      flushSync(() => {
+        onToggleLightMode?.();
+      });
+    });
+
+    await transition.ready;
+
+    if (willBeLight) {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${maxRadius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 650,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        }
+      );
+    } else {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(${maxRadius}px at ${x}px ${y}px)`,
+            `circle(0px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 380,
+          easing: 'cubic-bezier(0.4, 0, 1, 1)',
+          pseudoElement: '::view-transition-old(root)',
+        }
+      );
+    }
+  };
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
   const highlightedProject =
@@ -291,7 +364,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             <div className="flex flex-col items-center">
               <button
                 type="button"
-                onClick={() => onToggleLightMode?.()}
+                onClick={(e) => toggleLightModeWithTransition(e.currentTarget)}
                 className="w-13 h-13 sm:w-15 sm:h-15 rounded-full cursor-pointer active:translate-y-1 transition-transform flex items-center justify-center relative"
                 style={{
                   background: isLightMode
@@ -365,8 +438,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 }}
               >
                 <button
+                  ref={lightButtonRef}
                   type="button"
-                  onClick={() => onToggleLightMode?.()}
+                  onClick={(e) => toggleLightModeWithTransition(e.currentTarget)}
                   className="w-14 h-3.5 sm:w-16 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
                   style={{
                     background: isLightMode
