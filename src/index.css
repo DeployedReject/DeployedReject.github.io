@@ -1,10 +1,18 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Symbols Nerd Font Mono';
+  src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
-    --font-pixel: 'Press Start 2P', monospace;
-    --font-crt: 'VT323', monospace;
-    --font-code: 'JetBrains Mono', monospace;
+    --font-pixel: 'Press Start 2P', 'Symbols Nerd Font Mono', monospace;
+    --font-crt: 'VT323', 'Symbols Nerd Font Mono', monospace;
+    --font-code: 'JetBrainsMono Nerd Font', 'Symbols Nerd Font Mono', 'JetBrains Mono', monospace;
   }
 
   body {
@@ -14,6 +22,24 @@
     margin: 0;
     padding: 0;
   }
+}
+
+.nf-glyph {
+  font-family: 'Symbols Nerd Font Mono', 'JetBrainsMono Nerd Font', monospace;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+}
+
+/* Dull and pixelated white font styling */
+.pixel-dull-white {
+  color: #b4beb4;
+  font-family: 'Press Start 2P', 'Symbols Nerd Font Mono', monospace;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  font-smooth: never;
+  image-rendering: pixelated;
+  text-shadow: 2px 2px 0px #060906, 0 0 8px rgba(166, 226, 110, 0.14);
 }
 
 /* CRT Screen Effects - DO NOT set position: relative here or it will override Tailwind's .absolute */
@@ -95,42 +121,51 @@
   background: #a6e26e;
 }
 
-/* Top-loading console cartridge insert & eject animations */
+/* Top-loading SVG console cartridge insert & eject animations */
 @keyframes insertCartridgeAnim {
   0% {
-    transform: translateY(-28%) scale(0.96);
-    opacity: 0.9;
+    transform: translateY(-96px);
+    opacity: 0;
   }
-  65% {
-    transform: translateY(34%) scale(1);
+  18% {
+    transform: translateY(-76px);
     opacity: 1;
   }
-  82% {
-    transform: translateY(30%) scale(1);
+  74% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+  88% {
+    transform: translateY(-2px);
+    opacity: 1;
   }
   100% {
-    transform: translateY(42%) scale(1);
+    transform: translateY(0px);
     opacity: 1;
   }
 }
 
 @keyframes ejectCartridgeAnim {
   0% {
-    transform: translateY(42%) scale(1);
+    transform: translateY(0px);
     opacity: 1;
   }
-  30% {
-    transform: translateY(15%) scale(1);
+  22% {
+    transform: translateY(5px);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-78px);
     opacity: 1;
   }
   100% {
-    transform: translateY(-35%) scale(0.95);
+    transform: translateY(-102px);
     opacity: 0;
   }
 }
 
 .animate-insertCartridge {
-  animation: insertCartridgeAnim 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: insertCartridgeAnim 0.68s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-ejectCartridge {
@@ -235,3 +270,84 @@
 .animate-fadeIn {
   animation: fadeInAnim 0.4s ease-out forwards;
 }
+
+/* Rapid CRT analog static snow jitter */
+@keyframes crtStaticJitter {
+  0% {
+    transform: translate3d(0, 0, 0);
+    background-position: 0% 0%, 0 0;
+  }
+  20% {
+    transform: translate3d(-3%, 2%, 0);
+    background-position: 35% 60%, 0 -18px;
+  }
+  40% {
+    transform: translate3d(2%, -3%, 0);
+    background-position: 70% 20%, 0 24px;
+  }
+  60% {
+    transform: translate3d(-2%, -2%, 0);
+    background-position: 15% 85%, 0 -32px;
+  }
+  80% {
+    transform: translate3d(3%, 1%, 0);
+    background-position: 85% 40%, 0 14px;
+  }
+  100% {
+    transform: translate3d(-1%, 3%, 0);
+    background-position: 50% 90%, 0 -10px;
+  }
+}
+
+.animate-crtStaticNoise {
+  animation: crtStaticJitter 0.16s steps(2, end) infinite;
+}
+
+/* Static filling the screen during zoom-in */
+@keyframes crtStaticFill {
+  0% {
+    opacity: 0;
+    filter: brightness(1.1) contrast(1.2);
+  }
+  35% {
+    opacity: 0.72;
+    filter: brightness(1.35) contrast(1.6);
+  }
+  75% {
+    opacity: 0.98;
+    filter: brightness(1.5) contrast(1.85);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1.25) contrast(1.65);
+  }
+}
+
+.animate-crtStaticFill {
+  animation: crtStaticFill 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Static clearing away to reveal the Fullscreen TV */
+@keyframes crtStaticClear {
+  0% {
+    opacity: 1;
+    filter: brightness(1.35) contrast(1.75);
+  }
+  40% {
+    opacity: 0.78;
+    filter: brightness(1.2) contrast(1.45);
+  }
+  75% {
+    opacity: 0.28;
+    filter: brightness(1.08) contrast(1.15);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(1) contrast(1);
+  }
+}
+
+.animate-crtStaticClear {
+  animation: crtStaticClear 0.46s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

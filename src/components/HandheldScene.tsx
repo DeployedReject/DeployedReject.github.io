@@ -29,6 +29,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
 }) => {
   const [screenTab, setScreenTab] = useState<ScreenTab>('cartridges');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
   const [paletteIndex, setPaletteIndex] = useState<number>(0);
 
@@ -39,6 +40,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
 
   const cycleTab = (dir: 'prev' | 'next') => {
     const idx = TABS.indexOf(screenTab);
+    setOptionIndex(0);
     if (dir === 'next') {
       setScreenTab(TABS[(idx + 1) % TABS.length]);
     } else {
@@ -47,14 +49,15 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   };
 
   const cycleItem = (dir: 'prev' | 'next') => {
-    if (screenTab !== 'cartridges') {
-      setScreenTab('cartridges');
+    if (screenTab === 'cartridges') {
+      setSelectedIndex((prev) =>
+        dir === 'next'
+          ? (prev + 1) % projects.length
+          : (prev - 1 + projects.length) % projects.length
+      );
+    } else {
+      setOptionIndex((prev) => (dir === 'next' ? prev + 1 : Math.max(0, prev - 1)));
     }
-    setSelectedIndex((prev) =>
-      dir === 'next'
-        ? (prev + 1) % projects.length
-        : (prev - 1 + projects.length) % projects.length
-    );
   };
 
   const cyclePalette = () => {
@@ -109,7 +112,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             />
             <span
               className="text-[7px] text-[#b8aca3] tracking-wider uppercase"
-              style={{ fontFamily: "'Press Start 2P', monospace" }}
+              style={{ fontFamily: "var(--font-pixel)" }}
             >
               {currentPalette.name}
             </span>
@@ -124,7 +127,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             />
             <span
               className="text-[7px] text-[#e6cf65]"
-              style={{ fontFamily: "'Press Start 2P', monospace" }}
+              style={{ fontFamily: "var(--font-pixel)" }}
             >
               ROM: {highlightedProject.name.toUpperCase()}
             </span>
@@ -145,6 +148,15 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             projects={projects}
             activeTab={screenTab}
             selectedIndex={selectedIndex}
+            optionIndex={optionIndex}
+            onSelectOptionIndex={setOptionIndex}
+            onTriggerOption={(opt) => {
+              if (opt.action === 'ping') {
+                setPingRefreshKey((prev) => prev + 1);
+              } else if (opt.url) {
+                window.open(opt.url, '_blank', 'noopener,noreferrer');
+              }
+            }}
             pingRefreshKey={pingRefreshKey}
             isTableZoomedOut={false}
             insertingProject={
@@ -187,13 +199,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         <div className="relative z-10 flex items-center justify-between px-2 py-1 rounded-md bg-[#c4b19c]/70 border border-[#a6927c] shadow-[inset_0_2px_4px_rgba(70,54,40,0.35),0_1px_0_rgba(255,255,255,0.6)]">
           <span
             className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
+            style={{ fontFamily: "var(--font-pixel)" }}
           >
-            ◀▶ CHANNEL  •  ▲▼ ROM
+            \uf053\uf054 CHANNEL  |  \uf077\uf078 ROM
           </span>
           <span
             className="text-[7px] sm:text-[8px] text-[#7c2d38] font-bold tracking-wider"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
+            style={{ fontFamily: "var(--font-pixel)" }}
           >
             [A] LOAD ROM
           </span>

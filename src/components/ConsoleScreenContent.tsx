@@ -9,10 +9,97 @@ import {
 
 export type ScreenTab = 'status' | 'cartridges' | 'github' | 'pings' | 'hire';
 
+export interface ChannelOption {
+  label: string;
+  action: 'ping' | 'url';
+  url?: string;
+}
+
+export function getChannelOptions(
+  activeTab: ScreenTab,
+  stats: DeveloperStats | null
+): ChannelOption[] {
+  if (activeTab === 'status') {
+    return [
+      {
+        label: '\uf09b  Open GitHub Profile (github.com/DeployedReject)',
+        action: 'url',
+        url: 'https://github.com/DeployedReject',
+      },
+      {
+        label: '\uf126  Open Codeberg Profile (codeberg.org/DeployedReject)',
+        action: 'url',
+        url: 'https://codeberg.org/DeployedReject',
+      },
+    ];
+  }
+  if (activeTab === 'github') {
+    const commits = stats?.recentCommits || [
+      { repo: 'murces', message: 'drop windows support, wsl only', date: '10-11' },
+      { repo: 'SentricTechnologies', message: 'update map view and mqtt handler', date: '10-04' },
+      { repo: 'Cireu', message: 'fix light theme colors', date: '10-11' },
+    ];
+    const uniqueRepos = Array.from(new Set(commits.map((c) => c.repo))).slice(0, 3);
+    return [
+      ...uniqueRepos.map((repo) => ({
+        label: `\uf126  Open Repo: DeployedReject/${repo}`,
+        action: 'url' as const,
+        url: `https://github.com/DeployedReject/${repo}`,
+      })),
+      {
+        label: '\uf09b  View All Repositories on GitHub',
+        action: 'url',
+        url: 'https://github.com/DeployedReject?tab=repositories',
+      },
+    ];
+  }
+  if (activeTab === 'pings') {
+    return [
+      {
+        label: '\uf021  Re-Ping Active Servers (144.24.141.13 & 150.230.141.102)',
+        action: 'ping',
+      },
+      {
+        label: '\uf233  Open Aggregator Server (144.24.141.13)',
+        action: 'url',
+        url: 'http://144.24.141.13',
+      },
+      {
+        label: '\uf233  Open Sentric Technologies Server (150.230.141.102)',
+        action: 'url',
+        url: 'http://150.230.141.102',
+      },
+    ];
+  }
+  if (activeTab === 'hire') {
+    return [
+      {
+        label: '\uf09b  GitHub   : github.com/DeployedReject',
+        action: 'url',
+        url: 'https://github.com/DeployedReject',
+      },
+      {
+        label: '\uf126  Codeberg : codeberg.org/DeployedReject',
+        action: 'url',
+        url: 'https://codeberg.org/DeployedReject',
+      },
+      {
+        label: '\uf0e0  Email    : mishravaibhav2048@gmail.com',
+        action: 'url',
+        url: 'mailto:mishravaibhav2048@gmail.com',
+      },
+    ];
+  }
+  return [];
+}
+
 interface ConsoleScreenContentProps {
   projects: Project[];
   activeTab: ScreenTab;
   selectedIndex?: number;
+  optionIndex?: number;
+  onSelectOptionIndex?: (idx: number) => void;
+  onTriggerOption?: (opt: ChannelOption) => void;
   pingRefreshKey?: number;
   isTableZoomedOut: boolean;
   insertingProject?: Project | null;
@@ -36,6 +123,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   projects,
   activeTab,
   selectedIndex = 0,
+  optionIndex = 0,
+  onSelectOptionIndex,
+  onTriggerOption,
   pingRefreshKey = 0,
   isTableZoomedOut,
   insertingProject = null,
@@ -71,6 +161,16 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
     ((selectedIndex % projects.length) + projects.length) % projects.length;
   const highlightedProject = projects[normalizedIndex] || projects[0];
 
+  const channelOptions = useMemo(
+    () => getChannelOptions(activeTab, stats),
+    [activeTab, stats]
+  );
+  const safeOptionIndex =
+    channelOptions.length > 0
+      ? ((optionIndex % channelOptions.length) + channelOptions.length) %
+        channelOptions.length
+      : 0;
+
   // Ensure the selected ROM option is always scrolled into view when navigating on mobile
   useEffect(() => {
     if (activeTab === 'cartridges') {
@@ -96,7 +196,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
         { name: 'Shell       ', percent: 12, blocks: 3 },
       ];
       return [
-        'DeployedReject (Vaibhav)',
+        '\uf120 DeployedReject (Vaibhav)',
         '----------------------------------------',
         ...langs.map(
           (l) => `${l.name} [${makeBlockBar(l.blocks, 10)}] ${String(l.percent).padStart(2, ' ')}%`
@@ -117,7 +217,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
         { repo: 'Cireu', message: 'fix light theme colors', date: '10-11' },
       ];
       return [
-        `COMMITS (365D): ${s?.totalCommitsYear ?? 482}   |   FOLLOWERS: ${s?.followers ?? 12}`,
+        `\uf126 COMMITS (365D): ${s?.totalCommitsYear ?? 482}   |   FOLLOWERS: ${s?.followers ?? 12}`,
         '----------------------------------------',
         ...commits.slice(0, 4).map(
           (c) => `[${c.date}] ${c.repo.slice(0, 10).padEnd(10, ' ')}: ${c.message.slice(0, 26)}`
@@ -127,7 +227,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
     if (activeTab === 'pings') {
       return [
-        'SERVERS:',
+        '\uf233 SERVERS:',
         '----------------------------------------',
         ...pings.map((p) => {
           if (p.status === 'HIDDEN') {
@@ -150,11 +250,8 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
     // hire / contact tab
     return [
-      'CONTACT:',
+      '\uf0e0 SELECT CONTACT CHANNEL & PRESS ENTER:',
       '----------------------------------------',
-      'GITHUB   : github.com/DeployedReject',
-      'CODEBERG : codeberg.org/DeployedReject',
-      'EMAIL    : mishravaibhav2048@gmail.com',
     ];
   }, [activeTab, stats, pings, insertingProject]);
 
@@ -198,19 +295,19 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
   return (
     <div
-      className="w-full h-full bg-[#070c08] text-[#a6e26e] p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none pointer-events-none relative overflow-hidden"
+      className="w-full h-full bg-[#070c08] text-[#a6e26e] p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none relative overflow-hidden"
       style={{
-        fontFamily: "'VT323', monospace",
+        fontFamily: "var(--font-crt)",
         imageRendering: 'pixelated',
         background:
           'radial-gradient(circle at 50% 45%, #121f14 0%, #09100a 68%, #040704 100%)',
       }}
     >
       {/* Top CRT On-Screen Display (OSD) Channel Bar */}
-      <div className="border-b-2 border-[#4b6e32]/80 pb-2 flex items-center justify-between gap-2 shrink-0">
+      <div className="border-b-2 border-[#4b6e32]/80 pb-2 flex items-center justify-between gap-2 shrink-0 pointer-events-none">
         <div
           className="flex flex-wrap gap-1.5 sm:gap-2"
-          style={{ fontFamily: "'Press Start 2P', monospace" }}
+          style={{ fontFamily: "var(--font-pixel)" }}
         >
           {tabs.map((t, idx) => {
             const active = activeTab === t.id;
@@ -231,7 +328,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
         <div
           className="text-[9px] sm:text-[11px] text-[#e6cf65] px-2 py-0.5 bg-[#1b2819] border border-[#5c8244] shadow-[0_0_8px_rgba(230,207,101,0.25)] shrink-0"
-          style={{ fontFamily: "'Press Start 2P', monospace" }}
+          style={{ fontFamily: "var(--font-pixel)" }}
         >
           CH-0{activeChannelNum}
         </div>
@@ -241,19 +338,16 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
       <div className="flex-1 pt-2 sm:pt-3 min-h-0 flex flex-col md:flex-row gap-4 items-stretch justify-between overflow-hidden">
         {/* ROM Loading Animation with Logo & Description */}
         {insertingProject ? (
-          <div className="w-full h-full flex flex-col items-center justify-center text-center p-2 gap-3 animate-fadeIn">
+          <div className="w-full h-full flex flex-col items-center justify-center text-center p-2 gap-3 animate-fadeIn pointer-events-none">
             <img
               src={insertingProject.labelSvg}
               alt={insertingProject.name}
               className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.5)]"
             />
-            <div
-              className="text-white font-bold text-sm sm:text-base tracking-wide"
-              style={{ fontFamily: "'Press Start 2P', monospace" }}
-            >
+            <div className="pixel-dull-white text-xs sm:text-sm tracking-wide">
               {SHORT_NAMES[insertingProject.id] || insertingProject.name}
             </div>
-            <div className="text-white font-bold text-sm sm:text-lg max-w-md leading-snug font-sans">
+            <div className="pixel-dull-white text-[10px] sm:text-xs max-w-md leading-relaxed">
               "{insertingProject.originNote || insertingProject.tagline}"
             </div>
             <div className="w-40 sm:w-56 h-2 bg-[#142016] border border-[#5c8244] rounded overflow-hidden mt-1">
@@ -264,9 +358,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
           <div className="flex-1 flex flex-col justify-between min-h-0 overflow-hidden">
             {fullText && (
               <pre
-                className="whitespace-pre-wrap break-words text-[16px] sm:text-[20px] md:text-[23px] leading-[1.22] tracking-wide text-[#b5ec82] m-0 font-normal"
+                className="whitespace-pre-wrap break-words text-[16px] sm:text-[20px] md:text-[22px] leading-[1.2] tracking-wide text-[#b5ec82] m-0 font-normal pointer-events-none"
                 style={{
-                  fontFamily: "'VT323', monospace",
+                  fontFamily: "var(--font-crt)",
                   textShadow: '0 0 8px rgba(166, 226, 110, 0.5)',
                 }}
               >
@@ -278,7 +372,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
             {/* Scrollable ROMs List when on ROMS channel (Mobile Handheld only) */}
             {!hideRomsTab && activeTab === 'cartridges' && (
-              <div className="flex-1 flex flex-col justify-between min-h-0 gap-2 overflow-hidden">
+              <div className="flex-1 flex flex-col justify-between min-h-0 gap-2 overflow-hidden pointer-events-none">
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1">
                   {projects.map((p, i) => {
                     const isSelected = p.id === highlightedProject.id;
@@ -296,13 +390,13 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                         }`}
                       >
                         <span className="text-[16px] sm:text-[19px] md:text-[21px] tracking-wide">
-                          {isSelected ? '► ' : '  '}[{i + 1}] {shortName}
+                          {isSelected ? '\uf054 ' : '  '}[{i + 1}] {shortName}
                         </span>
                         <span
                           className={`text-[8px] sm:text-[9px] px-1.5 py-0.5 ${
                             isSelected ? 'bg-[#0c140d] text-[#e6cf65]' : 'text-[#6c9e46]'
                           }`}
-                          style={{ fontFamily: "'Press Start 2P', monospace" }}
+                          style={{ fontFamily: "var(--font-pixel)" }}
                         >
                           ROM
                         </span>
@@ -312,8 +406,8 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                 </div>
 
                 {/* Personal Origin Note for Highlighted Project */}
-                <div className="shrink-0 p-2 sm:p-2.5 bg-[#152216]/95 border border-[#5c8244] text-[#f0f7e6]">
-                  <div className="text-[14px] sm:text-[18px] md:text-[20px] leading-tight">
+                <div className="shrink-0 p-2 sm:p-2.5 bg-[#152216]/95 border border-[#5c8244]">
+                  <div className="pixel-dull-white text-[9px] sm:text-[11px] leading-relaxed">
                     "{highlightedProject.originNote || highlightedProject.tagline}"
                   </div>
                 </div>
@@ -321,17 +415,17 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             )}
 
             {/* Contribution Matrix on Commits tab */}
-            {activeTab === 'github' && stats && (
-              <div className="mt-2 pt-2 border-t border-[#375224] shrink-0">
+            {activeTab === 'github' && stats && !isTableZoomedOut && (
+              <div className="mt-1.5 pt-1.5 border-t border-[#375224] shrink-0 pointer-events-none">
                 <div className="flex flex-col gap-[3px]">
-                  {stats.contributionGrid.slice(0, 5).map((row, rIdx) => (
+                  {stats.contributionGrid.slice(0, 4).map((row, rIdx) => (
                     <div key={rIdx} className="flex gap-[3px]">
                       {row.slice(0, 22).map((lvl, cIdx) => {
                         const colors = ['#18261a', '#2f4d26', '#52803a', '#7ec252', '#c4f78b'];
                         return (
                           <div
                             key={cIdx}
-                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[1px]"
+                            className="w-2.5 h-2.5 rounded-[1px]"
                             style={{ backgroundColor: colors[Math.min(4, lvl)] }}
                           />
                         );
@@ -341,28 +435,54 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Right Side Cartridge Label Artwork (Only when ROMs tab is enabled and not zoomed out) */}
-        {!insertingProject && !isTableZoomedOut && !hideRomsTab && (
-          <div className="hidden md:flex w-52 lg:w-60 shrink-0 flex-col justify-between border-2 border-[#4b6e32] bg-[#101a11]/90 p-2 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
-            <div className="relative flex-1 rounded border border-[#5c8244] overflow-hidden bg-[#0a100b] flex items-center justify-center">
-              <img
-                src={highlightedProject.labelSvg}
-                alt={highlightedProject.name}
-                className="w-full h-full object-cover opacity-90 filter contrast-110"
-              />
-              <div
-                className="absolute bottom-1.5 inset-x-1.5 bg-[#0e170f]/95 border border-[#a6e26e] px-2 py-1 text-center text-[9px] text-[#e6cf65]"
-                style={{ fontFamily: "'Press Start 2P', monospace" }}
-              >
-                {SHORT_NAMES[highlightedProject.id] || highlightedProject.name}
+            {/* Selectable Channel Options (Opened by the TV's single ENTER button) */}
+            {!isTableZoomedOut && activeTab !== 'cartridges' && channelOptions.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-[#375224]/90 shrink-0 space-y-1 pointer-events-auto">
+                <div
+                  className="text-[8px] text-[#7ec252] uppercase tracking-wider mb-1 flex items-center justify-between"
+                  style={{ fontFamily: "var(--font-pixel)" }}
+                >
+                  <span>\uf0a4 OPTIONS (CLICK OR ↑/↓ + ENTER)</span>
+                  <span>[{safeOptionIndex + 1}/{channelOptions.length}]</span>
+                </div>
+                {channelOptions.map((opt, idx) => {
+                  const isSel = idx === safeOptionIndex;
+                  return (
+                    <div
+                      key={opt.label}
+                      onClick={() => {
+                        onSelectOptionIndex?.(idx);
+                        onTriggerOption?.(opt);
+                      }}
+                      onMouseEnter={() => onSelectOptionIndex?.(idx)}
+                      className={`px-2.5 py-1 border text-[15px] sm:text-[18px] flex items-center justify-between cursor-pointer transition-all ${
+                        isSel
+                          ? 'bg-[#a6e26e] text-[#09120a] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.45)]'
+                          : 'bg-[#101a11]/85 text-[#9cd66c] border-[#2d4520] hover:border-[#5c8244]'
+                      }`}
+                    >
+                      <span className="truncate">
+                        {isSel ? '\uf054 ' : '  '}
+                        {opt.label}
+                      </span>
+                      {isSel && (
+                        <span
+                          className="text-[8px] px-1.5 py-0.5 bg-[#09120a] text-[#e6cf65] shrink-0 ml-2"
+                          style={{ fontFamily: "var(--font-pixel)" }}
+                        >
+                          \uf061 ENTER
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
     </div>
   );
 };
+

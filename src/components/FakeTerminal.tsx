@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { Terminal as TerminalIcon, CornerDownLeft, Sparkles } from 'lucide-react';
-
 
 interface FakeTerminalProps {
   initialLogs: string[];
@@ -98,19 +96,19 @@ export const FakeTerminal: React.FC<FakeTerminalProps> = ({
           <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
           <span className="text-stone-400 font-medium ml-2 flex items-center gap-1.5 text-xs">
-            <TerminalIcon className="w-3.5 h-3.5 text-stone-400" />
+            <span className="nf-glyph text-stone-400">{'\uf120'}</span>
             guest@deployedreject-node: ~
           </span>
         </div>
         <div className="text-[11px] text-stone-500 hidden sm:block">
-          Interactive Mock TUI • Full Tab & History
+          Interactive Mock TUI | Full Tab &amp; History
         </div>
       </div>
 
       {/* Quick Action Chips for Easy Clicking / Mobile Discovery */}
       <div className="px-3 py-1.5 bg-stone-900/60 border-b border-stone-800/80 flex items-center gap-1.5 overflow-x-auto text-[11px] text-stone-300">
         <span className="text-stone-500 shrink-0 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-amber-400" /> Quick runs:
+          <span className="nf-glyph text-amber-400">{'\uf0e7'}</span> Quick runs:
         </span>
         {quickCommands.map((cmd) => (
           <button
@@ -139,7 +137,7 @@ export const FakeTerminal: React.FC<FakeTerminalProps> = ({
           if (item.type === 'input') {
             return (
               <div key={idx} className="flex items-start space-x-2 text-stone-100">
-                <span className="text-emerald-400 shrink-0 font-bold">❯</span>
+                <span className="text-emerald-400 shrink-0 font-bold nf-glyph">{'\uf054'}</span>
                 <span className="font-semibold">{item.text}</span>
               </div>
             );
@@ -164,7 +162,7 @@ export const FakeTerminal: React.FC<FakeTerminalProps> = ({
 
         {/* Input Line */}
         <div className="flex items-center space-x-2 pt-1">
-          <span className="text-emerald-400 font-bold shrink-0">❯</span>
+          <span className="text-emerald-400 font-bold shrink-0 nf-glyph">{'\uf054'}</span>
           <input
             ref={inputRef}
             type="text"
@@ -176,13 +174,14 @@ export const FakeTerminal: React.FC<FakeTerminalProps> = ({
           />
           <button
             onClick={() => handleCommand(inputVal)}
-            className="p-1 text-stone-500 hover:text-emerald-400 transition-colors"
+            className="p-1 text-stone-500 hover:text-emerald-400 transition-colors nf-glyph"
             title="Execute"
           >
-            <CornerDownLeft className="w-3.5 h-3.5" />
+            {'\uf061'}
           </button>
         </div>
       </div>
     </div>
   );
 };
+

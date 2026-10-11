@@ -1,6 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Project } from '../data/projects';
-import { ConsoleScreenContent, type ScreenTab } from './ConsoleScreenContent';
+import {
+  ConsoleScreenContent,
+  getChannelOptions,
+  type ScreenTab,
+  type ChannelOption,
+} from './ConsoleScreenContent';
+import { fetchDeveloperStats, type DeveloperStats } from '../services/githubStats';
 
 export type SceneCameraMode = 'closeup' | 'table' | 'inserting' | 'zooming-in' | 'ejecting';
 
@@ -30,50 +36,85 @@ const CRT_TINTS = [
 ];
 
 /**
- * 3D Skeuomorphic Rotary Dial on the Fullscreen TV Control Deck.
+ * Fullscreen CRT Analog Static Overlay (used when zooming in to fill the screen
+ * with static and then clearing to show the TV, and during zoom-out).
  */
-const RetroRotaryKnob: React.FC<{
+const CRTStaticOverlay: React.FC<{ mode: 'fill' | 'clear' }> = ({ mode }) => {
+  return (
+    <div
+      className={`fixed inset-0 z-[80] pointer-events-none overflow-hidden ${
+        mode === 'fill' ? 'animate-crtStaticFill' : 'animate-crtStaticClear'
+      }`}
+    >
+      {/* Rapidly Jittering Analog CRT Snow + Green Phosphor Grain */}
+      <div
+        className="absolute -inset-10 animate-crtStaticNoise"
+        style={{
+          backgroundColor: '#050a06',
+          backgroundImage: `
+            repeating-radial-gradient(circle at 25% 35%, rgba(196, 210, 196, 0.92) 0px, rgba(10, 18, 12, 0.96) 1.5px, rgba(166, 226, 110, 0.8) 3px, rgba(4, 8, 5, 0.98) 4.5px),
+            repeating-radial-gradient(circle at 75% 65%, rgba(220, 230, 220, 0.85) 0px, rgba(0, 0, 0, 0.92) 2px, rgba(126, 194, 82, 0.65) 3.5px, rgba(8, 14, 10, 0.96) 5px),
+            repeating-linear-gradient(0deg, rgba(166, 226, 110, 0.32) 0px, rgba(0, 0, 0, 0.88) 2px, rgba(210, 225, 210, 0.24) 4px)
+          `,
+          backgroundSize: '26px 26px, 34px 34px, 100% 6px',
+        }}
+      />
+      {/* Rolling Horizontal Sync Interference Band */}
+      <div
+        className="absolute inset-x-0 top-1/3 h-24 opacity-60"
+        style={{
+          background:
+            'linear-gradient(180deg, transparent 0%, rgba(166,226,110,0.45) 45%, rgba(220,235,220,0.7) 50%, rgba(166,226,110,0.45) 55%, transparent 100%)',
+        }}
+      />
+    </div>
+  );
+};
+
+/**
+ * Pure SVG Rotary Dial used in Fullscreen TV View — matches the exact SVG look
+ * of the rotary dials on the zoomed-out Blue TV.
+ */
+const MatchingSvgRotaryKnob: React.FC<{
   angle: number;
   onTurnClockwise: () => void;
   onTurnCounterClockwise: () => void;
   label: string;
   sublabel: string;
-  accentColor?: string;
+  accentColor: string;
 }> = ({
   angle,
   onTurnClockwise,
   onTurnCounterClockwise,
   label,
   sublabel,
-  accentColor = '#a6e26e',
+  accentColor,
 }) => {
   return (
-    <div className="flex flex-col items-center select-none">
-      {/* Label Plate Above Knob */}
+    <div className="flex flex-col items-center select-none w-full">
       <div className="w-full flex items-center justify-between px-1 mb-1">
         <span
-          className="text-[8px] tracking-wider text-[#d9c8b4] font-bold uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]"
-          style={{ fontFamily: "'Press Start 2P', monospace" }}
+          className="text-[8px] tracking-wider text-[#b4beb4] uppercase"
+          style={{ fontFamily: 'var(--font-pixel)' }}
         >
           {label}
         </span>
-        <span className="text-[10px] font-mono text-[#a6e26e] bg-[#161a16] px-1.5 py-0.2 rounded border border-[#3a4a35] shadow-inner">
+        <span className="text-[10px] font-mono text-[#a6e26e] bg-[#0b1522] px-1.5 py-0.2 rounded border border-[#2d4a6b]">
           {sublabel}
         </span>
       </div>
 
-      {/* Recessed Well + 3D Knob */}
-      <div className="relative flex items-center gap-1.5">
+      <div className="relative flex items-center justify-center gap-2">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onTurnCounterClockwise();
           }}
-          className="w-6 h-6 rounded bg-[#2c2724] hover:bg-[#3d3632] active:translate-y-0.5 border border-[#574d47] text-[#d9c8b4] text-xs font-mono flex items-center justify-center cursor-pointer shadow-[0_2px_0_#141110]"
+          className="w-6 h-6 rounded bg-[#102033] hover:bg-[#19304d] active:translate-y-0.5 border border-[#32537a] text-[#b4beb4] text-xs flex items-center justify-center cursor-pointer shadow-[0_2px_0_#070e17] nf-glyph"
           title={`Turn ${label} Counter-Clockwise`}
         >
-          ◀
+          {'\uf053'}
         </button>
 
         <div
@@ -91,75 +132,74 @@ const RetroRotaryKnob: React.FC<{
             if (e.deltaY > 0) onTurnClockwise();
             else onTurnCounterClockwise();
           }}
-          title={`Click to turn ${label} (or scroll mousewheel)`}
+          title={`Click or scroll to turn ${label}`}
           className="relative w-20 h-20 xl:w-22 xl:h-22 rounded-full cursor-pointer group flex items-center justify-center"
         >
-          <svg viewBox="0 0 120 120" className="absolute inset-0 w-full h-full pointer-events-none">
-            <defs>
-              <radialGradient id={`well-${label}`} cx="0.5" cy="0.5" r="0.5">
-                <stop offset="0.65" stopColor="#1c1816" />
-                <stop offset="0.92" stopColor="#2d2724" />
-                <stop offset="1" stopColor="#4f4640" />
-              </radialGradient>
-            </defs>
-            <circle cx="60" cy="60" r="56" fill={`url(#well-${label})`} stroke="#14110f" strokeWidth="2" />
+          {/* Exact Same SVG Dial Geometry as the Zoomed-Out TV */}
+          <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
+            {/* Outer Tick Marks */}
             {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((deg) => (
               <line
                 key={deg}
-                x1="60"
-                y1="7"
-                x2="60"
-                y2="12"
-                stroke={deg % 72 === 0 ? accentColor : '#786b60'}
+                x1="50"
+                y1="4"
+                x2="50"
+                y2="10"
+                stroke={deg % 72 === 0 ? accentColor : '#3e5c82'}
                 strokeWidth={deg % 72 === 0 ? '2.5' : '1.5'}
                 strokeLinecap="round"
-                transform={`rotate(${deg} 60 60)`}
+                transform={`rotate(${deg} 50 50)`}
               />
             ))}
-          </svg>
 
-          <div className="absolute w-[74%] h-[74%] rounded-full translate-y-1.5 translate-x-0.5 bg-black/75 blur-[3px] pointer-events-none" />
-
-          <div
-            className="relative w-[74%] h-[74%] rounded-full pointer-events-none border border-[#fff2e2]/40 group-hover:brightness-105 transition-all"
-            style={{
-              background:
-                'linear-gradient(135deg, #f3e3ce 0%, #dcc6ad 48%, #b39980 85%, #8c735d 100%)',
-              boxShadow:
-                'inset 0 2px 4px rgba(255,255,255,0.65), inset 0 -4px 6px rgba(60,45,32,0.7)',
-            }}
-          >
-            <div
-              className="absolute inset-[12%] rounded-full"
-              style={{
-                background: 'linear-gradient(135deg, #c2ab93 0%, #dfd0be 60%, #f0e2d0 100%)',
-                boxShadow: 'inset 0 3px 6px rgba(70,54,40,0.45)',
-              }}
+            {/* Outer Ring (#132236 with #3d6089 border, matching zoomed-out SVG TV) */}
+            <circle
+              cx="50"
+              cy="50"
+              r="38"
+              fill="#111f30"
+              stroke="#3b5e87"
+              strokeWidth="3"
             />
-          </div>
+            {/* Subtle Green Ray-Traced Rim Highlight on Left Arc */}
+            <path
+              d="M 22,24 A 38,38 0 0,0 22,76"
+              fill="none"
+              stroke="#a6e26e"
+              strokeWidth="2"
+              strokeOpacity="0.55"
+            />
 
-          <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-            style={{ transform: `rotate(${angle}deg)` }}
-          >
-            <div
-              className="w-[22%] h-[68%] rounded-full relative"
+            {/* Inner Cap (#1b2f48) */}
+            <circle
+              cx="50"
+              cy="50"
+              r="27"
+              fill="#1b2f48"
+              stroke="#2a4669"
+              strokeWidth="1.5"
+            />
+
+            {/* Rotating Pointer Line (Matches zoomed-out TV knob pointer) */}
+            <g
               style={{
-                background: 'linear-gradient(90deg, #f7ead9 0%, #e5cfb5 55%, #a88e75 100%)',
-                boxShadow:
-                  '0 3px 6px rgba(0,0,0,0.65), inset 0 1px 2px rgba(255,255,255,0.8)',
-                border: '1px solid rgba(120,95,72,0.5)',
+                transform: `rotate(${angle}deg)`,
+                transformOrigin: '50px 50px',
+                transition: 'transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
-              <div
-                className="w-1.5 h-3 mx-auto mt-1.5 rounded-full"
-                style={{
-                  backgroundColor: accentColor,
-                  boxShadow: `0 0 6px ${accentColor}`,
-                }}
+              <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="25"
+                stroke={accentColor}
+                strokeWidth="4.5"
+                strokeLinecap="round"
               />
-            </div>
-          </div>
+              <circle cx="50" cy="50" r="4.5" fill="#0d1826" stroke={accentColor} strokeWidth="1.5" />
+            </g>
+          </svg>
         </div>
 
         <button
@@ -168,171 +208,12 @@ const RetroRotaryKnob: React.FC<{
             e.stopPropagation();
             onTurnClockwise();
           }}
-          className="w-6 h-6 rounded bg-[#2c2724] hover:bg-[#3d3632] active:translate-y-0.5 border border-[#574d47] text-[#d9c8b4] text-xs font-mono flex items-center justify-center cursor-pointer shadow-[0_2px_0_#141110]"
+          className="w-6 h-6 rounded bg-[#102033] hover:bg-[#19304d] active:translate-y-0.5 border border-[#32537a] text-[#b4beb4] text-xs flex items-center justify-center cursor-pointer shadow-[0_2px_0_#070e17] nf-glyph"
           title={`Turn ${label} Clockwise`}
         >
-          ▶
+          {'\uf054'}
         </button>
       </div>
-    </div>
-  );
-};
-
-/**
- * Side-View (Spine View) Cartridge sitting on the Shelf.
- * Displays the artwork icon on the left, the project name along the spine,
- * and smoothly pulls out slightly toward the viewer on hover.
- */
-const CartridgeSideSpine: React.FC<{
-  project: Project;
-  isHovered: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-  onClick: () => void;
-}> = ({ project, isHovered, onMouseEnter, onMouseLeave, onClick }) => {
-  return (
-    <div
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
-      className={`group relative w-full h-15 xl:h-17 cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-        isHovered
-          ? '-translate-x-7 translate-y-1 scale-[1.03] z-30'
-          : 'translate-x-0 translate-y-0 z-10'
-      }`}
-    >
-      {/* Pure SVG 3D Side-View Cartridge Spine */}
-      <svg
-        viewBox="0 0 540 96"
-        className="w-full h-full overflow-visible"
-        style={{
-          filter: isHovered
-            ? 'drop-shadow(12px 14px 18px rgba(0,0,0,0.95)) drop-shadow(-4px 0 16px rgba(166,226,110,0.35))'
-            : 'drop-shadow(4px 8px 10px rgba(0,0,0,0.85))',
-        }}
-      >
-        <defs>
-          <linearGradient id={`spine-body-${project.id}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={isHovered ? '#2a3b2c' : '#1f2b21'} />
-            <stop offset="18%" stopColor={isHovered ? '#233025' : '#19221a'} />
-            <stop offset="100%" stopColor="#101511" />
-          </linearGradient>
-
-          <linearGradient id={`spine-top-${project.id}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={isHovered ? '#4e6e52' : '#314534'} />
-            <stop offset="100%" stopColor="#161f18" />
-          </linearGradient>
-
-          <clipPath id={`spine-icon-clip-${project.id}`}>
-            <rect x="26" y="21" width="54" height="54" rx="8" />
-          </clipPath>
-        </defs>
-
-        {/* 3D Top Depth Face (More visible as cartridge pulls out on hover) */}
-        <polygon
-          points="10,12 34,2 532,2 512,12"
-          fill={`url(#spine-top-${project.id})`}
-          stroke={isHovered ? '#a6e26e' : '#3b523e'}
-          strokeOpacity={isHovered ? '0.7' : '0.35'}
-          strokeWidth="1"
-        />
-
-        {/* 3D Right Depth End-Cap */}
-        <polygon
-          points="512,12 532,2 532,76 512,86"
-          fill="#0c100d"
-          stroke="#253327"
-          strokeWidth="1"
-        />
-
-        {/* Main Cartridge Side Spine Face */}
-        <rect
-          x="10"
-          y="12"
-          width="502"
-          height="74"
-          rx="6"
-          fill={`url(#spine-body-${project.id})`}
-          stroke={isHovered ? '#a6e26e' : '#384f3b'}
-          strokeOpacity={isHovered ? '0.9' : '0.5'}
-          strokeWidth={isHovered ? '2' : '1.5'}
-        />
-
-        {/* Left Edge Green Light Catch (Faces the CRT TV) */}
-        <line
-          x1="11"
-          y1="15"
-          x2="11"
-          y2="83"
-          stroke="#a6e26e"
-          strokeWidth={isHovered ? '3.5' : '2'}
-          strokeOpacity={isHovered ? '0.95' : '0.55'}
-        />
-
-        {/* Recessed Spine Label Slot */}
-        <rect
-          x="20"
-          y="17"
-          width="415"
-          height="62"
-          rx="6"
-          fill="#0b0f0c"
-          stroke={isHovered ? '#5c8244' : '#253327'}
-          strokeWidth="1.5"
-        />
-
-        {/* Project Artwork Icon on the Left of the Spine */}
-        <rect
-          x="25"
-          y="20"
-          width="56"
-          height="56"
-          rx="8"
-          fill="#141c15"
-          stroke={project.accentColor}
-          strokeWidth="1.5"
-        />
-        <image
-          href={project.labelSvg}
-          x="26"
-          y="21"
-          width="54"
-          height="54"
-          preserveAspectRatio="xMidYMid slice"
-          clipPath={`url(#spine-icon-clip-${project.id})`}
-        />
-
-        {/* Accent Color Bar Next to Icon */}
-        <rect
-          x="90"
-          y="24"
-          width="4"
-          height="48"
-          rx="2"
-          fill={project.accentColor}
-        />
-
-        {/* Project Name Written on the Side Spine */}
-        <text
-          x="108"
-          y="55"
-          fill="#ffffff"
-          fontFamily="system-ui, -apple-system, sans-serif"
-          fontSize="23"
-          fontWeight="800"
-          letterSpacing="0.4"
-        >
-          {project.name}
-        </text>
-
-        {/* Molded Cartridge Grip Ribs on the Right End of the Spine */}
-        {[450, 462, 474, 486, 498].map((rx) => (
-          <g key={rx}>
-            <line x1={rx} y1="22" x2={rx} y2="76" stroke="#090c0a" strokeWidth="4" strokeLinecap="round" />
-            <line x1={rx + 2} y1="22" x2={rx + 2} y2="76" stroke="#354a38" strokeWidth="1.5" strokeLinecap="round" />
-          </g>
-        ))}
-      </svg>
     </div>
   );
 };
@@ -345,18 +226,34 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   activeCartridgeId,
 }) => {
   const [screenTab, setScreenTab] = useState<ScreenTab>('status');
+  const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
-  const [channelKnobAngle, setChannelKnobAngle] = useState<number>(-45);
-  const [tintKnobAngle, setTintKnobAngle] = useState<number>(0);
+  const [channelKnobAngle, setChannelKnobAngle] = useState<number>(0);
+  const [tintKnobAngle, setTintKnobAngle] = useState<number>(35);
   const [tintIndex, setTintIndex] = useState<number>(0);
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
-  const [autoZoomingToCloseup, setAutoZoomingToCloseup] = useState(false);
+  const [hoveredConsole, setHoveredConsole] = useState<boolean>(false);
+  const [stats, setStats] = useState<DeveloperStats | null>(null);
+
+  // Transition states for smooth Zoom-In with Static and Zoom-Out with Static
+  const [zoomPhase, setZoomPhase] = useState<
+    'idle' | 'zooming-in-static' | 'clearing-closeup' | 'zooming-out-static' | 'zooming-out-dolly'
+  >('idle');
 
   const zoomCooldownRef = useRef<number>(0);
+
+  useEffect(() => {
+    fetchDeveloperStats().then(setStats);
+  }, []);
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
   const hoveredProject = projects.find((p) => p.id === hoveredProjectId) || null;
   const currentTint = CRT_TINTS[tintIndex] || CRT_TINTS[0];
+
+  const currentChannelOptions = useMemo(
+    () => getChannelOptions(screenTab, stats),
+    [screenTab, stats]
+  );
 
   const turnChannel = (dir: 'next' | 'prev') => {
     const idx = TV_TABS.indexOf(screenTab);
@@ -364,6 +261,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     const nextIdx =
       dir === 'next' ? (safeIdx + 1) % TV_TABS.length : (safeIdx - 1 + TV_TABS.length) % TV_TABS.length;
     setScreenTab(TV_TABS[nextIdx]);
+    setOptionIndex(0);
     setChannelKnobAngle((prev) => (dir === 'next' ? prev + 45 : prev - 45));
   };
 
@@ -376,48 +274,90 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     setTintKnobAngle((prev) => (dir === 'next' ? prev + 45 : prev - 45));
   };
 
-  const handleFullscreenButtonA = () => {
-    if (screenTab === 'pings') {
+  const triggerOption = (opt: ChannelOption) => {
+    if (opt.action === 'ping') {
       setPingRefreshKey((prev) => prev + 1);
       return;
     }
-    if (screenTab === 'hire') {
-      window.open('https://github.com/DeployedReject', '_blank', 'noopener,noreferrer');
-      return;
+    if (opt.url) {
+      window.open(opt.url, '_blank', 'noopener,noreferrer');
     }
-    turnChannel('next');
   };
 
-  // Automatic zoom out when mouse moves to the outer screen edge in Fullscreen TV mode
+  const handlePressEnterButton = () => {
+    if (currentChannelOptions.length === 0) return;
+    const safeIdx =
+      ((optionIndex % currentChannelOptions.length) + currentChannelOptions.length) %
+      currentChannelOptions.length;
+    triggerOption(currentChannelOptions[safeIdx]);
+  };
+
+  // Smooth Zoom-Out when mouse moves to the outer screen edge in Fullscreen TV mode
   const handleEdgeZoomOut = () => {
-    if (cameraMode !== 'closeup') return;
+    if (cameraMode !== 'closeup' || zoomPhase !== 'idle') return;
     if (Date.now() < zoomCooldownRef.current) return;
-    zoomCooldownRef.current = Date.now() + 850;
-    setAutoZoomingToCloseup(false);
-    setCameraMode('table');
+    zoomCooldownRef.current = Date.now() + 1050;
+
+    setZoomPhase('zooming-out-static');
+    window.setTimeout(() => {
+      setCameraMode('table');
+      setZoomPhase('zooming-out-dolly');
+      // After mounting in 'zooming-out-dolly', trigger smooth camera pull-back to 'idle'
+      window.setTimeout(() => {
+        setZoomPhase('idle');
+      }, 40);
+    }, 240);
   };
 
-  // Automatic zoom in when mouse moves onto the TV in the zoomed-out room view
-  const handleTvMouseEnterZoomIn = () => {
-    if (cameraMode !== 'table') return;
+  // Smooth Zoom-In with Static Filling the Screen and Clearing to Show the TV
+  const handleTvZoomIn = () => {
+    if (cameraMode !== 'table' || zoomPhase !== 'idle') return;
     if (Date.now() < zoomCooldownRef.current) return;
-    zoomCooldownRef.current = Date.now() + 950;
-    setAutoZoomingToCloseup(true);
+    zoomCooldownRef.current = Date.now() + 1150;
+
+    setZoomPhase('zooming-in-static');
     window.setTimeout(() => {
-      setAutoZoomingToCloseup(false);
       setCameraMode('closeup');
-    }, 520);
+      setZoomPhase('clearing-closeup');
+      window.setTimeout(() => {
+        setZoomPhase('idle');
+      }, 460);
+    }, 410);
   };
 
   // Keyboard navigation
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '1') setScreenTab('status');
-      if (e.key === '2') setScreenTab('github');
-      if (e.key === '3') setScreenTab('pings');
-      if (e.key === '4') setScreenTab('hire');
+      if (e.key === '1') {
+        setScreenTab('status');
+        setOptionIndex(0);
+      }
+      if (e.key === '2') {
+        setScreenTab('github');
+        setOptionIndex(0);
+      }
+      if (e.key === '3') {
+        setScreenTab('pings');
+        setOptionIndex(0);
+      }
+      if (e.key === '4') {
+        setScreenTab('hire');
+        setOptionIndex(0);
+      }
       if (e.key === 'ArrowRight') turnChannel('next');
       if (e.key === 'ArrowLeft') turnChannel('prev');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setOptionIndex((prev) => prev + 1);
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setOptionIndex((prev) => Math.max(0, prev - 1));
+      }
+      if (e.key === 'Enter' && cameraMode === 'closeup') {
+        e.preventDefault();
+        handlePressEnterButton();
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -425,59 +365,56 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   // ============================================================================
   // MODE 1: FULLSCREEN CRT VIEW (cameraMode === 'closeup')
-  // - ROM menu removed from fullscreen TV view.
-  // - No Cartridge Shelf button: moving mouse to the outer edge of the screen
-  //   automatically zooms out to the room & shelf view.
+  // - Retro Blue TV Casing matching the zoomed-out SVG TV
+  // - Matching SVG Rotary Knobs (Channel & Color)
+  // - Single ENTER button to open selected option on screen
+  // - Moving mouse to screen edge smoothly zooms out with static transition
   // ============================================================================
   if (cameraMode === 'closeup') {
     return (
-      <div className="relative w-screen h-screen overflow-hidden bg-black select-none flex items-stretch animate-fadeIn">
-        {/* Invisible Screen-Edge Sensors: Moving mouse to the edge automatically zooms out */}
-        <div
-          onMouseEnter={handleEdgeZoomOut}
-          className="fixed top-0 bottom-0 left-0 w-4 z-50"
-        />
-        <div
-          onMouseEnter={handleEdgeZoomOut}
-          className="fixed top-0 bottom-0 right-0 w-4 z-50"
-        />
-        <div
-          onMouseEnter={handleEdgeZoomOut}
-          className="fixed bottom-0 left-0 right-0 h-4 z-50"
-        />
-        <div
-          onMouseEnter={handleEdgeZoomOut}
-          className="fixed top-0 left-0 right-0 h-3 z-50"
-        />
+      <div className="relative w-screen h-screen overflow-hidden bg-black select-none flex items-stretch">
+        {/* CRT Static Overlay when clearing into Fullscreen TV or starting Zoom-Out */}
+        {zoomPhase === 'clearing-closeup' && <CRTStaticOverlay mode="clear" />}
+        {zoomPhase === 'zooming-out-static' && <CRTStaticOverlay mode="fill" />}
 
-        {/* Outer 3D Moulded CRT Bezel Frame */}
+        {/* Invisible Screen-Edge Sensors: Moving mouse to the edge automatically zooms out */}
+        <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 bottom-0 left-0 w-4 z-50" />
+        <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 bottom-0 right-0 w-4 z-50" />
+        <div onMouseEnter={handleEdgeZoomOut} className="fixed bottom-0 left-0 right-0 h-4 z-50" />
+        <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 left-0 right-0 h-3 z-50" />
+
+        {/* Outer 3D Moulded Blue CRT Television Cabinet */}
         <div
-          className="relative w-full h-full p-3 sm:p-5 md:p-7 flex items-stretch"
+          className="relative w-full h-full p-3 sm:p-5 md:p-6 flex items-stretch"
           style={{
             background:
-              'linear-gradient(145deg, #2b2623 0%, #1c1917 50%, #0e0c0b 100%)',
-            boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.1), inset 0 -10px 30px rgba(0,0,0,0.95)',
+              'linear-gradient(145deg, #1e3a5f 0%, #152945 52%, #0b1626 100%)',
+            boxShadow:
+              'inset 0 2px 6px rgba(140,185,240,0.22), inset 0 -10px 30px rgba(0,0,0,0.95)',
           }}
         >
-          {/* Inner Recessed Chamfered CRT Bezel Well */}
+          {/* Inner Recessed Blue CRT Bezel Well with Green Ray-Traced Tube Rim */}
           <div
-            className="relative flex-1 h-full rounded-[28px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden"
+            className="relative flex-1 h-full rounded-[26px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden"
             style={{
               background:
-                'linear-gradient(180deg, #171412 0%, #241f1c 50%, #2e2723 100%)',
+                'linear-gradient(180deg, #0f1e33 0%, #162b46 50%, #1c3557 100%)',
               boxShadow:
-                'inset 0 12px 35px rgba(0,0,0,0.95), inset 0 -4px 16px rgba(166,226,110,0.12), 0 2px 4px rgba(255,255,255,0.08)',
-              border: '3px solid #3d3530',
+                'inset 0 12px 35px rgba(0,0,0,0.92), inset 0 0 24px rgba(166,226,110,0.22), 0 2px 4px rgba(140,190,255,0.12)',
+              border: '3px solid #2e5077',
             }}
           >
             {/* FULLSCREEN CRT TUBE DISPLAY */}
             <div
-              className="relative flex-1 h-full rounded-[22px] overflow-hidden bg-[#070c08] crt-screen-container shadow-[0_0_50px_rgba(166,226,110,0.18),inset_0_0_60px_rgba(0,0,0,0.95)] border-4 border-[#121712] transition-all duration-300"
+              className="relative flex-1 h-full rounded-[20px] overflow-hidden bg-[#070c08] crt-screen-container shadow-[0_0_55px_rgba(166,226,110,0.24),inset_0_0_60px_rgba(0,0,0,0.95)] border-4 border-[#3a6b4c] transition-all duration-300"
               style={{ filter: currentTint.filter }}
             >
               <ConsoleScreenContent
                 projects={projects}
                 activeTab={screenTab}
+                optionIndex={optionIndex}
+                onSelectOptionIndex={setOptionIndex}
+                onTriggerOption={triggerOption}
                 pingRefreshKey={pingRefreshKey}
                 isTableZoomedOut={false}
                 insertingProject={null}
@@ -492,157 +429,137 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               <div className="crt-vignette" />
             </div>
 
-            {/* 3D HARDWARE CONTROL OVERLAY PANEL (Right Bezel Deck) */}
+            {/* RIGHT CONTROL PANEL (Matches the Zoomed-Out Blue SVG TV Panel) */}
             <div
-              className="w-60 xl:w-68 shrink-0 h-full rounded-[20px] p-3.5 xl:p-4 flex flex-col justify-between relative z-30"
+              className="w-60 xl:w-66 shrink-0 h-full rounded-[18px] p-3.5 xl:p-4 flex flex-col justify-between relative z-30"
               style={{
                 background:
-                  'linear-gradient(160deg, #423c38 0%, #2e2a27 55%, #1e1b19 100%)',
+                  'linear-gradient(160deg, #162840 0%, #101e30 58%, #0a1420 100%)',
                 boxShadow:
-                  '-10px 0 30px rgba(0,0,0,0.8), inset 0 2px 3px rgba(255,255,255,0.18), inset 0 -4px 10px rgba(0,0,0,0.85)',
-                border: '2px solid #595049',
+                  '-8px 0 26px rgba(0,0,0,0.8), inset 2px 0 8px rgba(166,226,110,0.18), inset 0 2px 3px rgba(140,190,255,0.16)',
+                border: '2px solid #2b4a6f',
               }}
             >
-              {/* Top Speaker Grille & Power Indicator Module */}
+              {/* Top Power LED & Channel Readout */}
               <div
-                className="rounded-xl p-2.5 border border-[#544940] relative overflow-hidden"
+                className="rounded-xl p-2.5 border border-[#2b4a6f] bg-[#0c1726]"
                 style={{
-                  background: 'linear-gradient(180deg, #6b5c4f 0%, #52463c 100%)',
-                  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.15)',
+                  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.75)',
                 }}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <span
-                      className="w-2.5 h-2.5 rounded-full animate-pulse"
+                      className="w-3 h-3 rounded-full animate-pulse"
                       style={{
                         backgroundColor: currentTint.color,
-                        boxShadow: `0 0 8px ${currentTint.color}`,
+                        boxShadow: `0 0 10px ${currentTint.color}`,
                       }}
                     />
                     <span
-                      className="text-[7px] text-[#f3e3ce] font-bold tracking-wider"
-                      style={{ fontFamily: "'Press Start 2P', monospace" }}
+                      className="text-[7px] text-[#b4beb4] tracking-wider"
+                      style={{ fontFamily: 'var(--font-pixel)' }}
                     >
                       POWER
                     </span>
                   </div>
-                  <span className="text-[9px] font-mono text-[#e6cf65] font-bold">
+                  <span
+                    className="text-[8px] text-[#e6cf65]"
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
                     {TAB_LABELS[screenTab]}
                   </span>
                 </div>
-                <div
-                  className="w-full h-6 rounded opacity-55"
-                  style={{
-                    backgroundImage: 'radial-gradient(#1f1916 2px, transparent 2px)',
-                    backgroundSize: '7px 7px',
-                  }}
-                />
               </div>
 
-              {/* TOP PHYSICAL BUTTON A */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between px-1">
-                  <span
-                    className="text-[7px] text-[#d9c8b4] uppercase tracking-wider"
-                    style={{ fontFamily: "'Press Start 2P', monospace" }}
-                  >
-                    BUTTON A
-                  </span>
-                  <span className="text-[9px] font-mono text-[#a6e26e]">
-                    {screenTab === 'pings'
-                      ? 'Refresh'
-                      : screenTab === 'hire'
-                      ? 'GitHub'
-                      : 'Next Channel'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleFullscreenButtonA}
-                  className="w-full py-2.5 px-3 rounded-lg cursor-pointer active:translate-y-1 transition-all flex items-center justify-center gap-2 group"
-                  style={{
-                    background: 'linear-gradient(180deg, #6ba397 0%, #4e8075 65%, #3b635a 100%)',
-                    boxShadow:
-                      '0 5px 0 #223b35, 0 8px 14px rgba(0,0,0,0.75), inset 0 1px 2px rgba(255,255,255,0.5)',
-                    border: '2px solid #8ec2b7',
-                  }}
-                >
-                  <span
-                    className="text-[9px] xl:text-[10px] text-[#0c1f1b] font-bold tracking-wider uppercase group-hover:text-white transition-colors"
-                    style={{ fontFamily: "'Press Start 2P', monospace" }}
-                  >
-                    {screenTab === 'pings'
-                      ? '▶ RE-PING'
-                      : screenTab === 'hire'
-                      ? '▶ GITHUB'
-                      : '▶ NEXT CH'}
-                  </span>
-                </button>
-              </div>
-
-              {/* RECESSED DUAL ROTARY KNOB BAY */}
+              {/* MATCHING SVG DUAL ROTARY KNOBS (Same design as zoomed-out SVG TV) */}
               <div
-                className="rounded-2xl p-3 flex flex-col items-center justify-around gap-3 border border-[#4a413b]"
+                className="rounded-2xl p-3 flex flex-col items-center justify-around gap-3 border border-[#274466] bg-[#0b1524]"
                 style={{
-                  background: 'linear-gradient(180deg, #211d1b 0%, #2d2724 100%)',
-                  boxShadow: 'inset 0 6px 16px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.1)',
+                  boxShadow: 'inset 0 6px 16px rgba(0,0,0,0.9)',
                 }}
               >
                 {/* Knob 1: Channel Selector */}
-                <RetroRotaryKnob
+                <MatchingSvgRotaryKnob
                   angle={channelKnobAngle}
                   onTurnClockwise={() => turnChannel('next')}
                   onTurnCounterClockwise={() => turnChannel('prev')}
                   label="CHANNEL"
                   sublabel={`CH-0${TV_TABS.indexOf(screenTab) + 1}`}
-                  accentColor="#e6cf65"
+                  accentColor="#a6e26e"
                 />
 
-                <div className="w-full h-[1px] bg-[#3d3530]" />
+                <div className="w-full h-[1px] bg-[#213a57]" />
 
                 {/* Knob 2: Phosphor Color Tint */}
-                <RetroRotaryKnob
+                <MatchingSvgRotaryKnob
                   angle={tintKnobAngle}
                   onTurnClockwise={() => turnTint('next')}
                   onTurnCounterClockwise={() => turnTint('prev')}
                   label="COLOR"
                   sublabel={currentTint.name}
-                  accentColor={currentTint.color}
+                  accentColor="#e6cf65"
                 />
               </div>
 
-              {/* BOTTOM PHYSICAL BUTTON B: PREVIOUS CHANNEL */}
-              <div className="flex flex-col gap-1">
+              {/* SINGLE ENTER BUTTON TO OPEN SELECTED OPTION (With Option Up/Down Selectors) */}
+              <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between px-1">
                   <span
-                    className="text-[7px] text-[#d9c8b4] uppercase tracking-wider"
-                    style={{ fontFamily: "'Press Start 2P', monospace" }}
+                    className="text-[7px] text-[#b4beb4] uppercase tracking-wider"
+                    style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    BUTTON B
+                    SELECT OPTION
                   </span>
-                  <span className="text-[9px] font-mono text-[#e6cf65]">
-                    Prev Channel
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setOptionIndex((prev) => Math.max(0, prev - 1))}
+                      className="w-6 h-5 rounded bg-[#102033] hover:bg-[#19304d] border border-[#32537a] text-[#a6e26e] text-xs flex items-center justify-center cursor-pointer nf-glyph"
+                      title="Previous Option"
+                    >
+                      {'\uf077'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOptionIndex((prev) => prev + 1)}
+                      className="w-6 h-5 rounded bg-[#102033] hover:bg-[#19304d] border border-[#32537a] text-[#a6e26e] text-xs flex items-center justify-center cursor-pointer nf-glyph"
+                      title="Next Option"
+                    >
+                      {'\uf078'}
+                    </button>
+                  </div>
                 </div>
+
                 <button
                   type="button"
-                  onClick={() => turnChannel('prev')}
-                  className="w-full py-2.5 px-3 rounded-lg cursor-pointer active:translate-y-1 transition-all flex items-center justify-center gap-2 group"
+                  onClick={handlePressEnterButton}
+                  className="w-full py-3 px-3 rounded-xl cursor-pointer active:translate-y-1 transition-all flex items-center justify-center gap-2 group"
                   style={{
-                    background: 'linear-gradient(180deg, #e6cf65 0%, #c4ab45 65%, #9c8428 100%)',
+                    background: 'linear-gradient(180deg, #2b6e48 0%, #1e5235 65%, #143824 100%)',
                     boxShadow:
-                      '0 5px 0 #574812, 0 8px 14px rgba(0,0,0,0.75), inset 0 1px 2px rgba(255,255,255,0.65)',
-                    border: '2px solid #f7e695',
+                      '0 5px 0 #0c2416, 0 8px 14px rgba(0,0,0,0.8), inset 0 1px 2px rgba(166,226,110,0.55)',
+                    border: '2px solid #a6e26e',
                   }}
+                  title="Open Selected Option on Screen"
                 >
                   <span
-                    className="text-[9px] xl:text-[10px] text-[#171409] font-bold tracking-wider uppercase"
-                    style={{ fontFamily: "'Press Start 2P', monospace" }}
+                    className="text-[9px] xl:text-[10px] text-[#e2f9c8] font-bold tracking-wider uppercase group-hover:text-white transition-colors"
+                    style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    ◀ PREV CH
+                    {'\uf061'} ENTER
                   </span>
                 </button>
+              </div>
+
+              {/* Matching SVG Speaker Grille Slots at Bottom of Panel */}
+              <div className="flex flex-col gap-1.5 px-2 py-1 opacity-80">
+                {[0, 1, 2, 3, 4].map((slot) => (
+                  <div
+                    key={slot}
+                    className="w-full h-1.5 rounded-full bg-[#060c14] border-b border-[#233d5c]"
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -652,501 +569,976 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   }
 
   // ============================================================================
-  // MODE 2: PURE BLACK ROOM WITH PURE SVG TV ON TOP OF SVG CONSOLE & SIDE-VIEW
-  // CARTRIDGES ON THE SHELF, ILLUMINATED BY TINGLING GREEN CRT LIGHT.
-  // - Moving mouse onto the TV automatically zooms in to Fullscreen TV view.
-  // - Hovering over a cartridge on the shelf slightly pulls it out and shows
-  //   its origin note in bold white text.
+  // MODE 2: PITCH-BLACK ROOM WITH RAY-TRACED GREEN CRT LIGHTING
+  // - Blue TV angled diagonally toward the Brown Shelf so its light shines across
+  // - White Console ("Definetly Legally Distinct Console") underneath the TV,
+  //   with greenish ray-traced bounce light on its upper deck & slot rim
+  // - Cartridge slides cleanly into the Console's top-loading slot mouth
+  // - 5 Side-View Cartridges sitting flush inside the Brown Shelf cubbies with
+  //   matching 3D perspective and greenish ray-traced rim lighting on left edges
   // ============================================================================
-  const isZoomingIntoScreen = cameraMode === 'zooming-in' || autoZoomingToCloseup;
+  const isZoomingIn =
+    cameraMode === 'zooming-in' || zoomPhase === 'zooming-in-static';
+  const isZoomOutStart = zoomPhase === 'zooming-out-dolly';
+
+  // Subtitle text in dull pixelated white when hovering a cartridge or the console
+  const hoverSubtitle = hoveredProject
+    ? `${hoveredProject.name}: "${hoveredProject.originNote || hoveredProject.tagline}"`
+    : hoveredConsole
+    ? 'Definetly Legally Distinct Console: "this doesnt really do much"'
+    : '';
+
+  // Shelf cubby floor Y-coordinates in the unified 1920x1080 SVG scene
+  const cubbyFloorYs = [332, 452, 572, 692, 812];
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black select-none">
-      {/* Camera Zoom Stage targeting the SVG CRT Screen on top of the SVG Console */}
+      {/* CRT Static Overlay Filling the Screen During Zoom-In or Clearing During Zoom-Out */}
+      {isZoomingIn && <CRTStaticOverlay mode="fill" />}
+      {zoomPhase === 'zooming-out-dolly' && <CRTStaticOverlay mode="clear" />}
+
+      {/* Camera Zoom Stage centered on the angled CRT screen (22.5% 37.5%) */}
       <div
-        className="relative w-screen h-screen transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+        className={`relative w-screen h-screen will-change-transform ${
+          isZoomOutStart
+            ? 'transition-none'
+            : 'transition-transform duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]'
+        }`}
         style={{
-          transformOrigin: '26% 42%',
-          transform: isZoomingIntoScreen ? 'scale(3.35)' : 'scale(1)',
+          transformOrigin: '22.5% 37.5%',
+          transform: isZoomingIn
+            ? 'scale(3.75)'
+            : isZoomOutStart
+            ? 'scale(2.85)'
+            : 'scale(1)',
         }}
       >
         {/* ================================================================== */}
-        {/* LAYER 1: PITCH-BLACK ROOM WITH GREEN LIGHT SLIGHTLY TINGLING OUT   */}
+        {/* TOP HEADLINE & HOVER NOTE IN DULL PIXELATED WHITE FONT             */}
         {/* ================================================================== */}
-        <svg
-          viewBox="0 0 1920 1080"
-          preserveAspectRatio="xMidYMid slice"
-          className="absolute inset-0 w-full h-full pointer-events-none"
-        >
-          <defs>
-            {/* Subtle Green Light Gradients Tingling Out from the CRT Screen */}
-            <radialGradient id="tingleCoreGlow" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.22" />
-              <stop offset="45%" stopColor="#6eb844" stopOpacity="0.07" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-            </radialGradient>
-
-            <linearGradient id="tingleRightRay" x1="0" y1="0.45" x2="1" y2="0.55">
-              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.16" />
-              <stop offset="40%" stopColor="#7ec252" stopOpacity="0.06" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-            </linearGradient>
-
-            <linearGradient id="tingleDownRay" x1="0.5" y1="0" x2="0.5" y2="1">
-              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.18" />
-              <stop offset="60%" stopColor="#6eb844" stopOpacity="0.05" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-            </linearGradient>
-
-            <filter id="tingleBlur" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="18" />
-            </filter>
-          </defs>
-
-          {/* Pure Black Room Backdrop */}
-          <rect x="0" y="0" width="1920" height="1080" fill="#000000" />
-
-          {/* Subtle Floor Horizon Line */}
-          <line x1="0" y1="900" x2="1920" y2="900" stroke="#142416" strokeWidth="1" opacity="0.6" />
-
-          {/* Green Light Slightly Tingling Out from the TV */}
-          <g className="animate-tv-tingle">
-            {/* Soft Ambient Phosphor Halo Around the TV */}
-            <ellipse
-              cx="490"
-              cy="450"
-              rx="390"
-              ry="310"
-              fill="url(#tingleCoreGlow)"
-              filter="url(#tingleBlur)"
-            />
-
-            {/* Subtle Tingling Light Cone Reaching Toward the Shelf */}
-            <polygon
-              points="580,310 580,555 1580,860 1580,190"
-              fill="url(#tingleRightRay)"
-              filter="url(#tingleBlur)"
-            />
-
-            {/* Subtle Tingling Downward Glow onto the SVG Console Beneath the TV */}
-            <polygon
-              points="310,560 620,560 710,920 220,920"
-              fill="url(#tingleDownRay)"
-              filter="url(#tingleBlur)"
-            />
-          </g>
-        </svg>
-
-        {/* ================================================================== */}
-        {/* LAYER 2: BOLD WHITE TEXT (HEADLINE & HOVERED CARTRIDGE NOTE)       */}
-        {/* ================================================================== */}
-        <div className="absolute top-[4.5%] inset-x-0 z-40 flex flex-col items-center px-6 text-center pointer-events-none">
-          <h1 className="text-white font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl tracking-tight">
+        <div className="absolute top-[4%] inset-x-0 z-40 flex flex-col items-center px-6 text-center pointer-events-none">
+          <h1 className="pixel-dull-white text-xs sm:text-sm md:text-base lg:text-xl tracking-wider leading-relaxed">
             Projects that I made based on my needs not for showcases
           </h1>
 
-          {/* Smoothly Animated Hover Origin Note in Bold White Text */}
-          <div className="h-14 sm:h-16 mt-3 flex items-center justify-center max-w-3xl">
+          <div className="h-14 sm:h-16 mt-2.5 flex items-center justify-center max-w-4xl">
             <p
-              className={`text-white font-bold text-base sm:text-lg md:text-xl lg:text-2xl tracking-tight leading-snug transition-all duration-300 ease-out ${
-                hoveredProject
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 -translate-y-2'
+              className={`pixel-dull-white text-[10px] sm:text-xs md:text-sm leading-relaxed transition-all duration-200 ${
+                hoverSubtitle ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
               }`}
             >
-              {hoveredProject
-                ? `${hoveredProject.name}: "${hoveredProject.originNote || hoveredProject.tagline}"`
-                : ''}
+              {hoverSubtitle}
             </p>
           </div>
         </div>
 
         {/* ================================================================== */}
-        {/* LAYER 3: PURE SVG TV STACKED ON TOP OF PURE SVG CONSOLE            */}
-        {/* Positioned to the side of the Shelf and slightly behind it (z-15)  */}
+        {/* LIVE DIAGONALLY ANGLED CRT SCREEN CONTENT INSIDE THE BLUE SVG TV   */}
         {/* ================================================================== */}
         <div
-          className="absolute z-15"
+          className="absolute inset-0 pointer-events-none z-10"
           style={{
-            left: '10%',
-            bottom: '8%',
-            width: '34%',
-            height: '74%',
+            perspective: '1200px',
           }}
         >
-          {/* 3A. Pure SVG CRT TV (Top of Stack) — Hovering the TV automatically zooms in */}
           <div
-            onMouseEnter={handleTvMouseEnterZoomIn}
-            onClick={() => setCameraMode('closeup')}
-            className="absolute left-[4%] top-[2%] w-[92%] h-[62%] z-20 cursor-zoom-in group"
+            className="absolute bg-[#070c08] crt-screen-container overflow-hidden shadow-[0_0_70px_16px_rgba(166,226,110,0.35)]"
+            style={{
+              left: '12.6%',
+              top: '23.2%',
+              width: '17.6%',
+              height: '26.2%',
+              borderRadius: '14px',
+              transform: 'rotateY(18deg) rotateZ(1.4deg) skewY(2.2deg)',
+              transformOrigin: 'left center',
+              filter: currentTint.filter,
+            }}
           >
-            {/* Live CRT Screen Content Positioned Inside the SVG TV Bezel */}
-            <div
-              className="absolute z-10 bg-[#070c08] crt-screen-container overflow-hidden shadow-[0_0_65px_12px_rgba(166,226,110,0.32)]"
-              style={{
-                left: '9.5%',
-                top: '11.5%',
-                width: '64.5%',
-                height: '74.5%',
-                borderRadius: '18px',
-                filter: currentTint.filter,
-              }}
-            >
-              <ConsoleScreenContent
-                projects={projects}
-                activeTab={screenTab}
-                pingRefreshKey={pingRefreshKey}
-                isTableZoomedOut={true}
-                insertingProject={
-                  cameraMode === 'inserting' || cameraMode === 'zooming-in'
-                    ? activeCartridge
-                    : null
-                }
-                hideRomsTab={true}
-              />
-              <div className="crt-vignette" />
-            </div>
-
-            {/* Pure SVG Drawn CRT Television Casing */}
-            <svg
-              viewBox="0 0 680 480"
-              className="relative z-20 w-full h-full pointer-events-none overflow-visible"
-            >
-              <defs>
-                <linearGradient id="svgTvBody" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#1e2920" />
-                  <stop offset="50%" stopColor="#121813" />
-                  <stop offset="100%" stopColor="#090c0a" />
-                </linearGradient>
-                <linearGradient id="svgTvTop" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#263629" />
-                  <stop offset="100%" stopColor="#141c15" />
-                </linearGradient>
-                <linearGradient id="svgTvScreenBezel" x1="0.2" y1="0" x2="0.8" y2="1">
-                  <stop offset="0%" stopColor="#0c120d" />
-                  <stop offset="100%" stopColor="#1a261c" />
-                </linearGradient>
-              </defs>
-
-              {/* 3D Top Perspective Roof of TV */}
-              <polygon
-                points="24,28 68,6 646,6 656,28"
-                fill="url(#svgTvTop)"
-                stroke="#3b543f"
-                strokeWidth="1.5"
-              />
-
-              {/* 3D Right Side Depth Panel of TV */}
-              <polygon
-                points="656,28 646,6 646,432 656,456"
-                fill="#0b0f0c"
-                stroke="#28382b"
-                strokeWidth="1.5"
-              />
-
-              {/* Main CRT Front Cabinet WITH Cutout Hole for the Live Screen */}
-              <path
-                fillRule="evenodd"
-                d="M 24,28 H 656 V 456 H 24 Z M 64,55 H 502 V 412 H 64 Z"
-                fill="url(#svgTvBody)"
-                stroke="#436148"
-                strokeWidth="2"
-              />
-
-              {/* Inner Chamfered Screen Bezel Frame (Glowing with Green Phosphor Reflection) */}
-              <rect
-                x="56"
-                y="47"
-                width="454"
-                height="373"
-                rx="22"
-                fill="none"
-                stroke="#a6e26e"
-                strokeOpacity="0.45"
-                strokeWidth="2.5"
-              />
-              <rect
-                x="63"
-                y="54"
-                width="440"
-                height="359"
-                rx="18"
-                fill="none"
-                stroke="#050806"
-                strokeWidth="5"
-              />
-
-              {/* Right-Side Control Panel on SVG TV */}
-              <rect
-                x="524"
-                y="54"
-                width="110"
-                height="358"
-                rx="10"
-                fill="#0e130f"
-                stroke="#2c3e2e"
-                strokeWidth="1.5"
-              />
-
-              {/* Power LED on TV */}
-              <circle cx="546" cy="80" r="5" fill="#a6e26e" />
-              <rect x="562" y="76" width="54" height="8" rx="2" fill="#293b2b" />
-
-              {/* SVG Rotary Dials on TV */}
-              <circle cx="579" cy="145" r="28" fill="#18211a" stroke="#425e46" strokeWidth="2" />
-              <circle cx="579" cy="145" r="20" fill="#243026" />
-              <line x1="579" y1="127" x2="579" y2="145" stroke="#a6e26e" strokeWidth="3" strokeLinecap="round" />
-
-              <circle cx="579" cy="225" r="28" fill="#18211a" stroke="#425e46" strokeWidth="2" />
-              <circle cx="579" cy="225" r="20" fill="#243026" />
-              <line x1="579" y1="225" x2="594" y2="215" stroke="#e6cf65" strokeWidth="3" strokeLinecap="round" />
-
-              {/* SVG Speaker Grille Slots on TV */}
-              {[285, 300, 315, 330, 345, 360, 375].map((sy) => (
-                <rect key={sy} x="542" y={sy} width="74" height="5" rx="2.5" fill="#070a08" />
-              ))}
-
-              {/* TV Bottom Support Feet Resting on the Console Riser */}
-              <rect x="65" y="456" width="75" height="14" rx="3" fill="#0d120e" stroke="#2c3e2e" strokeWidth="1" />
-              <rect x="535" y="456" width="75" height="14" rx="3" fill="#0d120e" stroke="#2c3e2e" strokeWidth="1" />
-            </svg>
-          </div>
-
-          {/* 3B. Pure SVG Console & Open-Bay Stand Underneath the TV */}
-          <div className="absolute inset-x-0 bottom-0 h-[42%] z-10 pointer-events-none">
-            {/* Sliding Cartridge Animation into the SVG Console Slot */}
-            {activeCartridge &&
-              (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting') && (
-                <div
-                  className={`absolute z-15 left-[33%] top-[-8%] w-[28%] h-[58%] ${
-                    cameraMode === 'ejecting' ? 'animate-ejectCartridge' : 'animate-insertCartridge'
-                  }`}
-                >
-                  <svg viewBox="0 0 220 180" className="w-full h-full">
-                    <rect
-                      x="15"
-                      y="10"
-                      width="190"
-                      height="155"
-                      rx="10"
-                      fill="#233025"
-                      stroke="#a6e26e"
-                      strokeWidth="2.5"
-                    />
-                    <image
-                      href={activeCartridge.labelSvg}
-                      x="35"
-                      y="25"
-                      width="150"
-                      height="95"
-                      preserveAspectRatio="xMidYMid slice"
-                    />
-                    <text
-                      x="110"
-                      y="145"
-                      textAnchor="middle"
-                      fill="#ffffff"
-                      fontSize="16"
-                      fontWeight="bold"
-                      fontFamily="sans-serif"
-                    >
-                      {activeCartridge.name}
-                    </text>
-                  </svg>
-                </div>
-              )}
-
-            {/* Pure SVG Console & Riser Bridge */}
-            <svg viewBox="0 0 720 340" className="relative z-20 w-full h-full overflow-visible">
-              <defs>
-                <linearGradient id="svgConsoleTop" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#263829" />
-                  <stop offset="100%" stopColor="#141e16" />
-                </linearGradient>
-                <linearGradient id="svgConsoleFront" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#162018" />
-                  <stop offset="50%" stopColor="#1d2b20" />
-                  <stop offset="100%" stopColor="#0f1510" />
-                </linearGradient>
-              </defs>
-
-              {/* Riser Stand Pillars (Holding the TV above the Console's Top-Loading Slot) */}
-              <polygon points="36,18 68,18 68,315 36,315" fill="#121a14" stroke="#354d39" strokeWidth="1.5" />
-              <polygon points="652,18 684,18 684,315 652,315" fill="#101712" stroke="#2c402f" strokeWidth="1.5" />
-              {/* Riser Top Shelf Bar under TV Feet */}
-              <rect x="26" y="6" width="668" height="16" rx="3" fill="#1d291f" stroke="#537a59" strokeWidth="1.5" />
-              <line x1="40" y1="7" x2="680" y2="7" stroke="#a6e26e" strokeOpacity="0.65" strokeWidth="2" />
-
-              {/* Top-Loading Console 3D Upper Deck (Lit by the TV Screen Above It) */}
-              <polygon
-                points="105,195 145,145 575,145 615,195"
-                fill="url(#svgConsoleTop)"
-                stroke="#4a6b4f"
-                strokeWidth="2"
-              />
-
-              {/* Cartridge Slot Opening in the Center of the Console */}
-              <rect
-                x="235"
-                y="158"
-                width="250"
-                height="24"
-                rx="4"
-                fill="#050806"
-                stroke="#a6e26e"
-                strokeOpacity="0.5"
-                strokeWidth="1.5"
-              />
-
-              {/* Console Front Body */}
-              <rect
-                x="105"
-                y="195"
-                width="510"
-                height="112"
-                rx="8"
-                fill="url(#svgConsoleFront)"
-                stroke="#3b543f"
-                strokeWidth="2"
-              />
-
-              {/* Green Rim Highlight on Console Front Lip */}
-              <line x1="108" y1="196" x2="612" y2="196" stroke="#a6e26e" strokeOpacity="0.6" strokeWidth="2" />
-
-              {/* Console Power & Reset Buttons + Controller Ports */}
-              <rect x="138" y="225" width="46" height="22" rx="4" fill="#263629" stroke="#5c8244" strokeWidth="1.5" />
-              <rect x="196" y="225" width="46" height="22" rx="4" fill="#1c261e" stroke="#3b523e" strokeWidth="1.5" />
-              <circle cx="138" cy="275" r="5" fill="#a6e26e" />
-              <text x="152" y="279" fill="#6ca144" fontSize="11" fontFamily="monospace">
-                CONSOLE
-              </text>
-
-              {/* Controller Port Sockets */}
-              <rect x="465" y="226" width="52" height="26" rx="4" fill="#090d0a" stroke="#2f4232" strokeWidth="1.5" />
-              <rect x="530" y="226" width="52" height="26" rx="4" fill="#090d0a" stroke="#2f4232" strokeWidth="1.5" />
-            </svg>
+            <ConsoleScreenContent
+              projects={projects}
+              activeTab={screenTab}
+              pingRefreshKey={pingRefreshKey}
+              isTableZoomedOut={true}
+              insertingProject={
+                cameraMode === 'inserting' || cameraMode === 'zooming-in'
+                  ? activeCartridge
+                  : null
+              }
+              hideRomsTab={true}
+            />
+            <div className="crt-vignette" />
           </div>
         </div>
 
         {/* ================================================================== */}
-        {/* LAYER 4: FOREGROUND SVG SHELF WITH SIDE-VIEW CARTRIDGES            */}
-        {/* Positioned to the side of the TV/Console and in front of it (z-30) */}
+        {/* UNIFIED 1920x1080 SVG SCENE:                                       */}
+        {/* 1. Pitch-Black Room + Floor + Ray-Traced Volumetric Green Light    */}
+        {/* 2. Diagonally Angled Blue TV Stacked on White Console              */}
+        {/* 3. Cartridge Sliding Cleanly into the White Console's Top Slot     */}
+        {/* 4. Brown Wooden Shelf with 5 Properly Seated 3D Cartridges         */}
         {/* ================================================================== */}
-        <div
-          className="absolute z-30 flex flex-col justify-between"
-          style={{
-            left: '51%',
-            bottom: '8%',
-            width: '41%',
-            height: '71%',
-          }}
+        <svg
+          viewBox="0 0 1920 1080"
+          preserveAspectRatio="xMidYMid meet"
+          className="relative z-20 w-full h-full"
         >
-          {/* Pure SVG 3D Shelf Frame */}
-          <svg
-            viewBox="0 0 760 760"
-            preserveAspectRatio="none"
-            className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
-          >
-            <defs>
-              <linearGradient id="svgShelfLeftWall" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#3c5940" />
-                <stop offset="100%" stopColor="#141f16" />
-              </linearGradient>
-              <linearGradient id="svgShelfBack" x1="0" y1="0.3" x2="1" y2="0.7">
-                <stop offset="0%" stopColor="#0f1710" />
-                <stop offset="60%" stopColor="#070a08" />
-                <stop offset="100%" stopColor="#030504" />
-              </linearGradient>
-              <linearGradient id="svgShelfPlank" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#38543b" />
-                <stop offset="40%" stopColor="#1e2d20" />
-                <stop offset="100%" stopColor="#0e140f" />
-              </linearGradient>
-            </defs>
+          <defs>
+            {/* ---------------- RAY-TRACED LIGHTING GRADIENTS ---------------- */}
+            {/* Volumetric Primary Frustum Beam from Angled CRT to Brown Shelf */}
+            <linearGradient id="rtPrimaryBeam" x1="0" y1="0.38" x2="1" y2="0.55">
+              <stop offset="0%" stopColor="#b8f284" stopOpacity="0.30" />
+              <stop offset="22%" stopColor="#a6e26e" stopOpacity="0.18" />
+              <stop offset="58%" stopColor="#72b846" stopOpacity="0.09" />
+              <stop offset="88%" stopColor="#4c852c" stopOpacity="0.03" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </linearGradient>
 
-            {/* 3D Left Side Wall of Shelf (Rim-Lit by the TV's Tingling Green Light) */}
+            {/* Individual Scanline God-Ray Shafts */}
+            <linearGradient id="rtGodRayShaft" x1="0" y1="0.4" x2="1" y2="0.55">
+              <stop offset="0%" stopColor="#d4f7b5" stopOpacity="0.22" />
+              <stop offset="45%" stopColor="#a6e26e" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </linearGradient>
+
+            {/* Downward CRT Light Cone Hitting the White Console Below */}
+            <linearGradient id="rtDownwardCone" x1="0.45" y1="0" x2="0.55" y2="1">
+              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.28" />
+              <stop offset="55%" stopColor="#7ec252" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </linearGradient>
+
+            {/* Ambient Halo Around the CRT Screen */}
+            <radialGradient id="rtScreenHalo" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.32" />
+              <stop offset="48%" stopColor="#6eb844" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </radialGradient>
+
+            {/* Floor Bounce Light Pool Across the Black Room Floor */}
+            <radialGradient id="rtFloorBounce" cx="0.38" cy="0.5" r="0.55">
+              <stop offset="0%" stopColor="#8ed158" stopOpacity="0.18" />
+              <stop offset="50%" stopColor="#4f8230" stopOpacity="0.07" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </radialGradient>
+
+            <filter id="rtSoftBlur" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="16" />
+            </filter>
+            <filter id="rtFineBlur" x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur stdDeviation="6" />
+            </filter>
+
+            {/* ---------------- BLUE TV CASING GRADIENTS ---------------- */}
+            {/* Front Cabinet of Blue TV (Right side slightly darker, screen rim greenish) */}
+            <linearGradient id="tvBlueFront" x1="0" y1="0" x2="1" y2="0.3">
+              <stop offset="0%" stopColor="#23456e" />
+              <stop offset="55%" stopColor="#1a3454" />
+              <stop offset="100%" stopColor="#102238" />
+            </linearGradient>
+            {/* Left 3D Side Wall of Blue TV */}
+            <linearGradient id="tvBlueLeftSide" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#0d1b2e" />
+              <stop offset="100%" stopColor="#1b3657" />
+            </linearGradient>
+            {/* Top 3D Roof of Blue TV */}
+            <linearGradient id="tvBlueTop" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#294f7d" />
+              <stop offset="100%" stopColor="#162d4a" />
+            </linearGradient>
+            {/* Inner Bezel of Blue TV Catching Green Ray-Traced Glow from Tube */}
+            <linearGradient id="tvBezelGreenRay" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#6cbf64" />
+              <stop offset="50%" stopColor="#356e4c" />
+              <stop offset="100%" stopColor="#1d4245" />
+            </linearGradient>
+
+            {/* ---------------- WHITE CONSOLE GRADIENTS (WITH GREEN RAY BOUNCE) ---------------- */}
+            {/* Top Deck of White Console: Greenish directly under CRT screen, white/grey toward edges */}
+            <radialGradient id="consoleWhiteTopRay" cx="0.42" cy="0.35" r="0.65">
+              <stop offset="0%" stopColor="#a9db9c" />
+              <stop offset="38%" stopColor="#b8d4b4" />
+              <stop offset="72%" stopColor="#c9d0d6" />
+              <stop offset="100%" stopColor="#a4adb5" />
+            </radialGradient>
+            {/* Front Face of White Console (Off-white in dark room, top lip slightly greenish) */}
+            <linearGradient id="consoleWhiteFront" x1="0" y1="0" x2="0.15" y2="1">
+              <stop offset="0%" stopColor="#c4d9c0" />
+              <stop offset="18%" stopColor="#d2d7dc" />
+              <stop offset="75%" stopColor="#b8bfc7" />
+              <stop offset="100%" stopColor="#8c949e" />
+            </linearGradient>
+            {/* Left 3D Side Wall of White Console (In shadow away from TV screen) */}
+            <linearGradient id="consoleWhiteLeftSide" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#6e7680" />
+              <stop offset="100%" stopColor="#9aa2ab" />
+            </linearGradient>
+
+            {/* Clip Path at the Exact Front Lip of the Console's Top-Loading Cartridge Slot */}
+            <clipPath id="consoleSlotMouthClip">
+              <polygon points="310,480 570,480 570,715 310,707" />
+            </clipPath>
+
+            {/* ---------------- BROWN WOODEN SHELF GRADIENTS (WITH GREEN RAY RIM) ---------------- */}
+            {/* Left Outer Wall of Brown Shelf: Directly hit by green CRT rays on its front/top-left */}
+            <linearGradient id="shelfBrownLeftWallRay" x1="0" y1="0.2" x2="1" y2="0.8">
+              <stop offset="0%" stopColor="#6ca352" />
+              <stop offset="28%" stopColor="#4f6e3b" />
+              <stop offset="65%" stopColor="#4a301d" />
+              <stop offset="100%" stopColor="#2e1c10" />
+            </linearGradient>
+            {/* Interior Recessed Back Wall of Brown Shelf */}
+            <linearGradient id="shelfBrownBackWall" x1="0" y1="0.3" x2="1" y2="0.7">
+              <stop offset="0%" stopColor="#293620" />
+              <stop offset="25%" stopColor="#2b1b10" />
+              <stop offset="70%" stopColor="#1c110a" />
+              <stop offset="100%" stopColor="#120b06" />
+            </linearGradient>
+            {/* Top Surface of Each Wooden Shelf Plank (Greenish on left near TV, brown wood to the right) */}
+            <linearGradient id="shelfBrownPlankTop" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#5e8747" />
+              <stop offset="22%" stopColor="#524628" />
+              <stop offset="55%" stopColor="#4a2e1b" />
+              <stop offset="100%" stopColor="#2b190e" />
+            </linearGradient>
+            {/* Front Edge of Each Wooden Shelf Plank */}
+            <linearGradient id="shelfBrownPlankFront" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#7ec258" />
+              <stop offset="18%" stopColor="#5d6e38" />
+              <stop offset="50%" stopColor="#593822" />
+              <stop offset="100%" stopColor="#362012" />
+            </linearGradient>
+          </defs>
+
+          {/* ================================================================ */}
+          {/* 1. PITCH-BLACK ROOM BACKDROP, FLOOR BOUNCE & CAST SHADOWS        */}
+          {/* ================================================================ */}
+          <rect x="0" y="0" width="1920" height="1080" fill="#020302" />
+
+          {/* Subtle Room Horizon Line */}
+          <line x1="0" y1="845" x2="1920" y2="845" stroke="#162919" strokeWidth="1.5" opacity="0.6" />
+
+          {/* Floor Green Bounce Pool from CRT Rays */}
+          <ellipse
+            cx="780"
+            cy="920"
+            rx="720"
+            ry="135"
+            fill="url(#rtFloorBounce)"
+            filter="url(#rtSoftBlur)"
+          />
+
+          {/* Ray-Traced Cast Shadow Behind/Right of the Shelf on the Floor */}
+          <polygon
+            points="995,895 1715,895 1890,965 1060,955"
+            fill="#000000"
+            opacity="0.88"
+          />
+          {/* Ray-Traced Cast Shadow Under the Console */}
+          <polygon
+            points="160,868 685,882 720,912 135,895"
+            fill="#000000"
+            opacity="0.92"
+          />
+
+          {/* ================================================================ */}
+          {/* 2. DIAGONALLY ANGLED WHITE CONSOLE & RISER STAND                 */}
+          {/*    ("Definetly Legally Distinct Console")                        */}
+          {/* ================================================================ */}
+          <g
+            onMouseEnter={() => setHoveredConsole(true)}
+            onMouseLeave={() => setHoveredConsole(false)}
+            className="cursor-pointer"
+          >
+            {/* Riser Left Support Pillar (Behind Console Left Edge) */}
             <polygon
-              points="8,24 38,4 38,736 8,756"
-              fill="url(#svgShelfLeftWall)"
+              points="158,548 196,552 196,860 158,842"
+              fill="#182638"
+              stroke="#2e4a6b"
+              strokeWidth="1.5"
+            />
+            {/* Riser Right Support Pillar */}
+            <polygon
+              points="642,566 676,568 676,876 642,874"
+              fill="#121e2e"
+              stroke="#27405e"
+              strokeWidth="1.5"
+            />
+            {/* Riser Bridge Shelf Holding the Angled Blue TV Above the Console */}
+            <polygon
+              points="152,536 205,512 690,528 652,556"
+              fill="#1b304a"
+              stroke="#487556"
+              strokeWidth="1.5"
+            />
+            <polygon
+              points="152,536 652,556 652,570 152,550"
+              fill="#132338"
+              stroke="#3b5e4c"
+              strokeWidth="1.5"
+            />
+
+            {/* WHITE CONSOLE: 3D Left Side Wall (Receding diagonally back-left) */}
+            <polygon
+              points="178,704 222,664 222,824 178,864"
+              fill="url(#consoleWhiteLeftSide)"
+              stroke="#5c646e"
+              strokeWidth="1.5"
+            />
+
+            {/* WHITE CONSOLE: 3D Sloped Upper Deck (Hit by green ray-traced light from CRT above) */}
+            <polygon
+              points="222,664 624,678 666,720 178,704"
+              fill="url(#consoleWhiteTopRay)"
+              stroke="#85b87e"
+              strokeWidth="2"
+            />
+
+            {/* Specular Green Ray-Traced Reflection Pool on the White Console Top Deck */}
+            <ellipse
+              cx="425"
+              cy="690"
+              rx="155"
+              ry="16"
+              fill="#a6e26e"
+              opacity="0.32"
+              filter="url(#rtFineBlur)"
+            />
+
+            {/* Top-Loading Cartridge Slot Recessed Well (Back Lip drawn BEHIND the cartridge) */}
+            <polygon
+              points="332,684 536,691 548,713 322,705"
+              fill="#0a120c"
+              stroke="#6cbf5e"
+              strokeWidth="2"
+            />
+            <line x1="334" y1="686" x2="534" y2="693" stroke="#a6e26e" strokeWidth="1.5" strokeOpacity="0.8" />
+
+            {/* ============================================================== */}
+            {/* SLIDING CARTRIDGE ENTERING THE CONSOLE SLOT MOUTH              */}
+            {/* Clipped at the front lip of the slot (y=707..715) so the       */}
+            {/* bottom half of the cartridge goes INSIDE the console slot!     */}
+            {/* ============================================================== */}
+            {activeCartridge &&
+              (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting') && (
+                <g clipPath="url(#consoleSlotMouthClip)">
+                  <g
+                    className={
+                      cameraMode === 'ejecting' ? 'animate-ejectCartridge' : 'animate-insertCartridge'
+                    }
+                  >
+                    {/* 3D Cartridge Shell Angled to Match the Console Slot */}
+                    <polygon
+                      points="344,598 358,590 526,596 514,604"
+                      fill="#35523a"
+                      stroke="#a6e26e"
+                      strokeWidth="1.5"
+                    />
+                    <polygon
+                      points="344,598 514,604 514,740 344,734"
+                      fill="#1d2b20"
+                      stroke="#a6e26e"
+                      strokeWidth="2"
+                    />
+                    {/* Cartridge Label Artwork */}
+                    <rect
+                      x="362"
+                      y="610"
+                      width="134"
+                      height="68"
+                      rx="4"
+                      fill="#0d140e"
+                      stroke={activeCartridge.accentColor}
+                      strokeWidth="1.5"
+                    />
+                    <image
+                      href={activeCartridge.labelSvg}
+                      x="364"
+                      y="612"
+                      width="130"
+                      height="64"
+                      preserveAspectRatio="xMidYMid slice"
+                    />
+                    {/* Dull Pixelated White Name on Inserting Cartridge */}
+                    <text
+                      x="429"
+                      y="696"
+                      textAnchor="middle"
+                      fill="#b4beb4"
+                      fontSize="11"
+                      fontFamily="'Press Start 2P', monospace"
+                    >
+                      {activeCartridge.name}
+                    </text>
+                  </g>
+                </g>
+              )}
+
+            {/* Front Lip of the Console Slot (Drawn ON TOP of the cartridge so it sits inside!) */}
+            <polygon
+              points="320,705 550,713 554,719 318,711"
+              fill="#b8d4b4"
+              stroke="#76bd68"
+              strokeWidth="1"
+            />
+
+            {/* WHITE CONSOLE: Front Body Panel (Angled diagonally to match TV) */}
+            <polygon
+              points="178,704 666,720 666,878 178,864"
+              fill="url(#consoleWhiteFront)"
+              stroke="#8c9ba6"
+              strokeWidth="2"
+            />
+
+            {/* Ray-Traced Green Rim Highlight Along the Console's Upper Front Lip */}
+            <line
+              x1="180"
+              y1="705"
+              x2="664"
+              y2="721"
+              stroke="#a6e26e"
+              strokeOpacity="0.85"
+              strokeWidth="2.5"
+            />
+
+            {/* Console Recessed Control Strip & Controller Ports */}
+            <polygon
+              points="204,732 640,746 640,806 204,792"
+              fill="#9ba4ad"
+              stroke="#747d87"
+              strokeWidth="1.5"
+            />
+
+            {/* Power & Reset Tactile Buttons on White Console */}
+            <polygon
+              points="222,746 276,748 276,774 222,772"
+              fill="#2e4a36"
+              stroke="#8ae070"
+              strokeWidth="1.5"
+            />
+            <polygon
+              points="290,748 342,750 342,776 290,774"
+              fill="#5a636e"
+              stroke="#3b424a"
+              strokeWidth="1.5"
+            />
+
+            {/* Controller Port Sockets */}
+            <polygon
+              points="508,754 562,756 562,786 508,784"
+              fill="#1e242b"
+              stroke="#49535e"
+              strokeWidth="1.5"
+            />
+            <polygon
+              points="574,756 628,758 628,788 574,786"
+              fill="#1e242b"
+              stroke="#49535e"
+              strokeWidth="1.5"
+            />
+
+            {/* Console Front Nameplate: "Definetly Legally Distinct Console" */}
+            <polygon
+              points="204,814 640,828 640,854 204,840"
+              fill="#182026"
+              stroke="#5b7a5e"
+              strokeWidth="1.5"
+            />
+            <circle cx="222" cy="827" r="5" fill="#a6e26e" />
+            <text
+              x="426"
+              y="839"
+              textAnchor="middle"
+              fill="#b4beb4"
+              fontSize="11.5"
+              fontFamily="'Press Start 2P', monospace"
+              letterSpacing="0.5"
+            >
+              Definetly Legally Distinct Console
+            </text>
+          </g>
+
+          {/* ================================================================ */}
+          {/* 3. DIAGONALLY ANGLED BLUE CRT TV ON TOP OF THE CONSOLE           */}
+          {/*    Angled toward the right so its screen shines on the shelf     */}
+          {/* ================================================================ */}
+          <g
+            onMouseEnter={handleTvZoomIn}
+            onClick={handleTvZoomIn}
+            className="cursor-zoom-in"
+          >
+            {/* 3D Left Side Depth Wall of Blue TV (Visible because TV is angled right) */}
+            <polygon
+              points="154,238 202,202 202,534 154,512"
+              fill="url(#tvBlueLeftSide)"
+              stroke="#2c4f7c"
+              strokeWidth="2"
+            />
+            {/* Ventilation Slots on Left Side of Blue TV */}
+            {[285, 305, 325, 345, 365, 385].map((vy) => (
+              <line
+                key={vy}
+                x1="164"
+                y1={vy}
+                x2="192"
+                y2={vy - 18}
+                stroke="#091321"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+            ))}
+
+            {/* 3D Top Roof of Blue TV (Angled diagonally toward the right) */}
+            <polygon
+              points="154,238 202,202 668,224 644,254"
+              fill="url(#tvBlueTop)"
+              stroke="#3b699e"
+              strokeWidth="2"
+            />
+
+            {/* Main Diagonally Angled Blue Front Cabinet WITH Cutout Window for the Live CRT Tube */}
+            <path
+              fillRule="evenodd"
+              d="M 202,202 L 644,224 L 644,548 L 202,534 Z M 236,238 L 538,252 L 538,504 L 236,492 Z"
+              fill="url(#tvBlueFront)"
+              stroke="#38669c"
+              strokeWidth="2.5"
+            />
+
+            {/* Inner Chamfered Screen Bezel (Glowing Greenish from Ray-Traced CRT Light) */}
+            <polygon
+              points="230,232 544,246 544,510 230,498"
+              fill="none"
+              stroke="url(#tvBezelGreenRay)"
+              strokeWidth="5"
+            />
+            <polygon
+              points="235,237 539,251 539,505 235,493"
+              fill="none"
               stroke="#a6e26e"
               strokeOpacity="0.65"
               strokeWidth="2"
             />
 
-            {/* Recessed Back Wall of Shelf */}
-            <rect
-              x="38"
-              y="4"
-              width="690"
-              height="732"
-              fill="url(#svgShelfBack)"
-              stroke="#243626"
+            {/* Right-Side Control Panel on the Angled Blue SVG TV */}
+            <polygon
+              points="554,250 630,254 630,512 554,508"
+              fill="#0e1d30"
+              stroke="#2d527d"
+              strokeWidth="1.5"
+            />
+            {/* Green Ray-Traced Rim Highlight on Control Panel Left Edge */}
+            <line
+              x1="554"
+              y1="252"
+              x2="554"
+              y2="506"
+              stroke="#8ce072"
+              strokeOpacity="0.7"
               strokeWidth="2"
             />
 
-            {/* Right Side Wall of Shelf */}
-            <polygon
-              points="728,4 750,24 750,756 728,736"
-              fill="#080c09"
-              stroke="#1b291d"
+            {/* Power LED on Blue SVG TV */}
+            <circle cx="570" cy="274" r="4.5" fill="#a6e26e" />
+            <line x1="582" y1="274" x2="618" y2="276" stroke="#3a628f" strokeWidth="5" strokeLinecap="round" />
+
+            {/* Rotary Knob 1 (Channel) on Blue SVG TV — Matches Fullscreen TV Knob */}
+            <circle cx="592" cy="326" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
+            <circle cx="592" cy="326" r="15" fill="#1b2f48" />
+            <line x1="592" y1="326" x2="592" y2="310" stroke="#a6e26e" strokeWidth="3.5" strokeLinecap="round" />
+
+            {/* Rotary Knob 2 (Color) on Blue SVG TV — Matches Fullscreen TV Knob */}
+            <circle cx="592" cy="388" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
+            <circle cx="592" cy="388" r="15" fill="#1b2f48" />
+            <line x1="592" y1="388" x2="604" y2="378" stroke="#e6cf65" strokeWidth="3.5" strokeLinecap="round" />
+
+            {/* Single ENTER Button on Blue SVG TV */}
+            <rect
+              x="566"
+              y="424"
+              width="52"
+              height="18"
+              rx="4"
+              fill="#1e5235"
+              stroke="#a6e26e"
               strokeWidth="1.5"
             />
 
-            {/* Top Cap Plank */}
-            <rect x="8" y="20" width="742" height="16" fill="url(#svgShelfPlank)" />
-            <line x1="8" y1="21" x2="750" y2="21" stroke="#a6e26e" strokeOpacity="0.6" strokeWidth="2" />
-
-            {/* 5 Shelf Slot Divider Planks (One under each Side-View Cartridge) */}
-            {[164, 308, 452, 596, 740].map((py) => (
-              <g key={py}>
-                <polygon
-                  points={`12,${py} 38,${py - 14} 728,${py - 14} 748,${py}`}
-                  fill="#162118"
-                />
-                <rect x="12" y={py} width="736" height="14" fill="url(#svgShelfPlank)" />
-                <line
-                  x1="12"
-                  y1={py + 1}
-                  x2="748"
-                  y2={py + 1}
-                  stroke="#a6e26e"
-                  strokeOpacity="0.45"
-                  strokeWidth="1.5"
-                />
-              </g>
+            {/* Speaker Grille Slots on Blue SVG TV */}
+            {[456, 468, 480, 492].map((sy) => (
+              <line
+                key={sy}
+                x1="566"
+                y1={sy}
+                x2="618"
+                y2={sy + 2}
+                stroke="#07101c"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
             ))}
+          </g>
 
-            {/* Left Front Vertical Post Catching the TV's Green Light */}
-            <rect x="8" y="20" width="14" height="736" fill="url(#svgShelfLeftWall)" />
-            <line x1="9" y1="20" x2="9" y2="756" stroke="#b8f284" strokeOpacity="0.85" strokeWidth="2.5" />
-          </svg>
+          {/* ================================================================ */}
+          {/* 4. FOREGROUND BROWN WOODEN SHELF WITH 5 PROPERLY SEATED          */}
+          {/*    3D SIDE-VIEW CARTRIDGES (Exact offset & 3D perspective)       */}
+          {/* ================================================================ */}
+          <g>
+            {/* 3D Top Wooden Roof Plank of Brown Shelf (Receding back-left by dx=-30, dy=-16) */}
+            <polygon
+              points="1008,210 978,194 1676,194 1706,210"
+              fill="url(#shelfBrownPlankTop)"
+              stroke="#658c4a"
+              strokeWidth="1.5"
+            />
 
-          {/* The 5 Side-View Cartridges Stacked in the Shelf Bays */}
-          <div className="relative z-20 flex-1 flex flex-col justify-around py-[5%] pl-[6%] pr-[7%]">
-            {projects.map((project) => {
+            {/* 3D Left Outer Wooden Wall of Shelf — Directly Facing the Angled CRT TV! */}
+            {/* Greenish at top/front where the CRT rays hit brightest, brown deeper down */}
+            <polygon
+              points="978,194 1008,210 1008,850 978,832"
+              fill="url(#shelfBrownLeftWallRay)"
+              stroke="#98de74"
+              strokeOpacity="0.85"
+              strokeWidth="2"
+            />
+
+            {/* Recessed Interior Back Wooden Wall of Shelf */}
+            <rect
+              x="1008"
+              y="210"
+              width="684"
+              height="640"
+              fill="url(#shelfBrownBackWall)"
+              stroke="#3b2416"
+              strokeWidth="2"
+            />
+
+            {/* Top Frame Lip of Brown Shelf */}
+            <rect
+              x="1008"
+              y="210"
+              width="698"
+              height="14"
+              fill="url(#shelfBrownPlankFront)"
+            />
+            <line x1="1008" y1="211" x2="1706" y2="211" stroke="#a6e26e" strokeOpacity="0.7" strokeWidth="2" />
+
+            {/* ============================================================== */}
+            {/* 5 SHELF CUBBIES: EACH WITH ITS 3D WOODEN PLANK FLOOR AND       */}
+            {/* A SIDE-VIEW CARTRIDGE RESTING FLUSH ON THE PLANK               */}
+            {/* ============================================================== */}
+            {cubbyFloorYs.map((floorY, idx) => {
+              const project = projects[idx];
+              const isHovered = project ? hoveredProjectId === project.id : false;
               const isCurrentlyInSlot =
+                project &&
                 activeCartridgeId === project.id &&
                 (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting');
 
-              if (isCurrentlyInSlot) {
-                return <div key={project.id} className="w-full h-15 xl:h-17" />;
-              }
+              // Cartridge sits directly on top of the cubby plank floor (height = 72)
+              const cartBottomY = floorY;
+              const cartTopY = cartBottomY - 72;
+              const cartLeftX = 1044;
+              const cartRightX = 1656;
 
               return (
-                <CartridgeSideSpine
-                  key={project.id}
-                  project={project}
-                  isHovered={hoveredProjectId === project.id}
-                  onMouseEnter={() => setHoveredProjectId(project.id)}
-                  onMouseLeave={() =>
-                    setHoveredProjectId((prev) => (prev === project.id ? null : prev))
-                  }
-                  onClick={() => onSelectProject(project.id)}
-                />
+                <g key={floorY}>
+                  {/* Inner Left Cubby Wall Shadow / Depth Line */}
+                  <line
+                    x1="1008"
+                    y1={floorY}
+                    x2="1036"
+                    y2={floorY - 14}
+                    stroke="#4e6e3a"
+                    strokeWidth="1.5"
+                    strokeOpacity="0.6"
+                  />
+
+                  {/* 3D Top Surface of the Wooden Cubby Plank (Cartridge rests on this!) */}
+                  <polygon
+                    points={`1008,${floorY} 1036,${floorY - 14} 1680,${floorY - 14} 1706,${floorY}`}
+                    fill="url(#shelfBrownPlankTop)"
+                  />
+
+                  {/* Ray-Traced Contact Shadow on the Plank Directly Under the Cartridge */}
+                  {!isCurrentlyInSlot && (
+                    <polygon
+                      points={`${cartLeftX - 8},${floorY - 1} ${cartLeftX + 16},${floorY - 11} ${cartRightX + 10},${floorY - 11} ${cartRightX - 4},${floorY - 1}`}
+                      fill="#050302"
+                      opacity={isHovered ? '0.55' : '0.82'}
+                    />
+                  )}
+
+                  {/* Front Thickness Face of the Wooden Shelf Plank */}
+                  <rect
+                    x="1008"
+                    y={floorY}
+                    width="698"
+                    height="14"
+                    fill="url(#shelfBrownPlankFront)"
+                  />
+                  {/* Greenish Ray-Traced Highlight on Left Portion of Plank Front Lip */}
+                  <line
+                    x1="1008"
+                    y1={floorY + 1}
+                    x2="1480"
+                    y2={floorY + 1}
+                    stroke="#a6e26e"
+                    strokeOpacity="0.6"
+                    strokeWidth="1.5"
+                  />
+
+                  {/* 3D SIDE-VIEW CARTRIDGE SITTING FLUSH ON THE PLANK */}
+                  {project && !isCurrentlyInSlot && (
+                    <g
+                      onMouseEnter={() => setHoveredProjectId(project.id)}
+                      onMouseLeave={() =>
+                        setHoveredProjectId((prev) => (prev === project.id ? null : prev))
+                      }
+                      onClick={() => onSelectProject(project.id)}
+                      className="cursor-pointer"
+                      style={{
+                        transform: isHovered ? 'translate(-30px, 8px)' : 'translate(0px, 0px)',
+                        transition: 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)',
+                      }}
+                    >
+                      <defs>
+                        <clipPath id={`cubby-icon-clip-${project.id}`}>
+                          <rect
+                            x={cartLeftX + 18}
+                            y={cartTopY + 10}
+                            width="52"
+                            height="52"
+                            rx="7"
+                          />
+                        </clipPath>
+                        {/* Cartridge Spine Body: Greenish ray-traced left side fading into dark slate */}
+                        <linearGradient
+                          id={`cubby-cart-face-${project.id}`}
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="0"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor={isHovered ? '#3b5e3e' : '#2b452e'}
+                          />
+                          <stop
+                            offset="26%"
+                            stopColor={isHovered ? '#29382c' : '#1e2820'}
+                          />
+                          <stop offset="100%" stopColor="#141816" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* 3D Top Face of Cartridge (Matches Shelf Plank Perspective dx=+24, dy=-12) */}
+                      <polygon
+                        points={`${cartLeftX},${cartTopY} ${cartLeftX + 24},${cartTopY - 12} ${cartRightX + 24},${cartTopY - 12} ${cartRightX},${cartTopY}`}
+                        fill={isHovered ? '#4c7350' : '#314a34'}
+                        stroke={isHovered ? '#a6e26e' : '#4a6b4e'}
+                        strokeWidth="1.2"
+                      />
+
+                      {/* 3D Right Depth Face of Cartridge Inside the Cubby */}
+                      <polygon
+                        points={`${cartRightX},${cartTopY} ${cartRightX + 24},${cartTopY - 12} ${cartRightX + 24},${cartBottomY - 12} ${cartRightX},${cartBottomY}`}
+                        fill="#0d110e"
+                        stroke="#253027"
+                        strokeWidth="1"
+                      />
+
+                      {/* Main Cartridge Side Spine Face Resting Flush on `cartBottomY = floorY` */}
+                      <rect
+                        x={cartLeftX}
+                        y={cartTopY}
+                        width={cartRightX - cartLeftX}
+                        height={72}
+                        rx="5"
+                        fill={`url(#cubby-cart-face-${project.id})`}
+                        stroke={isHovered ? '#a6e26e' : '#436147'}
+                        strokeWidth={isHovered ? '2.2' : '1.5'}
+                      />
+
+                      {/* Bright Green Ray-Traced Specular Left Edge (Faces the Angled CRT TV) */}
+                      <line
+                        x1={cartLeftX + 1}
+                        y1={cartTopY + 3}
+                        x2={cartLeftX + 1}
+                        y2={cartBottomY - 3}
+                        stroke="#b8f284"
+                        strokeWidth={isHovered ? '4' : '2.5'}
+                        strokeOpacity={isHovered ? '1' : '0.8'}
+                      />
+
+                      {/* Recessed Spine Label Bay */}
+                      <rect
+                        x={cartLeftX + 12}
+                        y={cartTopY + 6}
+                        width={495}
+                        height={60}
+                        rx="5"
+                        fill="#0c100d"
+                        stroke={isHovered ? '#6ca144' : '#28382a'}
+                        strokeWidth="1.5"
+                      />
+
+                      {/* Artwork Icon on the Left of the Spine */}
+                      <rect
+                        x={cartLeftX + 17}
+                        y={cartTopY + 9}
+                        width="54"
+                        height="54"
+                        rx="7"
+                        fill="#141c15"
+                        stroke={project.accentColor}
+                        strokeWidth="1.5"
+                      />
+                      <image
+                        href={project.labelSvg}
+                        x={cartLeftX + 18}
+                        y={cartTopY + 10}
+                        width="52"
+                        height="52"
+                        preserveAspectRatio="xMidYMid slice"
+                        clipPath={`url(#cubby-icon-clip-${project.id})`}
+                      />
+
+                      {/* Project Accent Bar */}
+                      <rect
+                        x={cartLeftX + 82}
+                        y={cartTopY + 14}
+                        width="4"
+                        height="44"
+                        rx="2"
+                        fill={project.accentColor}
+                      />
+
+                      {/* Project Name on Spine in Dull Pixelated White Font */}
+                      <text
+                        x={cartLeftX + 100}
+                        y={cartTopY + 43}
+                        fill={isHovered ? '#d2dcd2' : '#b4beb4'}
+                        fontFamily="'Press Start 2P', monospace"
+                        fontSize="16"
+                        letterSpacing="0.5"
+                      >
+                        {project.name}
+                      </text>
+
+                      {/* Molded Grip Ribs on the Right End of the Cartridge Spine */}
+                      {[528, 542, 556, 570, 584].map((offset) => (
+                        <g key={offset}>
+                          <line
+                            x1={cartLeftX + offset}
+                            y1={cartTopY + 12}
+                            x2={cartLeftX + offset}
+                            y2={cartBottomY - 12}
+                            stroke="#090c0a"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                          />
+                          <line
+                            x1={cartLeftX + offset + 2}
+                            y1={cartTopY + 12}
+                            x2={cartLeftX + offset + 2}
+                            y2={cartBottomY - 12}
+                            stroke="#3b523e"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                          />
+                        </g>
+                      ))}
+                    </g>
+                  )}
+                </g>
               );
             })}
-          </div>
-        </div>
+
+            {/* Front-Left Vertical Wooden Frame Post of Shelf (Rim-Lit Green on Left Edge) */}
+            <rect
+              x="1008"
+              y="210"
+              width="14"
+              height="640"
+              fill="#423822"
+              stroke="#2e2214"
+              strokeWidth="1"
+            />
+            <line
+              x1="1009"
+              y1="210"
+              x2="1009"
+              y2="850"
+              stroke="#b8f284"
+              strokeOpacity="0.9"
+              strokeWidth="2.5"
+            />
+
+            {/* Front-Right Vertical Wooden Frame Post of Shelf (Overlaps right cubby edge for 3D depth) */}
+            <rect
+              x="1690"
+              y="210"
+              width="16"
+              height="640"
+              fill="#2e1b0f"
+              stroke="#1c1008"
+              strokeWidth="1.5"
+            />
+          </g>
+
+          {/* ================================================================ */}
+          {/* 5. VOLUMETRIC RAY-TRACED CRT LIGHT BEAMS & GOD-RAYS              */}
+          {/*    Shining from the diagonally angled CRT screen onto the        */}
+          {/*    brown shelf, cartridges, and white console below              */}
+          {/* ================================================================ */}
+          <g className="animate-tv-tingle pointer-events-none" style={{ mixBlendMode: 'screen' }}>
+            {/* Soft Phosphor Halo Around the Angled CRT Screen */}
+            <ellipse
+              cx="395"
+              cy="372"
+              rx="235"
+              ry="195"
+              fill="url(#rtScreenHalo)"
+              filter="url(#rtSoftBlur)"
+            />
+
+            {/* Primary Volumetric Frustum Cone Shining Diagonally from TV Screen to Shelf */}
+            <polygon
+              points="240,238 540,252 1705,190 1705,855 540,506 240,494"
+              fill="url(#rtPrimaryBeam)"
+              filter="url(#rtSoftBlur)"
+            />
+
+            {/* Individual Ray-Traced Scanline Light Shafts Hitting Each Shelf Cubby */}
+            <polygon
+              points="538,262 1012,215 1680,295 538,312"
+              fill="url(#rtGodRayShaft)"
+              filter="url(#rtFineBlur)"
+            />
+            <polygon
+              points="538,332 1012,355 1680,455 538,388"
+              fill="url(#rtGodRayShaft)"
+              filter="url(#rtFineBlur)"
+            />
+            <polygon
+              points="538,408 1012,505 1680,625 538,458"
+              fill="url(#rtGodRayShaft)"
+              filter="url(#rtFineBlur)"
+            />
+            <polygon
+              points="538,468 1012,655 1680,810 538,504"
+              fill="url(#rtGodRayShaft)"
+              filter="url(#rtFineBlur)"
+            />
+
+            {/* Downward Volumetric Ray Cone Illuminating the Top of the White Console */}
+            <polygon
+              points="236,492 538,504 662,728 182,710"
+              fill="url(#rtDownwardCone)"
+              filter="url(#rtFineBlur)"
+            />
+          </g>
+        </svg>
       </div>
     </div>
   );

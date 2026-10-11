@@ -1,13 +1,4 @@
 import { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  ExternalLink,
-  GitBranch,
-  Layers,
-  FileCode2,
-  Terminal,
-  Play,
-} from 'lucide-react';
 import type { Project } from '../data/projects';
 import { MurcesTuiDemo } from './MurcesTuiDemo';
 import { CfPLinkDemo } from './CfPLinkDemo';
@@ -110,7 +101,7 @@ const GITINGEST_TREES: Record<
         │   ├── MatrixEditor.tsx          # Editable Adjacency Matrix and Incidence Table
         │   └── PlaybackControls.tsx      # Play, pause, and step buttons for viewing the path
         └── storage/
-            └── presetGraphs.ts           # Example graphs (Königsberg Bridges, Petersen, etc.)`,
+            └── presetGraphs.ts           # Example graphs (Konigsberg Bridges, Petersen, etc.)`,
     keyFiles: [
       {
         path: 'src/algorithms/eulerian.ts',
@@ -193,6 +184,8 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   project,
   onEject,
 }) => {
+  // CRT static clears away during the first 440ms when entering the TV ROM screen
+  const [staticClearing, setStaticClearing] = useState(true);
   // Brief ROM boot animation showing the ROM's logo and description before the demo starts
   const [romBooting, setRomBooting] = useState(true);
   // Show CRT vanish effect for the first 500ms after boot completes
@@ -206,12 +199,15 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   const [sentricSubRoute, setSentricSubRoute] = useState<'/vital' | '/' | '/docs'>('/vital');
 
   useEffect(() => {
+    setStaticClearing(true);
     setRomBooting(true);
     setCrtVanishing(true);
-    const bootTimer = setTimeout(() => setRomBooting(false), 1350);
-    const crtTimer = setTimeout(() => setCrtVanishing(false), 1850);
+    const staticTimer = setTimeout(() => setStaticClearing(false), 450);
+    const bootTimer = setTimeout(() => setRomBooting(false), 1450);
+    const crtTimer = setTimeout(() => setCrtVanishing(false), 1950);
     const headerTimer = setTimeout(() => setHeaderPinnedOpen(false), 4800);
     return () => {
+      clearTimeout(staticTimer);
       clearTimeout(bootTimer);
       clearTimeout(crtTimer);
       clearTimeout(headerTimer);
@@ -234,6 +230,22 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#090a0f] text-stone-100 flex flex-col relative selection:bg-emerald-500 selection:text-black">
+      {/* CRT STATIC CLEARING OVERLAY (Transitions from zoom-in static to TV ROM screen) */}
+      {staticClearing && (
+        <div className="fixed inset-0 z-[70] pointer-events-none overflow-hidden animate-crtStaticClear">
+          <div
+            className="absolute -inset-8 animate-crtStaticNoise opacity-95"
+            style={{
+              backgroundImage: `
+                repeating-radial-gradient(circle at 30% 40%, rgba(180,190,180,0.88) 0px, rgba(12,18,14,0.95) 1.5px, rgba(166,226,110,0.75) 3px, rgba(0,0,0,0.98) 4.5px),
+                repeating-linear-gradient(0deg, rgba(166,226,110,0.28) 0px, rgba(0,0,0,0.85) 2px, rgba(255,255,255,0.22) 4px)
+              `,
+              backgroundSize: '28px 28px, 100% 6px',
+            }}
+          />
+        </div>
+      )}
+
       {/* BRIEF ROM LOADING SCREEN WITH LOGO & DESCRIPTION */}
       {romBooting && (
         <div className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center p-6 text-center select-none animate-fadeIn">
@@ -247,11 +259,11 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             />
           </div>
 
-          <h1 className="text-white font-bold text-2xl sm:text-3xl tracking-tight mb-2">
+          <h1 className="pixel-dull-white text-lg sm:text-2xl tracking-wider mb-4">
             {project.name}
           </h1>
 
-          <p className="text-white font-bold text-base sm:text-xl max-w-xl leading-snug mb-2">
+          <p className="pixel-dull-white text-xs sm:text-sm max-w-2xl leading-relaxed mb-4">
             "{project.originNote || project.tagline}"
           </p>
 
@@ -265,9 +277,9 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
           </div>
           <span
             className="text-[9px] text-[#a6e26e] tracking-widest uppercase mt-2.5"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
+            style={{ fontFamily: "var(--font-pixel)" }}
           >
-            LOADING ROM...
+            \uf110 LOADING ROM...
           </span>
         </div>
       )}
@@ -298,10 +310,10 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             type="button"
             onClick={() => setCornerHovered(true)}
             className="m-2 px-2.5 py-1 bg-[#141914]/90 hover:bg-[#1e281e] text-[#a6e26e] border border-[#a6e26e]/60 text-[10px] shadow-lg flex items-center gap-1.5 cursor-pointer transition-opacity opacity-75 hover:opacity-100"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
+            style={{ fontFamily: "var(--font-pixel)" }}
             title="Reveal Eject & Project Info"
           >
-            <span>⏏ EJECT / INFO</span>
+            <span>\uf052 EJECT / INFO</span>
           </button>
         )}
       </div>
@@ -321,10 +333,9 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               type="button"
               onClick={onEject}
               className="flex items-center gap-2 px-3 py-2 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] active:translate-y-0.5 transition-all text-[10px] sm:text-xs cursor-pointer"
-              style={{ fontFamily: "'Press Start 2P', monospace" }}
+              style={{ fontFamily: "var(--font-pixel)" }}
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>⏏ EJECT</span>
+              <span>\uf060 \uf052 EJECT</span>
             </button>
 
             <div className="hidden sm:flex flex-col">
@@ -396,12 +407,12 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             >
               {showSummary ? (
                 <>
-                  <Play className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="nf-glyph text-emerald-400">\uf04b</span>
                   <span>Back to Demo</span>
                 </>
               ) : (
                 <>
-                  <FileCode2 className="w-3.5 h-3.5 text-amber-300" />
+                  <span className="nf-glyph text-amber-300">\uf15c</span>
                   <span>Gitingest Summary</span>
                 </>
               )}
@@ -413,9 +424,9 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               rel="noreferrer"
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition-colors"
             >
-              <GitBranch className="w-3.5 h-3.5 text-stone-400" />
+              <span className="nf-glyph text-stone-400">\uf126</span>
               <span>Repo</span>
-              <ExternalLink className="w-3 h-3 text-stone-500" />
+              <span className="nf-glyph text-stone-500 text-[10px]">\uf08e</span>
             </a>
 
             {project.liveUrl && (
@@ -426,7 +437,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/70 transition-colors"
               >
                 <span>Live Site</span>
-                <ExternalLink className="w-3 h-3 text-emerald-400" />
+                <span className="nf-glyph text-emerald-400 text-[10px]">\uf08e</span>
               </a>
             )}
           </div>
@@ -485,7 +496,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             onClick={() => setShowSummary(true)}
             className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 text-stone-100 border border-stone-600 text-xs font-mono shadow-2xl cursor-pointer hover:border-emerald-500 transition-colors"
           >
-            <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="nf-glyph text-emerald-400">\uf15c</span>
             <span>Read Gitingest Summary</span>
           </button>
         </section>
@@ -496,7 +507,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-6">
               <div>
                 <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 mb-1">
-                  <Terminal className="w-4 h-4" />
+                  <span className="nf-glyph">\uf120</span>
                   <span>Gitingest Summary</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold font-mono text-white">
@@ -511,7 +522,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   onClick={() => setShowSummary(false)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white border-2 border-emerald-300/80 shadow-[3px_3px_0px_#000] text-xs font-mono font-bold cursor-pointer transition-colors"
                 >
-                  <Play className="w-4 h-4" />
+                  <span className="nf-glyph">\uf04b</span>
                   <span>BACK TO DEMO</span>
                 </button>
 
@@ -519,10 +530,9 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   type="button"
                   onClick={onEject}
                   className="flex items-center gap-2 px-4 py-2.5 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] text-xs cursor-pointer"
-                  style={{ fontFamily: "'Press Start 2P', monospace" }}
+                  style={{ fontFamily: "var(--font-pixel)" }}
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>⏏ EJECT</span>
+                  <span>\uf060 \uf052 EJECT</span>
                 </button>
               </div>
             </div>
@@ -534,7 +544,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                 <div className="rounded-lg border border-stone-800 bg-[#08090c] overflow-hidden">
                   <div className="px-4 py-2.5 bg-stone-900/90 border-b border-stone-800 flex items-center justify-between text-xs font-mono">
                     <span className="flex items-center gap-2 text-amber-300 font-semibold">
-                      <FileCode2 className="w-4 h-4" />
+                      <span className="nf-glyph">\uf15c</span>
                       gitingest://{project.id}/digest.txt
                     </span>
                     <span className="text-[11px] text-stone-400">UTF-8</span>
@@ -574,7 +584,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               <div className="lg:col-span-7 space-y-6">
                 <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-6 space-y-4">
                   <div className="flex items-center gap-2 text-emerald-400 font-mono text-sm font-semibold">
-                    <Layers className="w-4 h-4" />
+                    <span className="nf-glyph">\uf0c9</span>
                     <span>What It Does</span>
                   </div>
                   <p className="text-stone-200 text-sm sm:text-base leading-relaxed">
@@ -636,3 +646,4 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
     </div>
   );
 };
+
