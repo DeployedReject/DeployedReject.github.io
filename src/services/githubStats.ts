@@ -36,7 +36,7 @@ export interface DeveloperStats {
   fetchedLive: boolean;
 }
 
-const CACHE_KEY = 'dr_retro_stats_v2';
+const CACHE_KEY = 'dr_retro_stats_v3';
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 const FALLBACK_STATS: DeveloperStats = {
@@ -60,13 +60,13 @@ const FALLBACK_STATS: DeveloperStats = {
     { repo: 'cf-p-link', message: 'restart tunnel on process exit', date: 'RECENT' },
   ],
   contributionGrid: [
-    [0, 1, 2, 0, 1, 3, 2, 1, 0, 2, 3, 4, 2, 1, 0, 1, 2, 3, 4, 3],
-    [1, 2, 3, 1, 0, 2, 4, 3, 1, 2, 4, 3, 1, 2, 1, 2, 3, 4, 2, 4],
-    [0, 0, 1, 2, 2, 3, 1, 0, 2, 3, 2, 1, 3, 4, 2, 1, 4, 3, 3, 2],
-    [2, 1, 0, 1, 3, 4, 2, 2, 1, 0, 1, 2, 4, 3, 1, 3, 2, 4, 4, 3],
-    [1, 3, 2, 0, 1, 2, 3, 4, 2, 1, 3, 2, 1, 2, 3, 4, 1, 2, 3, 4],
-    [0, 1, 1, 2, 0, 1, 2, 1, 3, 2, 1, 0, 2, 1, 2, 3, 2, 3, 4, 2],
-    [0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 2, 1, 0, 1, 1, 2, 1, 2, 3, 1],
+    [0, 1, 2, 0, 1, 3, 2, 1, 0, 2, 3, 4, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1, 3, 4, 2, 3, 4, 3],
+    [1, 2, 3, 1, 0, 2, 4, 3, 1, 2, 4, 3, 1, 2, 1, 2, 3, 4, 2, 4, 3, 2, 4, 3, 1, 4, 3, 4],
+    [0, 0, 1, 2, 2, 3, 1, 0, 2, 3, 2, 1, 3, 4, 2, 1, 4, 3, 3, 2, 1, 3, 2, 4, 3, 2, 4, 3],
+    [2, 1, 0, 1, 3, 4, 2, 2, 1, 0, 1, 2, 4, 3, 1, 3, 2, 4, 4, 3, 2, 4, 3, 2, 4, 3, 3, 4],
+    [1, 3, 2, 0, 1, 2, 3, 4, 2, 1, 3, 2, 1, 2, 3, 4, 1, 2, 3, 4, 3, 2, 4, 3, 2, 4, 4, 3],
+    [0, 1, 1, 2, 0, 1, 2, 1, 3, 2, 1, 0, 2, 1, 2, 3, 2, 3, 4, 2, 1, 2, 3, 2, 1, 3, 2, 2],
+    [0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 2, 1, 0, 1, 1, 2, 1, 2, 3, 1, 0, 1, 2, 1, 2, 2, 3, 2],
   ],
   repos: [
     { name: 'murces', stars: 16, forks: 2, language: 'Java', updatedAt: '2026-10', source: 'codeberg', url: 'https://codeberg.org/DeployedReject/murces' },
@@ -209,10 +209,10 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       if (cJson?.total?.lastYear) {
         totalCommitsYear = cJson.total.lastYear;
       }
-      if (Array.isArray(cJson?.contributions) && cJson.contributions.length >= 140) {
-        const last140 = cJson.contributions.slice(-140);
+      if (Array.isArray(cJson?.contributions) && cJson.contributions.length >= 196) {
+        const last196 = cJson.contributions.slice(-196);
         const grid: number[][] = Array.from({ length: 7 }, () => []);
-        last140.forEach((day: { level?: number }, idx: number) => {
+        last196.forEach((day: { level?: number }, idx: number) => {
           const row = idx % 7;
           grid[row].push(day.level ?? 0);
         });

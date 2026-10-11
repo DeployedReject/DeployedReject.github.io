@@ -239,13 +239,13 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
     return (
       <div className="flex flex-col h-[620px] bg-[#141617]">
         <div className="flex items-center justify-between px-4 py-2 bg-[#1d2021] border-b border-[#3c3836] font-mono text-xs">
-          <span className="text-[#fabd2f] font-bold">\uf120 MurCes Headless CLI Mode (./murces)</span>
+          <span className="text-[#fabd2f] font-bold">{'\uf120'} MurCes Headless CLI Mode (./murces)</span>
           <button
             type="button"
             onClick={() => setMode('tui')}
             className="px-3 py-1 bg-[#d79921] text-[#1d2021] font-bold cursor-pointer"
           >
-            \uf060 Switch back to Interactive Lanterna TUI
+            {'\uf060'} Switch back to Interactive Lanterna TUI
           </button>
         </div>
         <div className="flex-1 min-h-0">
@@ -285,7 +285,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
               borderColor: palette.border,
             }}
           >
-            [ \uf120 Switch to CLI Shell (./murces) ]
+            [ {'\uf120'} Switch to CLI Shell (./murces) ]
           </button>
         </div>
 
@@ -295,25 +295,25 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
           style={{ borderColor: palette.border, color: palette.accent }}
         >
           <span className="cursor-pointer hover:underline" onClick={() => setScreen('main')}>
-            \uf05a [TIP] \uf15c [A] Activity Log
+            {'\uf05a'} [TIP] {'\uf15c'} [A] Activity Log
           </span>
           <span className="opacity-50">|</span>
           <span className="cursor-pointer hover:underline" onClick={() => setScreen('control')}>
-            \uf120 [L] Server Console
+            {'\uf120'} [L] Server Console
           </span>
           <span className="opacity-50">|</span>
           <span className="cursor-pointer hover:underline" onClick={() => setScreen('tasks')}>
-            \uf0ae [J] Active Tasks
+            {'\uf0ae'} [J] Active Tasks
           </span>
           <span className="opacity-50">|</span>
-          <span>\uf013 [TAB] Cycle Focus</span>
+          <span>{'\uf013'} [TAB] Cycle Focus</span>
           <span className="opacity-50">|</span>
           <button
             type="button"
             onClick={() => setScreen('main')}
             className="cursor-pointer hover:underline font-bold"
           >
-            \uf060 [ESC] Back to Main Menu
+            {'\uf060'} [ESC] Back to Main Menu
           </button>
         </div>
 
@@ -349,7 +349,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
 |_|  |_|\\__,_|_|   \\____\\___||___/ `}
                 </pre>
                 <div style={{ color: palette.accent }} className="text-xs font-bold">
-                  \uf005 Native AOT GraalVM binary! \uf005
+                  {'\uf005'} Native AOT GraalVM binary! {'\uf005'}
                 </div>
 
                 {/* Main Navigation Box */}
@@ -361,7 +361,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf013 Main Navigation (Click or Enter to select)
+                    {'\uf013'} Main Navigation (Click or Enter to select)
                   </span>
 
                   <div className="space-y-0.5">
@@ -391,7 +391,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
             {screen === 'control' && (
               <div className="space-y-3 mt-1">
                 <div style={{ color: palette.accent }} className="font-bold">
-                  = Workspace: \uf233 Server Control =
+                  = Workspace: {'\uf233'} Server Control =
                 </div>
 
                 {/* Server State Box */}
@@ -400,7 +400,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf233 Server State
+                    {'\uf233'} Server State
                   </span>
                   <div className="flex flex-wrap items-center gap-4">
                     <span>Server Status:</span>
@@ -408,14 +408,14 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       style={{ color: serverRunning ? palette.success : '#fb4934' }}
                       className="font-bold"
                     >
-                      \uf111 {serverRunning ? '[RUNNING] - Port 25565' : '[STOPPED]'}
+                      {'\uf111'} {serverRunning ? '[RUNNING] - Port 25565' : '[STOPPED]'}
                     </span>
                     <button
                       type="button"
                       onClick={() => addActivity('STATUS', 'Polled tmux session mcsv: HEALTHY (20.0 TPS)')}
                       className="cursor-pointer hover:underline"
                     >
-                      &lt;\uf021 [U]pdate Status&gt;
+                      &lt;{'\uf021'} [U]pdate Status&gt;
                     </button>
                   </div>
                 </div>
@@ -426,7 +426,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf013 Launch Options
+                    {'\uf013'} Launch Options
                   </span>
                   <div className="flex flex-wrap items-center gap-6">
                     <button
@@ -440,7 +440,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       }}
                       className="cursor-pointer"
                     >
-                      [{playitEnabled ? 'x' : ' '}] \uf132 [P]layit Tunnel (--public)
+                      [{playitEnabled ? 'x' : ' '}] {'\uf132'} [P]layit Tunnel (--public)
                     </button>
                     <button
                       type="button"
@@ -451,7 +451,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       }}
                       className="cursor-pointer"
                     >
-                      \uf013 [M]emory (RAM): {ramAlloc} |\uf0d7
+                      {'\uf013'} [M]emory (RAM): {ramAlloc} |{'\uf0d7'}
                     </button>
                   </div>
                 </div>
@@ -462,7 +462,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf0ae Server Actions
+                    {'\uf0ae'} Server Actions
                   </span>
                   <div className="flex flex-wrap gap-5">
                     <button
@@ -477,7 +477,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       className="cursor-pointer font-bold hover:underline"
                       style={{ color: palette.success }}
                     >
-                      &lt;\uf04b [S]tart Server&gt;
+                      &lt;{'\uf04b'} [S]tart Server&gt;
                     </button>
                     <button
                       type="button"
@@ -489,7 +489,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       }}
                       className="cursor-pointer font-bold hover:underline text-red-400"
                     >
-                      &lt;\uf04d [T]erminate Server&gt;
+                      &lt;{'\uf04d'} [T]erminate Server&gt;
                     </button>
                     <button
                       type="button"
@@ -501,7 +501,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       className="cursor-pointer font-bold hover:underline"
                       style={{ color: palette.accent }}
                     >
-                      &lt;\uf021 [R]estart Server&gt;
+                      &lt;{'\uf021'} [R]estart Server&gt;
                     </button>
                   </div>
                 </div>
@@ -512,10 +512,10 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf120 Command Dispatch
+                    {'\uf120'} Command Dispatch
                   </span>
                   <div className="flex items-center justify-between gap-2">
-                    <span>\uf120 [C]onsole Cmd (/):</span>
+                    <span>{'\uf120'} [C]onsole Cmd (/):</span>
                     <input
                       type="text"
                       value={consoleCmd}
@@ -532,7 +532,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       className="cursor-pointer font-bold hover:underline"
                       style={{ color: palette.accent }}
                     >
-                      &lt;\uf00c [D]ispatch&gt;
+                      &lt;{'\uf00c'} [D]ispatch&gt;
                     </button>
                   </div>
                 </div>
@@ -542,7 +542,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                   onClick={() => setScreen('main')}
                   className="cursor-pointer hover:underline"
                 >
-                  &lt;\uf060 [B]ack to Main Menu&gt;
+                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
                 </button>
               </div>
             )}
@@ -550,14 +550,14 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
             {screen === 'install' && (
               <div className="space-y-3 mt-1">
                 <div style={{ color: palette.accent }} className="font-bold">
-                  = Workspace: \uf013 Install Server Engine =
+                  = Workspace: {'\uf013'} Install Server Engine =
                 </div>
                 <div className="relative border p-3 pt-4 space-y-1.5" style={{ borderColor: palette.border }}>
                   <span
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf013 Server Configuration
+                    {'\uf013'} Server Configuration
                   </span>
                   <div
                     className="flex justify-between cursor-pointer hover:bg-white/5 px-1"
@@ -567,22 +567,22 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       )
                     }
                   >
-                    <span>\uf233 [E]ngine:</span>
-                    <span className="font-bold">{engineLoader} |\uf0d7</span>
+                    <span>{'\uf233'} [E]ngine:</span>
+                    <span className="font-bold">{engineLoader} |{'\uf0d7'}</span>
                   </div>
                   <div
                     className="flex justify-between cursor-pointer hover:bg-white/5 px-1"
                     onClick={() => setMcVersion(mcVersion === '1.21.1' ? '1.20.4' : '1.21.1')}
                   >
-                    <span>\uf1c0 Game [V]ersion:</span>
-                    <span className="font-bold">{mcVersion} |\uf0d7</span>
+                    <span>{'\uf1c0'} Game [V]ersion:</span>
+                    <span className="font-bold">{mcVersion} |{'\uf0d7'}</span>
                   </div>
                   <div className="flex justify-between px-1">
-                    <span>\uf013 Loader [L] Version:</span>
+                    <span>{'\uf013'} Loader [L] Version:</span>
                     <span>0.16.5 (Latest Stable)</span>
                   </div>
                   <div className="flex justify-between px-1">
-                    <span>\ue738 Portable Open[J]DK:</span>
+                    <span>{'\ue738'} Portable Open[J]DK:</span>
                     <span style={{ color: palette.success }}>[x] Eclipse Temurin 21.0.4 (Auto)</span>
                   </div>
                 </div>
@@ -598,14 +598,14 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="px-2 py-0.5 font-bold cursor-pointer"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    &lt;\uf0c7 [I]nstall Only&gt;
+                    &lt;{'\uf0c7'} [I]nstall Only&gt;
                   </button>
                   <button
                     type="button"
                     onClick={() => setScreen('main')}
                     className="cursor-pointer hover:underline"
                   >
-                    &lt;\uf060 [B]ack to Main Menu&gt;
+                    &lt;{'\uf060'} [B]ack to Main Menu&gt;
                   </button>
                 </div>
               </div>
@@ -614,7 +614,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
             {screen === 'mods' && (
               <div className="space-y-2 mt-1">
                 <div style={{ color: palette.accent }} className="font-bold">
-                  = Workspace: \uf019 Download & Browse Mods =
+                  = Workspace: {'\uf019'} Download & Browse Mods =
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-xs">
                   <button
@@ -624,13 +624,13 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     }
                     className="cursor-pointer"
                   >
-                    \uf002 [P]lat: <strong>{modPlatform}</strong> |\uf0d7
+                    {'\uf002'} [P]lat: <strong>{modPlatform}</strong> |{'\uf0d7'}
                   </button>
-                  <span>\uf013 L[o]ad: {engineLoader.toLowerCase()} |\uf0d7</span>
-                  <span>\uf013 [V]er: {mcVersion} |\uf0d7</span>
+                  <span>{'\uf013'} L[o]ad: {engineLoader.toLowerCase()} |{'\uf0d7'}</span>
+                  <span>{'\uf013'} [V]er: {mcVersion} |{'\uf0d7'}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span>\uf002 [Q] Query:</span>
+                  <span>{'\uf002'} [Q] Query:</span>
                   <input
                     type="text"
                     value={modQuery}
@@ -648,7 +648,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="px-1.5 font-bold cursor-pointer"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    &lt;\uf002 [S]earch&gt;
+                    &lt;{'\uf002'} [S]earch&gt;
                   </button>
                   <button
                     type="button"
@@ -663,7 +663,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="cursor-pointer font-bold hover:underline"
                     style={{ color: palette.success }}
                   >
-                    &lt;\uf019 [D]ownload&gt;
+                    &lt;{'\uf019'} [D]ownload&gt;
                   </button>
                 </div>
 
@@ -673,7 +673,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                       style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                     >
-                      \uf487 Results [L]ist (\uf077/\uf078)
+                      {'\uf487'} Results [L]ist ({'\uf077'}/{'\uf078'})
                     </span>
                     <div className="space-y-0.5">
                       {MOD_CATALOG.map((m, i) => (
@@ -686,7 +686,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                             color: selectedModIdx === i ? palette.badgeFg : palette.fg,
                           }}
                         >
-                          \uf487 {m.title} - {m.author}
+                          {'\uf487'} {m.title} - {m.author}
                         </div>
                       ))}
                     </div>
@@ -697,7 +697,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                       style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                     >
-                      \uf15c Mod Details & Versions
+                      {'\uf15c'} Mod Details & Versions
                     </span>
                     <div className="space-y-1 text-xs">
                       <div style={{ color: palette.accent }}>Title: {activeMod.title}</div>
@@ -715,7 +715,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                   onClick={() => setScreen('main')}
                   className="cursor-pointer hover:underline"
                 >
-                  &lt;\uf060 [B]ack to Main Menu&gt;
+                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
                 </button>
               </div>
             )}
@@ -723,7 +723,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
             {screen === 'backups' && (
               <div className="space-y-3 mt-1">
                 <div style={{ color: palette.accent }} className="font-bold">
-                  = Workspace: \uf0c7 World Backups =
+                  = Workspace: {'\uf0c7'} World Backups =
                 </div>
                 <div className="flex gap-4">
                   <button
@@ -744,7 +744,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="cursor-pointer font-bold hover:underline"
                     style={{ color: palette.success }}
                   >
-                    &lt;\uf0c7 [K] Backup Now&gt;
+                    &lt;{'\uf0c7'} [K] Backup Now&gt;
                   </button>
                   <span>Found {backups.length} backup archive(s). (Retain quota: 3 | rclone: minecraftdrive)</span>
                 </div>
@@ -754,7 +754,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf15c Backups [L]ist
+                    {'\uf15c'} Backups [L]ist
                   </span>
                   <div className="space-y-1">
                     <div className="grid grid-cols-3 opacity-70 border-b border-white/10 pb-0.5">
@@ -784,7 +784,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                   onClick={() => setScreen('main')}
                   className="cursor-pointer hover:underline"
                 >
-                  &lt;\uf060 [B]ack to Main Menu&gt;
+                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
                 </button>
               </div>
             )}
@@ -792,7 +792,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
             {screen === 'themes' && (
               <div className="space-y-3 mt-1">
                 <div style={{ color: palette.accent }} className="font-bold">
-                  = Workspace: \uf1fc Customization & Themes =
+                  = Workspace: {'\uf1fc'} Customization & Themes =
                 </div>
                 <div className="text-xs">Select from developer 24-bit TrueColor palettes:</div>
                 <div className="relative border p-3 pt-4 space-y-2" style={{ borderColor: palette.border }}>
@@ -800,7 +800,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                     className="absolute -top-2.5 left-2 px-1 font-bold text-xs"
                     style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                   >
-                    \uf1fc Appearance Settings
+                    {'\uf1fc'} Appearance Settings
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {Object.keys(THEMES).map((tName) => (
@@ -834,7 +834,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                   onClick={() => setScreen('main')}
                   className="cursor-pointer hover:underline"
                 >
-                  &lt;\uf060 [B]ack to Main Menu&gt;
+                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
                 </button>
               </div>
             )}
@@ -862,13 +862,13 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                         className="px-2 py-0.5 font-bold cursor-pointer"
                         style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                       >
-                        &lt;\uf021 [U]pdate All Mods (1-Key)&gt;
+                        &lt;{'\uf021'} [U]pdate All Mods (1-Key)&gt;
                       </button>
                     </div>
                     <div className="border p-2 space-y-1" style={{ borderColor: palette.border }}>
                       {installedMods.map((m) => (
                         <div key={m} className="flex justify-between">
-                          <span>\uf00c {m}</span>
+                          <span>{'\uf00c'} {m}</span>
                           <span style={{ color: palette.success }}>[ACTIVE]</span>
                         </div>
                       ))}
@@ -878,7 +878,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                 {screen === 'properties' && (
                   <div className="border p-2 space-y-1 text-xs" style={{ borderColor: palette.border }}>
                     <div>server-port = 25565</div>
-                    <div>motd = \u00A7aMurCes Managed Minecraft 1.21.1 Server</div>
+                    <div>motd = {'\u00A7'}aMurCes Managed Minecraft 1.21.1 Server</div>
                     <div>max-players = 20</div>
                     <div>online-mode = true</div>
                     <div>view-distance = 12</div>
@@ -901,7 +901,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                       className="px-2 py-0.5 font-bold cursor-pointer mt-1"
                       style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
                     >
-                      &lt;\uf0e7 [M]igrate UUID Data&gt;
+                      &lt;{'\uf0e7'} [M]igrate UUID Data&gt;
                     </button>
                   </div>
                 )}
@@ -923,7 +923,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
                   onClick={() => setScreen('main')}
                   className="cursor-pointer hover:underline"
                 >
-                  &lt;\uf060 [B]ack to Main Menu&gt;
+                  &lt;{'\uf060'} [B]ack to Main Menu&gt;
                 </button>
               </div>
             )}
@@ -938,7 +938,7 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
               className="absolute -top-2.5 left-3 px-1.5 font-bold text-xs"
               style={{ backgroundColor: palette.badgeBg, color: palette.badgeFg }}
             >
-              \uf15c Activity & Diagnostics [A]
+              {'\uf15c'} Activity & Diagnostics [A]
             </span>
             <div className="overflow-y-auto space-y-1 text-xs pr-1">
               {activityLogs.map((l, i) => (

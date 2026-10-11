@@ -279,7 +279,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             className="text-[9px] text-[#a6e26e] tracking-widest uppercase mt-2.5"
             style={{ fontFamily: "var(--font-pixel)" }}
           >
-            \uf110 LOADING ROM...
+            {'\uf110'} LOADING ROM...
           </span>
         </div>
       )}
@@ -313,7 +313,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             style={{ fontFamily: "var(--font-pixel)" }}
             title="Reveal Eject & Project Info"
           >
-            <span>\uf052 EJECT / INFO</span>
+            <span>{'\uf052'} EJECT / INFO</span>
           </button>
         )}
       </div>
@@ -335,7 +335,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               className="flex items-center gap-2 px-3 py-2 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] active:translate-y-0.5 transition-all text-[10px] sm:text-xs cursor-pointer"
               style={{ fontFamily: "var(--font-pixel)" }}
             >
-              <span>\uf060 \uf052 EJECT</span>
+              <span>{'\uf060 \uf052'} EJECT</span>
             </button>
 
             <div className="hidden sm:flex flex-col">
@@ -407,12 +407,12 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             >
               {showSummary ? (
                 <>
-                  <span className="nf-glyph text-emerald-400">\uf04b</span>
+                  <span className="nf-glyph text-emerald-400">{'\uf04b'}</span>
                   <span>Back to Demo</span>
                 </>
               ) : (
                 <>
-                  <span className="nf-glyph text-amber-300">\uf15c</span>
+                  <span className="nf-glyph text-amber-300">{'\uf15c'}</span>
                   <span>Gitingest Summary</span>
                 </>
               )}
@@ -424,9 +424,9 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               rel="noreferrer"
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition-colors"
             >
-              <span className="nf-glyph text-stone-400">\uf126</span>
+              <span className="nf-glyph text-stone-400">{'\uf126'}</span>
               <span>Repo</span>
-              <span className="nf-glyph text-stone-500 text-[10px]">\uf08e</span>
+              <span className="nf-glyph text-stone-500 text-[10px]">{'\uf08e'}</span>
             </a>
 
             {project.liveUrl && (
@@ -437,7 +437,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/70 transition-colors"
               >
                 <span>Live Site</span>
-                <span className="nf-glyph text-emerald-400 text-[10px]">\uf08e</span>
+                <span className="nf-glyph text-emerald-400 text-[10px]">{'\uf08e'}</span>
               </a>
             )}
           </div>
@@ -496,7 +496,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             onClick={() => setShowSummary(true)}
             className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 text-stone-100 border border-stone-600 text-xs font-mono shadow-2xl cursor-pointer hover:border-emerald-500 transition-colors"
           >
-            <span className="nf-glyph text-emerald-400">\uf15c</span>
+            <span className="nf-glyph text-emerald-400">{'\uf15c'}</span>
             <span>Read Gitingest Summary</span>
           </button>
         </section>
@@ -507,7 +507,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-6">
               <div>
                 <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 mb-1">
-                  <span className="nf-glyph">\uf120</span>
+                  <span className="nf-glyph">{'\uf120'}</span>
                   <span>Gitingest Summary</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold font-mono text-white">
@@ -522,7 +522,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   onClick={() => setShowSummary(false)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white border-2 border-emerald-300/80 shadow-[3px_3px_0px_#000] text-xs font-mono font-bold cursor-pointer transition-colors"
                 >
-                  <span className="nf-glyph">\uf04b</span>
+                  <span className="nf-glyph">{'\uf04b'}</span>
                   <span>BACK TO DEMO</span>
                 </button>
 
@@ -532,7 +532,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   className="flex items-center gap-2 px-4 py-2.5 bg-[#7c2d38] hover:bg-[#993846] text-[#f5e4d7] border-2 border-[#f5e4d7]/80 shadow-[3px_3px_0px_#000] text-xs cursor-pointer"
                   style={{ fontFamily: "var(--font-pixel)" }}
                 >
-                  <span>\uf060 \uf052 EJECT</span>
+                  <span>{'\uf060 \uf052'} EJECT</span>
                 </button>
               </div>
             </div>
@@ -544,7 +544,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                 <div className="rounded-lg border border-stone-800 bg-[#08090c] overflow-hidden">
                   <div className="px-4 py-2.5 bg-stone-900/90 border-b border-stone-800 flex items-center justify-between text-xs font-mono">
                     <span className="flex items-center gap-2 text-amber-300 font-semibold">
-                      <span className="nf-glyph">\uf15c</span>
+                      <span className="nf-glyph">{'\uf15c'}</span>
                       gitingest://{project.id}/digest.txt
                     </span>
                     <span className="text-[11px] text-stone-400">UTF-8</span>
@@ -584,7 +584,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
               <div className="lg:col-span-7 space-y-6">
                 <div className="rounded-lg border border-stone-800 bg-stone-900/40 p-6 space-y-4">
                   <div className="flex items-center gap-2 text-emerald-400 font-mono text-sm font-semibold">
-                    <span className="nf-glyph">\uf0c9</span>
+                    <span className="nf-glyph">{'\uf0c9'}</span>
                     <span>What It Does</span>
                   </div>
                   <p className="text-stone-200 text-sm sm:text-base leading-relaxed">

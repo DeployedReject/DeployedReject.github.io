@@ -2,17 +2,25 @@
 
 @font-face {
   font-family: 'Symbols Nerd Font Mono';
-  src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf') format('truetype');
-  font-weight: normal;
+  src:
+    url('/fonts/SymbolsNerdFontMono-Regular.ttf') format('truetype'),
+    local('Symbols Nerd Font Mono'),
+    local('JetBrainsMono Nerd Font Mono'),
+    local('JetBrainsMono Nerd Font'),
+    local('CaskaydiaCove Nerd Font Mono'),
+    url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
+  unicode-range: U+2300-27BF, U+2B50-2B55, U+E000-F8FF, U+F0000-FFFFD;
 }
 
 @layer base {
   :root {
-    --font-pixel: 'Press Start 2P', 'Symbols Nerd Font Mono', monospace;
-    --font-crt: 'VT323', 'Symbols Nerd Font Mono', monospace;
-    --font-code: 'JetBrainsMono Nerd Font', 'Symbols Nerd Font Mono', 'JetBrains Mono', monospace;
+    --font-pixel: 'Symbols Nerd Font Mono', 'Press Start 2P', monospace;
+    --font-crt: 'Symbols Nerd Font Mono', 'VT323', monospace;
+    --font-code: 'Symbols Nerd Font Mono', 'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace;
+    --font-mono: 'Symbols Nerd Font Mono', 'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace;
   }
 
   body {
@@ -24,8 +32,12 @@
   }
 }
 
+.font-mono {
+  font-family: var(--font-code);
+}
+
 .nf-glyph {
-  font-family: 'Symbols Nerd Font Mono', 'JetBrainsMono Nerd Font', monospace;
+  font-family: 'Symbols Nerd Font Mono', 'JetBrainsMono Nerd Font Mono', monospace;
   font-style: normal;
   font-weight: normal;
   line-height: 1;
@@ -34,7 +46,7 @@
 /* Dull and pixelated white font styling */
 .pixel-dull-white {
   color: #b4beb4;
-  font-family: 'Press Start 2P', 'Symbols Nerd Font Mono', monospace;
+  font-family: 'Symbols Nerd Font Mono', 'Press Start 2P', monospace;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
   font-smooth: never;
@@ -271,83 +283,99 @@
   animation: fadeInAnim 0.4s ease-out forwards;
 }
 
-/* Rapid CRT analog static snow jitter */
+/* Rapid CRT analog static snow jitter (pure GPU transform3d — no CPU repaint) */
 @keyframes crtStaticJitter {
   0% {
     transform: translate3d(0, 0, 0);
-    background-position: 0% 0%, 0 0;
   }
-  20% {
-    transform: translate3d(-3%, 2%, 0);
-    background-position: 35% 60%, 0 -18px;
+  25% {
+    transform: translate3d(-2.5%, 1.8%, 0);
   }
-  40% {
-    transform: translate3d(2%, -3%, 0);
-    background-position: 70% 20%, 0 24px;
+  50% {
+    transform: translate3d(2.2%, -2.4%, 0);
   }
-  60% {
-    transform: translate3d(-2%, -2%, 0);
-    background-position: 15% 85%, 0 -32px;
-  }
-  80% {
-    transform: translate3d(3%, 1%, 0);
-    background-position: 85% 40%, 0 14px;
+  75% {
+    transform: translate3d(-1.8%, -1.6%, 0);
   }
   100% {
-    transform: translate3d(-1%, 3%, 0);
-    background-position: 50% 90%, 0 -10px;
+    transform: translate3d(1.5%, 2.2%, 0);
   }
 }
 
 .animate-crtStaticNoise {
-  animation: crtStaticJitter 0.16s steps(2, end) infinite;
+  will-change: transform;
+  animation: crtStaticJitter 0.14s steps(2, end) infinite;
 }
 
-/* Static filling the screen during zoom-in */
+/* Static filling the screen during zoom-in (pure GPU opacity) */
 @keyframes crtStaticFill {
   0% {
     opacity: 0;
-    filter: brightness(1.1) contrast(1.2);
   }
   35% {
     opacity: 0.72;
-    filter: brightness(1.35) contrast(1.6);
   }
   75% {
-    opacity: 0.98;
-    filter: brightness(1.5) contrast(1.85);
+    opacity: 0.96;
   }
   100% {
     opacity: 1;
-    filter: brightness(1.25) contrast(1.65);
   }
 }
 
 .animate-crtStaticFill {
-  animation: crtStaticFill 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: opacity;
+  animation: crtStaticFill 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Static clearing away to reveal the Fullscreen TV */
+/* Static clearing away to reveal the Fullscreen TV or Room (pure GPU opacity) */
 @keyframes crtStaticClear {
   0% {
-    opacity: 1;
-    filter: brightness(1.35) contrast(1.75);
+    opacity: 0.95;
   }
-  40% {
-    opacity: 0.78;
-    filter: brightness(1.2) contrast(1.45);
+  35% {
+    opacity: 0.65;
   }
   75% {
-    opacity: 0.28;
-    filter: brightness(1.08) contrast(1.15);
+    opacity: 0.22;
   }
   100% {
     opacity: 0;
-    filter: brightness(1) contrast(1);
   }
 }
 
 .animate-crtStaticClear {
-  animation: crtStaticClear 0.46s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity;
+  animation: crtStaticClear 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Pure GPU-composited Camera Zoom-In and Zoom-Out keyframes (zero React state toggle frame drops) */
+@keyframes cameraZoomInAnim {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(3.55) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes cameraZoomOutAnim {
+  0% {
+    transform: scale(3.15) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+.animate-cameraZoomIn {
+  will-change: transform;
+  animation: cameraZoomInAnim 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-cameraZoomOut {
+  will-change: transform;
+  animation: cameraZoomOutAnim 0.56s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 

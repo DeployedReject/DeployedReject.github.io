@@ -28,13 +28,6 @@ const TAB_LABELS: Record<ScreenTab, string> = {
   hire: 'CH4: CONTACT',
 };
 
-const CRT_TINTS = [
-  { name: 'GREEN', filter: 'none', color: '#a6e26e' },
-  { name: 'AMBER', filter: 'hue-rotate(-48deg) saturate(1.35)', color: '#f59e0b' },
-  { name: 'CYAN', filter: 'hue-rotate(72deg) saturate(1.15)', color: '#38bdf8' },
-  { name: 'MONO', filter: 'grayscale(1) contrast(1.18) brightness(1.08)', color: '#e5e7eb' },
-];
-
 /**
  * Fullscreen CRT Analog Static Overlay (used when zooming in to fill the screen
  * with static and then clearing to show the TV, and during zoom-out).
@@ -152,7 +145,7 @@ const MatchingSvgRotaryKnob: React.FC<{
               />
             ))}
 
-            {/* Outer Ring (#132236 with #3d6089 border, matching zoomed-out SVG TV) */}
+            {/* Outer Ring (#111f30 with #3b5e87 border, matching zoomed-out SVG TV) */}
             <circle
               cx="50"
               cy="50"
@@ -229,8 +222,8 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
   const [channelKnobAngle, setChannelKnobAngle] = useState<number>(0);
-  const [tintKnobAngle, setTintKnobAngle] = useState<number>(35);
-  const [tintIndex, setTintIndex] = useState<number>(0);
+  const [scrollKnobAngle, setScrollKnobAngle] = useState<number>(35);
+  const [copiedBanner, setCopiedBanner] = useState<string | null>(null);
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
   const [hoveredConsole, setHoveredConsole] = useState<boolean>(false);
   const [stats, setStats] = useState<DeveloperStats | null>(null);
@@ -248,12 +241,17 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
   const hoveredProject = projects.find((p) => p.id === hoveredProjectId) || null;
-  const currentTint = CRT_TINTS[tintIndex] || CRT_TINTS[0];
 
   const currentChannelOptions = useMemo(
     () => getChannelOptions(screenTab, stats),
     [screenTab, stats]
   );
+
+  const safeOptionIndex =
+    currentChannelOptions.length > 0
+      ? ((optionIndex % currentChannelOptions.length) + currentChannelOptions.length) %
+        currentChannelOptions.length
+      : 0;
 
   const turnChannel = (dir: 'next' | 'prev') => {
     const idx = TV_TABS.indexOf(screenTab);
@@ -265,13 +263,12 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     setChannelKnobAngle((prev) => (dir === 'next' ? prev + 45 : prev - 45));
   };
 
-  const turnTint = (dir: 'next' | 'prev') => {
-    setTintIndex((prev) =>
-      dir === 'next'
-        ? (prev + 1) % CRT_TINTS.length
-        : (prev - 1 + CRT_TINTS.length) % CRT_TINTS.length
+  const turnScroll = (dir: 'next' | 'prev') => {
+    const total = Math.max(1, currentChannelOptions.length);
+    setOptionIndex((prev) =>
+      dir === 'next' ? (prev + 1) % total : (prev - 1 + total) % total
     );
-    setTintKnobAngle((prev) => (dir === 'next' ? prev + 45 : prev - 45));
+    setScrollKnobAngle((prev) => (dir === 'next' ? prev + 40 : prev - 40));
   };
 
   const triggerOption = (opt: ChannelOption) => {
@@ -279,41 +276,40 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
       setPingRefreshKey((prev) => prev + 1);
       return;
     }
+    if (opt.action === 'copy' && opt.copyText) {
+      navigator.clipboard?.writeText(opt.copyText).catch(() => {});
+      setCopiedBanner(`COPIED: ${opt.copyText}`);
+      window.setTimeout(() => setCopiedBanner(null), 2200);
+      return;
+    }
     if (opt.url) {
       window.open(opt.url, '_blank', 'noopener,noreferrer');
     }
   };
 
-  const handlePressEnterButton = () => {
+  const handlePressSelectButton = () => {
     if (currentChannelOptions.length === 0) return;
-    const safeIdx =
-      ((optionIndex % currentChannelOptions.length) + currentChannelOptions.length) %
-      currentChannelOptions.length;
-    triggerOption(currentChannelOptions[safeIdx]);
+    triggerOption(currentChannelOptions[safeOptionIndex]);
   };
 
-  // Smooth Zoom-Out when mouse moves to the outer screen edge in Fullscreen TV mode
+  // Smooth GPU-composited Zoom-Out when mouse moves to the outer screen edge in Fullscreen TV mode
   const handleEdgeZoomOut = () => {
     if (cameraMode !== 'closeup' || zoomPhase !== 'idle') return;
     if (Date.now() < zoomCooldownRef.current) return;
-    zoomCooldownRef.current = Date.now() + 1050;
+    zoomCooldownRef.current = Date.now() + 950;
 
-    setZoomPhase('zooming-out-static');
+    setCameraMode('table');
+    setZoomPhase('zooming-out-dolly');
     window.setTimeout(() => {
-      setCameraMode('table');
-      setZoomPhase('zooming-out-dolly');
-      // After mounting in 'zooming-out-dolly', trigger smooth camera pull-back to 'idle'
-      window.setTimeout(() => {
-        setZoomPhase('idle');
-      }, 40);
-    }, 240);
+      setZoomPhase('idle');
+    }, 580);
   };
 
-  // Smooth Zoom-In with Static Filling the Screen and Clearing to Show the TV
+  // Smooth GPU-composited Zoom-In with Static Filling the Screen and Clearing to Show the TV
   const handleTvZoomIn = () => {
     if (cameraMode !== 'table' || zoomPhase !== 'idle') return;
     if (Date.now() < zoomCooldownRef.current) return;
-    zoomCooldownRef.current = Date.now() + 1150;
+    zoomCooldownRef.current = Date.now() + 1050;
 
     setZoomPhase('zooming-in-static');
     window.setTimeout(() => {
@@ -321,8 +317,8 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
       setZoomPhase('clearing-closeup');
       window.setTimeout(() => {
         setZoomPhase('idle');
-      }, 460);
-    }, 410);
+      }, 430);
+    }, 400);
   };
 
   // Keyboard navigation
@@ -348,15 +344,15 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
       if (e.key === 'ArrowLeft') turnChannel('prev');
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setOptionIndex((prev) => prev + 1);
+        turnScroll('next');
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setOptionIndex((prev) => Math.max(0, prev - 1));
+        turnScroll('prev');
       }
       if (e.key === 'Enter' && cameraMode === 'closeup') {
         e.preventDefault();
-        handlePressEnterButton();
+        handlePressSelectButton();
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -366,16 +362,14 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   // ============================================================================
   // MODE 1: FULLSCREEN CRT VIEW (cameraMode === 'closeup')
   // - Retro Blue TV Casing matching the zoomed-out SVG TV
-  // - Matching SVG Rotary Knobs (Channel & Color)
-  // - Single ENTER button to open selected option on screen
+  // - Knob 1: CHANNEL | Knob 2: SCROLL | Button: SELECT
   // - Moving mouse to screen edge smoothly zooms out with static transition
   // ============================================================================
   if (cameraMode === 'closeup') {
     return (
       <div className="relative w-screen h-screen overflow-hidden bg-black select-none flex items-stretch">
-        {/* CRT Static Overlay when clearing into Fullscreen TV or starting Zoom-Out */}
+        {/* CRT Static Overlay when clearing into Fullscreen TV */}
         {zoomPhase === 'clearing-closeup' && <CRTStaticOverlay mode="clear" />}
-        {zoomPhase === 'zooming-out-static' && <CRTStaticOverlay mode="fill" />}
 
         {/* Invisible Screen-Edge Sensors: Moving mouse to the edge automatically zooms out */}
         <div onMouseEnter={handleEdgeZoomOut} className="fixed top-0 bottom-0 left-0 w-4 z-50" />
@@ -405,14 +399,11 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             }}
           >
             {/* FULLSCREEN CRT TUBE DISPLAY */}
-            <div
-              className="relative flex-1 h-full rounded-[20px] overflow-hidden bg-[#070c08] crt-screen-container shadow-[0_0_55px_rgba(166,226,110,0.24),inset_0_0_60px_rgba(0,0,0,0.95)] border-4 border-[#3a6b4c] transition-all duration-300"
-              style={{ filter: currentTint.filter }}
-            >
+            <div className="relative flex-1 h-full rounded-[20px] overflow-hidden bg-[#070c08] crt-screen-container shadow-[0_0_55px_rgba(166,226,110,0.24),inset_0_0_60px_rgba(0,0,0,0.95)] border-4 border-[#3a6b4c]">
               <ConsoleScreenContent
                 projects={projects}
                 activeTab={screenTab}
-                optionIndex={optionIndex}
+                optionIndex={safeOptionIndex}
                 onSelectOptionIndex={setOptionIndex}
                 onTriggerOption={triggerOption}
                 pingRefreshKey={pingRefreshKey}
@@ -420,6 +411,15 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 insertingProject={null}
                 hideRomsTab={true}
               />
+
+              {copiedBanner && (
+                <div
+                  className="absolute top-14 right-6 z-40 px-3 py-1.5 bg-[#a6e26e] text-[#071008] border-2 border-[#e2f9c8] text-[10px] font-bold shadow-lg"
+                  style={{ fontFamily: 'var(--font-pixel)' }}
+                >
+                  {'\uf00c'} {copiedBanner}
+                </div>
+              )}
 
               <img
                 src="/svg/glass-overlay.svg"
@@ -452,8 +452,8 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     <span
                       className="w-3 h-3 rounded-full animate-pulse"
                       style={{
-                        backgroundColor: currentTint.color,
-                        boxShadow: `0 0 10px ${currentTint.color}`,
+                        backgroundColor: '#a6e26e',
+                        boxShadow: '0 0 10px #a6e26e',
                       }}
                     />
                     <span
@@ -472,7 +472,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 </div>
               </div>
 
-              {/* MATCHING SVG DUAL ROTARY KNOBS (Same design as zoomed-out SVG TV) */}
+              {/* MATCHING SVG DUAL ROTARY KNOBS: 1. CHANNEL | 2. SCROLL */}
               <div
                 className="rounded-2xl p-3 flex flex-col items-center justify-around gap-3 border border-[#274466] bg-[#0b1524]"
                 style={{
@@ -491,49 +491,34 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
                 <div className="w-full h-[1px] bg-[#213a57]" />
 
-                {/* Knob 2: Phosphor Color Tint */}
+                {/* Knob 2: Scroll Selector (Scrolls options on active channel) */}
                 <MatchingSvgRotaryKnob
-                  angle={tintKnobAngle}
-                  onTurnClockwise={() => turnTint('next')}
-                  onTurnCounterClockwise={() => turnTint('prev')}
-                  label="COLOR"
-                  sublabel={currentTint.name}
+                  angle={scrollKnobAngle}
+                  onTurnClockwise={() => turnScroll('next')}
+                  onTurnCounterClockwise={() => turnScroll('prev')}
+                  label="SCROLL"
+                  sublabel={`OPT ${safeOptionIndex + 1}/${Math.max(1, currentChannelOptions.length)}`}
                   accentColor="#e6cf65"
                 />
               </div>
 
-              {/* SINGLE ENTER BUTTON TO OPEN SELECTED OPTION (With Option Up/Down Selectors) */}
-              <div className="flex flex-col gap-2">
+              {/* SINGLE SELECT BUTTON TO OPEN SELECTED OPTION */}
+              <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between px-1">
                   <span
                     className="text-[7px] text-[#b4beb4] uppercase tracking-wider"
                     style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    SELECT OPTION
+                    ACTION
                   </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setOptionIndex((prev) => Math.max(0, prev - 1))}
-                      className="w-6 h-5 rounded bg-[#102033] hover:bg-[#19304d] border border-[#32537a] text-[#a6e26e] text-xs flex items-center justify-center cursor-pointer nf-glyph"
-                      title="Previous Option"
-                    >
-                      {'\uf077'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOptionIndex((prev) => prev + 1)}
-                      className="w-6 h-5 rounded bg-[#102033] hover:bg-[#19304d] border border-[#32537a] text-[#a6e26e] text-xs flex items-center justify-center cursor-pointer nf-glyph"
-                      title="Next Option"
-                    >
-                      {'\uf078'}
-                    </button>
-                  </div>
+                  <span className="text-[9px] font-mono text-[#a6e26e]">
+                    Open Selected
+                  </span>
                 </div>
 
                 <button
                   type="button"
-                  onClick={handlePressEnterButton}
+                  onClick={handlePressSelectButton}
                   className="w-full py-3 px-3 rounded-xl cursor-pointer active:translate-y-1 transition-all flex items-center justify-center gap-2 group"
                   style={{
                     background: 'linear-gradient(180deg, #2b6e48 0%, #1e5235 65%, #143824 100%)',
@@ -541,13 +526,13 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                       '0 5px 0 #0c2416, 0 8px 14px rgba(0,0,0,0.8), inset 0 1px 2px rgba(166,226,110,0.55)',
                     border: '2px solid #a6e26e',
                   }}
-                  title="Open Selected Option on Screen"
+                  title="Select Highlighted Option on Screen"
                 >
                   <span
                     className="text-[9px] xl:text-[10px] text-[#e2f9c8] font-bold tracking-wider uppercase group-hover:text-white transition-colors"
                     style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    {'\uf061'} ENTER
+                    {'\uf061'} SELECT
                   </span>
                 </button>
               </div>
@@ -570,16 +555,16 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   // ============================================================================
   // MODE 2: PITCH-BLACK ROOM WITH RAY-TRACED GREEN CRT LIGHTING
-  // - Blue TV angled diagonally toward the Brown Shelf so its light shines across
-  // - White Console ("Definetly Legally Distinct Console") underneath the TV,
-  //   with greenish ray-traced bounce light on its upper deck & slot rim
-  // - Cartridge slides cleanly into the Console's top-loading slot mouth
-  // - 5 Side-View Cartridges sitting flush inside the Brown Shelf cubbies with
-  //   matching 3D perspective and greenish ray-traced rim lighting on left edges
+  // - Left Side: Blue CRT TV sitting 100% inside the rear deck of the White
+  //   Console ("Definetly Legally Distinct Console"), angled toward the shelf.
+  // - Right Side: Brown Wooden Shelf tilted toward the TV (skewY(1.68) and
+  //   depth (+32, -18)) so all 5 cartridges fit flush inside the cubbies and
+  //   pull out toward the TV along the shelf's 3D axis.
   // ============================================================================
   const isZoomingIn =
     cameraMode === 'zooming-in' || zoomPhase === 'zooming-in-static';
-  const isZoomOutStart = zoomPhase === 'zooming-out-dolly';
+  const isZoomingOut =
+    zoomPhase === 'zooming-out-dolly' || cameraMode === 'ejecting';
 
   // Subtitle text in dull pixelated white when hovering a cartridge or the console
   const hoverSubtitle = hoveredProject
@@ -588,29 +573,26 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     ? 'Definetly Legally Distinct Console: "this doesnt really do much"'
     : '';
 
-  // Shelf cubby floor Y-coordinates in the unified 1920x1080 SVG scene
-  const cubbyFloorYs = [332, 452, 572, 692, 812];
+  // Shelf cubby floor Y-coordinates in local shelf coordinates
+  const cubbyFloorYs = [326, 446, 566, 686, 806];
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black select-none">
       {/* CRT Static Overlay Filling the Screen During Zoom-In or Clearing During Zoom-Out */}
       {isZoomingIn && <CRTStaticOverlay mode="fill" />}
-      {zoomPhase === 'zooming-out-dolly' && <CRTStaticOverlay mode="clear" />}
+      {isZoomingOut && <CRTStaticOverlay mode="clear" />}
 
-      {/* Camera Zoom Stage centered on the angled CRT screen (22.5% 37.5%) */}
+      {/* GPU-Composited Camera Zoom Stage centered on the CRT screen (19.5% 42.5%) */}
       <div
-        className={`relative w-screen h-screen will-change-transform ${
-          isZoomOutStart
-            ? 'transition-none'
-            : 'transition-transform duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]'
+        className={`relative w-screen h-screen ${
+          isZoomingIn
+            ? 'animate-cameraZoomIn'
+            : isZoomingOut
+            ? 'animate-cameraZoomOut'
+            : ''
         }`}
         style={{
-          transformOrigin: '22.5% 37.5%',
-          transform: isZoomingIn
-            ? 'scale(3.75)'
-            : isZoomOutStart
-            ? 'scale(2.85)'
-            : 'scale(1)',
+          transformOrigin: '19.5% 42.5%',
         }}
       >
         {/* ================================================================== */}
@@ -633,49 +615,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         </div>
 
         {/* ================================================================== */}
-        {/* LIVE DIAGONALLY ANGLED CRT SCREEN CONTENT INSIDE THE BLUE SVG TV   */}
-        {/* ================================================================== */}
-        <div
-          className="absolute inset-0 pointer-events-none z-10"
-          style={{
-            perspective: '1200px',
-          }}
-        >
-          <div
-            className="absolute bg-[#070c08] crt-screen-container overflow-hidden shadow-[0_0_70px_16px_rgba(166,226,110,0.35)]"
-            style={{
-              left: '12.6%',
-              top: '23.2%',
-              width: '17.6%',
-              height: '26.2%',
-              borderRadius: '14px',
-              transform: 'rotateY(18deg) rotateZ(1.4deg) skewY(2.2deg)',
-              transformOrigin: 'left center',
-              filter: currentTint.filter,
-            }}
-          >
-            <ConsoleScreenContent
-              projects={projects}
-              activeTab={screenTab}
-              pingRefreshKey={pingRefreshKey}
-              isTableZoomedOut={true}
-              insertingProject={
-                cameraMode === 'inserting' || cameraMode === 'zooming-in'
-                  ? activeCartridge
-                  : null
-              }
-              hideRomsTab={true}
-            />
-            <div className="crt-vignette" />
-          </div>
-        </div>
-
-        {/* ================================================================== */}
-        {/* UNIFIED 1920x1080 SVG SCENE:                                       */}
-        {/* 1. Pitch-Black Room + Floor + Ray-Traced Volumetric Green Light    */}
-        {/* 2. Diagonally Angled Blue TV Stacked on White Console              */}
-        {/* 3. Cartridge Sliding Cleanly into the White Console's Top Slot     */}
-        {/* 4. Brown Wooden Shelf with 5 Properly Seated 3D Cartridges         */}
+        {/* UNIFIED 1920x1080 SVG SCENE                                        */}
         {/* ================================================================== */}
         <svg
           viewBox="0 0 1920 1080"
@@ -684,38 +624,33 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         >
           <defs>
             {/* ---------------- RAY-TRACED LIGHTING GRADIENTS ---------------- */}
-            {/* Volumetric Primary Frustum Beam from Angled CRT to Brown Shelf */}
-            <linearGradient id="rtPrimaryBeam" x1="0" y1="0.38" x2="1" y2="0.55">
-              <stop offset="0%" stopColor="#b8f284" stopOpacity="0.30" />
-              <stop offset="22%" stopColor="#a6e26e" stopOpacity="0.18" />
+            <linearGradient id="rtPrimaryBeam" x1="0" y1="0.4" x2="1" y2="0.52">
+              <stop offset="0%" stopColor="#b8f284" stopOpacity="0.32" />
+              <stop offset="24%" stopColor="#a6e26e" stopOpacity="0.19" />
               <stop offset="58%" stopColor="#72b846" stopOpacity="0.09" />
               <stop offset="88%" stopColor="#4c852c" stopOpacity="0.03" />
               <stop offset="100%" stopColor="#000000" stopOpacity="0" />
             </linearGradient>
 
-            {/* Individual Scanline God-Ray Shafts */}
-            <linearGradient id="rtGodRayShaft" x1="0" y1="0.4" x2="1" y2="0.55">
-              <stop offset="0%" stopColor="#d4f7b5" stopOpacity="0.22" />
-              <stop offset="45%" stopColor="#a6e26e" stopOpacity="0.08" />
+            <linearGradient id="rtGodRayShaft" x1="0" y1="0.42" x2="1" y2="0.52">
+              <stop offset="0%" stopColor="#d4f7b5" stopOpacity="0.24" />
+              <stop offset="45%" stopColor="#a6e26e" stopOpacity="0.09" />
               <stop offset="100%" stopColor="#000000" stopOpacity="0" />
             </linearGradient>
 
-            {/* Downward CRT Light Cone Hitting the White Console Below */}
             <linearGradient id="rtDownwardCone" x1="0.45" y1="0" x2="0.55" y2="1">
-              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.28" />
-              <stop offset="55%" stopColor="#7ec252" stopOpacity="0.10" />
+              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.34" />
+              <stop offset="60%" stopColor="#7ec252" stopOpacity="0.12" />
               <stop offset="100%" stopColor="#000000" stopOpacity="0" />
             </linearGradient>
 
-            {/* Ambient Halo Around the CRT Screen */}
             <radialGradient id="rtScreenHalo" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.32" />
+              <stop offset="0%" stopColor="#a6e26e" stopOpacity="0.34" />
               <stop offset="48%" stopColor="#6eb844" stopOpacity="0.10" />
               <stop offset="100%" stopColor="#000000" stopOpacity="0" />
             </radialGradient>
 
-            {/* Floor Bounce Light Pool Across the Black Room Floor */}
-            <radialGradient id="rtFloorBounce" cx="0.38" cy="0.5" r="0.55">
+            <radialGradient id="rtFloorBounce" cx="0.4" cy="0.5" r="0.55">
               <stop offset="0%" stopColor="#8ed158" stopOpacity="0.18" />
               <stop offset="50%" stopColor="#4f8230" stopOpacity="0.07" />
               <stop offset="100%" stopColor="#000000" stopOpacity="0" />
@@ -729,78 +664,76 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             </filter>
 
             {/* ---------------- BLUE TV CASING GRADIENTS ---------------- */}
-            {/* Front Cabinet of Blue TV (Right side slightly darker, screen rim greenish) */}
-            <linearGradient id="tvBlueFront" x1="0" y1="0" x2="1" y2="0.3">
-              <stop offset="0%" stopColor="#23456e" />
-              <stop offset="55%" stopColor="#1a3454" />
-              <stop offset="100%" stopColor="#102238" />
+            <linearGradient id="tvBlueFront" x1="0" y1="0" x2="1" y2="0.2">
+              <stop offset="0%" stopColor="#244770" />
+              <stop offset="55%" stopColor="#1b3656" />
+              <stop offset="100%" stopColor="#11243b" />
             </linearGradient>
-            {/* Left 3D Side Wall of Blue TV */}
             <linearGradient id="tvBlueLeftSide" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#0d1b2e" />
               <stop offset="100%" stopColor="#1b3657" />
             </linearGradient>
-            {/* Top 3D Roof of Blue TV */}
             <linearGradient id="tvBlueTop" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#294f7d" />
-              <stop offset="100%" stopColor="#162d4a" />
+              <stop offset="0%" stopColor="#2a5180" />
+              <stop offset="100%" stopColor="#18304f" />
             </linearGradient>
-            {/* Inner Bezel of Blue TV Catching Green Ray-Traced Glow from Tube */}
             <linearGradient id="tvBezelGreenRay" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#6cbf64" />
+              <stop offset="0%" stopColor="#72c768" />
               <stop offset="50%" stopColor="#356e4c" />
               <stop offset="100%" stopColor="#1d4245" />
             </linearGradient>
 
+            {/* Clip Path for Live CRT Screen Inside the Angled Blue TV */}
+            <clipPath id="angledTvScreenClip">
+              <polygon points="206,314 512,304 512,601 206,611" />
+            </clipPath>
+
             {/* ---------------- WHITE CONSOLE GRADIENTS (WITH GREEN RAY BOUNCE) ---------------- */}
-            {/* Top Deck of White Console: Greenish directly under CRT screen, white/grey toward edges */}
-            <radialGradient id="consoleWhiteTopRay" cx="0.42" cy="0.35" r="0.65">
-              <stop offset="0%" stopColor="#a9db9c" />
-              <stop offset="38%" stopColor="#b8d4b4" />
-              <stop offset="72%" stopColor="#c9d0d6" />
-              <stop offset="100%" stopColor="#a4adb5" />
+            <radialGradient id="consoleWhiteTopRay" cx="0.46" cy="0.58" r="0.55">
+              <stop offset="0%" stopColor="#9ce38a" />
+              <stop offset="40%" stopColor="#b5d6b0" />
+              <stop offset="75%" stopColor="#cbd1d6" />
+              <stop offset="100%" stopColor="#a7b0b8" />
             </radialGradient>
-            {/* Front Face of White Console (Off-white in dark room, top lip slightly greenish) */}
-            <linearGradient id="consoleWhiteFront" x1="0" y1="0" x2="0.15" y2="1">
-              <stop offset="0%" stopColor="#c4d9c0" />
-              <stop offset="18%" stopColor="#d2d7dc" />
-              <stop offset="75%" stopColor="#b8bfc7" />
-              <stop offset="100%" stopColor="#8c949e" />
+            <linearGradient id="consoleWhiteFront" x1="0" y1="0" x2="0.1" y2="1">
+              <stop offset="0%" stopColor="#c4dbc0" />
+              <stop offset="18%" stopColor="#d5dade" />
+              <stop offset="75%" stopColor="#bcc3cb" />
+              <stop offset="100%" stopColor="#9199a3" />
             </linearGradient>
-            {/* Left 3D Side Wall of White Console (In shadow away from TV screen) */}
             <linearGradient id="consoleWhiteLeftSide" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#6e7680" />
-              <stop offset="100%" stopColor="#9aa2ab" />
+              <stop offset="0%" stopColor="#707882" />
+              <stop offset="100%" stopColor="#9ea6b0" />
             </linearGradient>
 
-            {/* Clip Path at the Exact Front Lip of the Console's Top-Loading Cartridge Slot */}
+            {/* Clip Path at the Exact Front Lip of the Console's Front-Deck Cartridge Slot */}
             <clipPath id="consoleSlotMouthClip">
-              <polygon points="310,480 570,480 570,715 310,707" />
+              <polygon points="300,498 550,488 550,664 300,672" />
             </clipPath>
 
             {/* ---------------- BROWN WOODEN SHELF GRADIENTS (WITH GREEN RAY RIM) ---------------- */}
-            {/* Left Outer Wall of Brown Shelf: Directly hit by green CRT rays on its front/top-left */}
             <linearGradient id="shelfBrownLeftWallRay" x1="0" y1="0.2" x2="1" y2="0.8">
-              <stop offset="0%" stopColor="#6ca352" />
-              <stop offset="28%" stopColor="#4f6e3b" />
-              <stop offset="65%" stopColor="#4a301d" />
+              <stop offset="0%" stopColor="#6ea654" />
+              <stop offset="32%" stopColor="#4f6e3b" />
+              <stop offset="68%" stopColor="#4a301d" />
               <stop offset="100%" stopColor="#2e1c10" />
             </linearGradient>
-            {/* Interior Recessed Back Wall of Brown Shelf */}
+            <linearGradient id="shelfBrownRightWallDark" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#382214" />
+              <stop offset="100%" stopColor="#1c1008" />
+            </linearGradient>
             <linearGradient id="shelfBrownBackWall" x1="0" y1="0.3" x2="1" y2="0.7">
               <stop offset="0%" stopColor="#293620" />
               <stop offset="25%" stopColor="#2b1b10" />
               <stop offset="70%" stopColor="#1c110a" />
               <stop offset="100%" stopColor="#120b06" />
             </linearGradient>
-            {/* Top Surface of Each Wooden Shelf Plank (Greenish on left near TV, brown wood to the right) */}
             <linearGradient id="shelfBrownPlankTop" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#5e8747" />
               <stop offset="22%" stopColor="#524628" />
               <stop offset="55%" stopColor="#4a2e1b" />
               <stop offset="100%" stopColor="#2b190e" />
             </linearGradient>
-            {/* Front Edge of Each Wooden Shelf Plank */}
             <linearGradient id="shelfBrownPlankFront" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#7ec258" />
               <stop offset="18%" stopColor="#5d6e38" />
@@ -815,7 +748,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           <rect x="0" y="0" width="1920" height="1080" fill="#020302" />
 
           {/* Subtle Room Horizon Line */}
-          <line x1="0" y1="845" x2="1920" y2="845" stroke="#162919" strokeWidth="1.5" opacity="0.6" />
+          <line x1="0" y1="848" x2="1920" y2="848" stroke="#162919" strokeWidth="1.5" opacity="0.6" />
 
           {/* Floor Green Bounce Pool from CRT Rays */}
           <ellipse
@@ -829,95 +762,237 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
           {/* Ray-Traced Cast Shadow Behind/Right of the Shelf on the Floor */}
           <polygon
-            points="995,895 1715,895 1890,965 1060,955"
+            points="1005,875 1712,895 1860,960 1075,935"
             fill="#000000"
             opacity="0.88"
           />
           {/* Ray-Traced Cast Shadow Under the Console */}
           <polygon
-            points="160,868 685,882 720,912 135,895"
+            points="98,780 190,828 682,812 728,848 175,868 85,812"
             fill="#000000"
             opacity="0.92"
           />
 
           {/* ================================================================ */}
-          {/* 2. DIAGONALLY ANGLED WHITE CONSOLE & RISER STAND                 */}
-          {/*    ("Definetly Legally Distinct Console")                        */}
+          {/* 2. WHITE CONSOLE DECK ("Definetly Legally Distinct Console")     */}
+          {/*    Consistent 3D Geometry:                                       */}
+          {/*    - Front face: (190,680) -> (670,664) -> (670,810) -> (190,826)*/}
+          {/*    - Depth vector: (-80, -48) receding up-and-left               */}
+          {/*    - Rear deck (154..110) holds the Blue TV 100% inside!         */}
           {/* ================================================================ */}
           <g
             onMouseEnter={() => setHoveredConsole(true)}
             onMouseLeave={() => setHoveredConsole(false)}
             className="cursor-pointer"
           >
-            {/* Riser Left Support Pillar (Behind Console Left Edge) */}
+            {/* Console 3D Left Side Wall (Receding up-and-left by dx=-80, dy=-48) */}
             <polygon
-              points="158,548 196,552 196,860 158,842"
-              fill="#182638"
-              stroke="#2e4a6b"
-              strokeWidth="1.5"
-            />
-            {/* Riser Right Support Pillar */}
-            <polygon
-              points="642,566 676,568 676,876 642,874"
-              fill="#121e2e"
-              stroke="#27405e"
-              strokeWidth="1.5"
-            />
-            {/* Riser Bridge Shelf Holding the Angled Blue TV Above the Console */}
-            <polygon
-              points="152,536 205,512 690,528 652,556"
-              fill="#1b304a"
-              stroke="#487556"
-              strokeWidth="1.5"
-            />
-            <polygon
-              points="152,536 652,556 652,570 152,550"
-              fill="#132338"
-              stroke="#3b5e4c"
-              strokeWidth="1.5"
-            />
-
-            {/* WHITE CONSOLE: 3D Left Side Wall (Receding diagonally back-left) */}
-            <polygon
-              points="178,704 222,664 222,824 178,864"
+              points="110,632 190,680 190,826 110,778"
               fill="url(#consoleWhiteLeftSide)"
               stroke="#5c646e"
               strokeWidth="1.5"
             />
 
-            {/* WHITE CONSOLE: 3D Sloped Upper Deck (Hit by green ray-traced light from CRT above) */}
+            {/* Console 3D Deep Top Deck (Rear half holds TV; Front half holds Cartridge Slot) */}
             <polygon
-              points="222,664 624,678 666,720 178,704"
+              points="190,680 110,632 590,616 670,664"
               fill="url(#consoleWhiteTopRay)"
               stroke="#85b87e"
               strokeWidth="2"
             />
 
-            {/* Specular Green Ray-Traced Reflection Pool on the White Console Top Deck */}
+            {/* Contact Shadow on Rear Half of Console Top Deck Where the Blue TV Sits */}
+            <polygon
+              points="164,658 122,633 580,618 622,643"
+              fill="#0a120d"
+              opacity="0.78"
+            />
+          </g>
+
+          {/* ================================================================ */}
+          {/* 3. BLUE CRT TV SITTING 100% INSIDE THE REAR CONSOLE DECK         */}
+          {/*    Consistent 3D Geometry (Exact same axes as the Console!):     */}
+          {/*    - Front face: (168,286) -> (618,271) -> (618,641) -> (168,656)*/}
+          {/*    - Depth vector: (-42, -25) receding up-and-left               */}
+          {/* ================================================================ */}
+          <g
+            onMouseEnter={handleTvZoomIn}
+            onClick={handleTvZoomIn}
+            className="cursor-zoom-in"
+          >
+            {/* 3D Top Roof of Blue TV (Opposite edges 100% parallel!) */}
+            <polygon
+              points="168,286 126,261 576,246 618,271"
+              fill="url(#tvBlueTop)"
+              stroke="#3b699e"
+              strokeWidth="2"
+            />
+
+            {/* 3D Left Side Depth Wall of Blue TV (Opposite edges 100% parallel!) */}
+            <polygon
+              points="126,261 168,286 168,656 126,631"
+              fill="url(#tvBlueLeftSide)"
+              stroke="#2c4f7c"
+              strokeWidth="2"
+            />
+
+            {/* Ventilation Slots on Left Side Wall (Parallel to depth vector -42,-25) */}
+            {[332, 354, 376, 398, 420, 442].map((vy) => (
+              <line
+                key={vy}
+                x1="134"
+                y1={vy}
+                x2="160"
+                y2={vy + 15}
+                stroke="#08111f"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+            ))}
+
+            {/* Main Blue TV Front Face (168,286 -> 618,271 -> 618,641 -> 168,656) */}
+            <polygon
+              points="168,286 618,271 618,641 168,656"
+              fill="url(#tvBlueFront)"
+              stroke="#38669c"
+              strokeWidth="2.5"
+            />
+
+            {/* Live CRT Screen Embedded Directly Inside the SVG TV Bezel */}
+            <g clipPath="url(#angledTvScreenClip)">
+              <polygon
+                points="206,314 512,304 512,601 206,611"
+                fill="#070c08"
+              />
+              <foreignObject x="204" y="302" width="310" height="310">
+                <div
+                  className="w-full h-full crt-screen-container overflow-hidden"
+                  style={{
+                    transform: 'skewY(-1.9deg)',
+                    transformOrigin: 'left center',
+                  }}
+                >
+                  <ConsoleScreenContent
+                    projects={projects}
+                    activeTab={screenTab}
+                    pingRefreshKey={pingRefreshKey}
+                    isTableZoomedOut={true}
+                    insertingProject={
+                      cameraMode === 'inserting' || cameraMode === 'zooming-in'
+                        ? activeCartridge
+                        : null
+                    }
+                    hideRomsTab={true}
+                  />
+                </div>
+              </foreignObject>
+            </g>
+
+            {/* Inner Chamfered Screen Bezel (Glowing Greenish from Ray-Traced CRT Light) */}
+            <polygon
+              points="202,310 516,300 516,605 202,615"
+              fill="none"
+              stroke="url(#tvBezelGreenRay)"
+              strokeWidth="5"
+            />
+            <polygon
+              points="206,314 512,304 512,601 206,611"
+              fill="none"
+              stroke="#a6e26e"
+              strokeOpacity="0.7"
+              strokeWidth="2"
+            />
+
+            {/* Right-Side Control Panel on the Angled Blue SVG TV */}
+            <polygon
+              points="528,299 604,296 604,601 528,604"
+              fill="#0e1d30"
+              stroke="#2d527d"
+              strokeWidth="1.5"
+            />
+            {/* Green Ray-Traced Rim Highlight on Control Panel Left Edge */}
+            <line
+              x1="528"
+              y1="301"
+              x2="528"
+              y2="602"
+              stroke="#8ce072"
+              strokeOpacity="0.75"
+              strokeWidth="2"
+            />
+
+            {/* Power LED on Blue SVG TV */}
+            <circle cx="544" cy="322" r="4.5" fill="#a6e26e" />
+            <line x1="556" y1="322" x2="592" y2="321" stroke="#3a628f" strokeWidth="5" strokeLinecap="round" />
+
+            {/* Rotary Knob 1 (CHANNEL) on Blue SVG TV */}
+            <circle cx="566" cy="374" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
+            <circle cx="566" cy="374" r="15" fill="#1b2f48" />
+            <line x1="566" y1="374" x2="566" y2="358" stroke="#a6e26e" strokeWidth="3.5" strokeLinecap="round" />
+
+            {/* Rotary Knob 2 (SCROLL) on Blue SVG TV */}
+            <circle cx="566" cy="436" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
+            <circle cx="566" cy="436" r="15" fill="#1b2f48" />
+            <line x1="566" y1="436" x2="578" y2="426" stroke="#e6cf65" strokeWidth="3.5" strokeLinecap="round" />
+
+            {/* Single SELECT Button on Blue SVG TV */}
+            <rect
+              x="540"
+              y="472"
+              width="52"
+              height="18"
+              rx="4"
+              fill="#1e5235"
+              stroke="#a6e26e"
+              strokeWidth="1.5"
+            />
+
+            {/* Speaker Grille Slots on Blue SVG TV */}
+            {[506, 518, 530, 542].map((sy) => (
+              <line
+                key={sy}
+                x1="540"
+                y1={sy}
+                x2="592"
+                y2={sy - 2}
+                stroke="#07101c"
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+            ))}
+          </g>
+
+          {/* ================================================================ */}
+          {/* 4. FRONT DECK SLOT & FRONT FACE OF THE WHITE CONSOLE             */}
+          {/*    Drawn in front of the TV base so the front deck shelf &       */}
+          {/*    cartridge slot sit cleanly in front of the TV!                */}
+          {/* ================================================================ */}
+          <g
+            onMouseEnter={() => setHoveredConsole(true)}
+            onMouseLeave={() => setHoveredConsole(false)}
+            className="cursor-pointer"
+          >
+            {/* Specular Green Ray-Traced Reflection Pool on the Front Deck Under the CRT Tube */}
             <ellipse
-              cx="425"
-              cy="690"
+              cx="415"
+              cy="656"
               rx="155"
-              ry="16"
+              ry="12"
               fill="#a6e26e"
-              opacity="0.32"
+              opacity="0.38"
               filter="url(#rtFineBlur)"
             />
 
-            {/* Top-Loading Cartridge Slot Recessed Well (Back Lip drawn BEHIND the cartridge) */}
+            {/* Top-Loading Cartridge Slot Recessed Well on the Front Console Deck */}
             <polygon
-              points="332,684 536,691 548,713 322,705"
+              points="314,654 518,647 530,663 326,670"
               fill="#0a120c"
               stroke="#6cbf5e"
               strokeWidth="2"
             />
-            <line x1="334" y1="686" x2="534" y2="693" stroke="#a6e26e" strokeWidth="1.5" strokeOpacity="0.8" />
+            <line x1="316" y1="656" x2="516" y2="649" stroke="#a6e26e" strokeWidth="1.5" strokeOpacity="0.85" />
 
-            {/* ============================================================== */}
-            {/* SLIDING CARTRIDGE ENTERING THE CONSOLE SLOT MOUTH              */}
-            {/* Clipped at the front lip of the slot (y=707..715) so the       */}
-            {/* bottom half of the cartridge goes INSIDE the console slot!     */}
-            {/* ============================================================== */}
+            {/* SLIDING CARTRIDGE ENTERING THE CONSOLE SLOT MOUTH */}
             {activeCartridge &&
               (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting') && (
                 <g clipPath="url(#consoleSlotMouthClip)">
@@ -928,23 +1003,23 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   >
                     {/* 3D Cartridge Shell Angled to Match the Console Slot */}
                     <polygon
-                      points="344,598 358,590 526,596 514,604"
+                      points="340,564 328,556 498,550 510,558"
                       fill="#35523a"
                       stroke="#a6e26e"
                       strokeWidth="1.5"
                     />
                     <polygon
-                      points="344,598 514,604 514,740 344,734"
+                      points="340,564 510,558 510,694 340,700"
                       fill="#1d2b20"
                       stroke="#a6e26e"
                       strokeWidth="2"
                     />
                     {/* Cartridge Label Artwork */}
                     <rect
-                      x="362"
-                      y="610"
+                      x="358"
+                      y="572"
                       width="134"
-                      height="68"
+                      height="64"
                       rx="4"
                       fill="#0d140e"
                       stroke={activeCartridge.accentColor}
@@ -952,20 +1027,19 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     />
                     <image
                       href={activeCartridge.labelSvg}
-                      x="364"
-                      y="612"
+                      x="360"
+                      y="574"
                       width="130"
-                      height="64"
+                      height="60"
                       preserveAspectRatio="xMidYMid slice"
                     />
-                    {/* Dull Pixelated White Name on Inserting Cartridge */}
                     <text
-                      x="429"
-                      y="696"
+                      x="425"
+                      y="654"
                       textAnchor="middle"
                       fill="#b4beb4"
                       fontSize="11"
-                      fontFamily="'Press Start 2P', monospace"
+                      fontFamily="var(--font-pixel)"
                     >
                       {activeCartridge.name}
                     </text>
@@ -975,15 +1049,15 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
             {/* Front Lip of the Console Slot (Drawn ON TOP of the cartridge so it sits inside!) */}
             <polygon
-              points="320,705 550,713 554,719 318,711"
+              points="324,668 532,661 536,667 328,674"
               fill="#b8d4b4"
               stroke="#76bd68"
               strokeWidth="1"
             />
 
-            {/* WHITE CONSOLE: Front Body Panel (Angled diagonally to match TV) */}
+            {/* WHITE CONSOLE: Front Body Panel (190,680 -> 670,664 -> 670,810 -> 190,826) */}
             <polygon
-              points="178,704 666,720 666,878 178,864"
+              points="190,680 670,664 670,810 190,826"
               fill="url(#consoleWhiteFront)"
               stroke="#8c9ba6"
               strokeWidth="2"
@@ -991,18 +1065,18 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
             {/* Ray-Traced Green Rim Highlight Along the Console's Upper Front Lip */}
             <line
-              x1="180"
-              y1="705"
-              x2="664"
-              y2="721"
+              x1="192"
+              y1="680"
+              x2="668"
+              y2="664"
               stroke="#a6e26e"
-              strokeOpacity="0.85"
+              strokeOpacity="0.9"
               strokeWidth="2.5"
             />
 
             {/* Console Recessed Control Strip & Controller Ports */}
             <polygon
-              points="204,732 640,746 640,806 204,792"
+              points="214,704 646,690 646,748 214,762"
               fill="#9ba4ad"
               stroke="#747d87"
               strokeWidth="1.5"
@@ -1010,13 +1084,13 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
             {/* Power & Reset Tactile Buttons on White Console */}
             <polygon
-              points="222,746 276,748 276,774 222,772"
+              points="232,718 286,716 286,742 232,744"
               fill="#2e4a36"
               stroke="#8ae070"
               strokeWidth="1.5"
             />
             <polygon
-              points="290,748 342,750 342,776 290,774"
+              points="300,715 352,713 352,739 300,741"
               fill="#5a636e"
               stroke="#3b424a"
               strokeWidth="1.5"
@@ -1024,13 +1098,13 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
             {/* Controller Port Sockets */}
             <polygon
-              points="508,754 562,756 562,786 508,784"
+              points="514,706 568,704 568,734 514,736"
               fill="#1e242b"
               stroke="#49535e"
               strokeWidth="1.5"
             />
             <polygon
-              points="574,756 628,758 628,788 574,786"
+              points="580,703 634,701 634,731 580,733"
               fill="#1e242b"
               stroke="#49535e"
               strokeWidth="1.5"
@@ -1038,194 +1112,74 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
             {/* Console Front Nameplate: "Definetly Legally Distinct Console" */}
             <polygon
-              points="204,814 640,828 640,854 204,840"
+              points="214,776 646,762 646,792 214,806"
               fill="#182026"
               stroke="#5b7a5e"
               strokeWidth="1.5"
             />
-            <circle cx="222" cy="827" r="5" fill="#a6e26e" />
+            <circle cx="232" cy="791" r="5" fill="#a6e26e" />
             <text
-              x="426"
-              y="839"
+              x="434"
+              y="788"
               textAnchor="middle"
               fill="#b4beb4"
               fontSize="11.5"
-              fontFamily="'Press Start 2P', monospace"
+              fontFamily="var(--font-pixel)"
               letterSpacing="0.5"
+              transform="rotate(-1.9 434 788)"
             >
               Definetly Legally Distinct Console
             </text>
           </g>
 
           {/* ================================================================ */}
-          {/* 3. DIAGONALLY ANGLED BLUE CRT TV ON TOP OF THE CONSOLE           */}
-          {/*    Angled toward the right so its screen shines on the shelf     */}
+          {/* 5. FOREGROUND BROWN WOODEN SHELF TILTED TOWARD THE TV TO FIT     */}
+          {/*    THE 5 3D CARTRIDGES                                           */}
+          {/*    - Entire Shelf + Cartridges share:                            */}
+          {/*      * Front Tilt: skewY(1.68) (sloping down-right toward viewer)*/}
+          {/*      * Depth Vector into Cubby: (+32, -18) for shelf planks/walls*/}
+          {/*        and (+24, -13.5) for cartridges (exact same 16:-9 angle!) */}
           {/* ================================================================ */}
-          <g
-            onMouseEnter={handleTvZoomIn}
-            onClick={handleTvZoomIn}
-            className="cursor-zoom-in"
-          >
-            {/* 3D Left Side Depth Wall of Blue TV (Visible because TV is angled right) */}
-            <polygon
-              points="154,238 202,202 202,534 154,512"
-              fill="url(#tvBlueLeftSide)"
-              stroke="#2c4f7c"
-              strokeWidth="2"
-            />
-            {/* Ventilation Slots on Left Side of Blue TV */}
-            {[285, 305, 325, 345, 365, 385].map((vy) => (
-              <line
-                key={vy}
-                x1="164"
-                y1={vy}
-                x2="192"
-                y2={vy - 18}
-                stroke="#091321"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
-            ))}
-
-            {/* 3D Top Roof of Blue TV (Angled diagonally toward the right) */}
-            <polygon
-              points="154,238 202,202 668,224 644,254"
-              fill="url(#tvBlueTop)"
-              stroke="#3b699e"
-              strokeWidth="2"
-            />
-
-            {/* Main Diagonally Angled Blue Front Cabinet WITH Cutout Window for the Live CRT Tube */}
-            <path
-              fillRule="evenodd"
-              d="M 202,202 L 644,224 L 644,548 L 202,534 Z M 236,238 L 538,252 L 538,504 L 236,492 Z"
-              fill="url(#tvBlueFront)"
-              stroke="#38669c"
-              strokeWidth="2.5"
-            />
-
-            {/* Inner Chamfered Screen Bezel (Glowing Greenish from Ray-Traced CRT Light) */}
-            <polygon
-              points="230,232 544,246 544,510 230,498"
-              fill="none"
-              stroke="url(#tvBezelGreenRay)"
-              strokeWidth="5"
-            />
-            <polygon
-              points="235,237 539,251 539,505 235,493"
-              fill="none"
-              stroke="#a6e26e"
-              strokeOpacity="0.65"
-              strokeWidth="2"
-            />
-
-            {/* Right-Side Control Panel on the Angled Blue SVG TV */}
-            <polygon
-              points="554,250 630,254 630,512 554,508"
-              fill="#0e1d30"
-              stroke="#2d527d"
-              strokeWidth="1.5"
-            />
-            {/* Green Ray-Traced Rim Highlight on Control Panel Left Edge */}
-            <line
-              x1="554"
-              y1="252"
-              x2="554"
-              y2="506"
-              stroke="#8ce072"
-              strokeOpacity="0.7"
-              strokeWidth="2"
-            />
-
-            {/* Power LED on Blue SVG TV */}
-            <circle cx="570" cy="274" r="4.5" fill="#a6e26e" />
-            <line x1="582" y1="274" x2="618" y2="276" stroke="#3a628f" strokeWidth="5" strokeLinecap="round" />
-
-            {/* Rotary Knob 1 (Channel) on Blue SVG TV — Matches Fullscreen TV Knob */}
-            <circle cx="592" cy="326" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
-            <circle cx="592" cy="326" r="15" fill="#1b2f48" />
-            <line x1="592" y1="326" x2="592" y2="310" stroke="#a6e26e" strokeWidth="3.5" strokeLinecap="round" />
-
-            {/* Rotary Knob 2 (Color) on Blue SVG TV — Matches Fullscreen TV Knob */}
-            <circle cx="592" cy="388" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
-            <circle cx="592" cy="388" r="15" fill="#1b2f48" />
-            <line x1="592" y1="388" x2="604" y2="378" stroke="#e6cf65" strokeWidth="3.5" strokeLinecap="round" />
-
-            {/* Single ENTER Button on Blue SVG TV */}
+          <g transform="translate(1000, 0) skewY(1.68)">
+            {/* Recessed Interior Back Wooden Wall of Shelf (at depth +32, -18) */}
             <rect
-              x="566"
-              y="424"
-              width="52"
-              height="18"
-              rx="4"
-              fill="#1e5235"
-              stroke="#a6e26e"
-              strokeWidth="1.5"
-            />
-
-            {/* Speaker Grille Slots on Blue SVG TV */}
-            {[456, 468, 480, 492].map((sy) => (
-              <line
-                key={sy}
-                x1="566"
-                y1={sy}
-                x2="618"
-                y2={sy + 2}
-                stroke="#07101c"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
-            ))}
-          </g>
-
-          {/* ================================================================ */}
-          {/* 4. FOREGROUND BROWN WOODEN SHELF WITH 5 PROPERLY SEATED          */}
-          {/*    3D SIDE-VIEW CARTRIDGES (Exact offset & 3D perspective)       */}
-          {/* ================================================================ */}
-          <g>
-            {/* 3D Top Wooden Roof Plank of Brown Shelf (Receding back-left by dx=-30, dy=-16) */}
-            <polygon
-              points="1008,210 978,194 1676,194 1706,210"
-              fill="url(#shelfBrownPlankTop)"
-              stroke="#658c4a"
-              strokeWidth="1.5"
-            />
-
-            {/* 3D Left Outer Wooden Wall of Shelf — Directly Facing the Angled CRT TV! */}
-            {/* Greenish at top/front where the CRT rays hit brightest, brown deeper down */}
-            <polygon
-              points="978,194 1008,210 1008,850 978,832"
-              fill="url(#shelfBrownLeftWallRay)"
-              stroke="#98de74"
-              strokeOpacity="0.85"
-              strokeWidth="2"
-            />
-
-            {/* Recessed Interior Back Wooden Wall of Shelf */}
-            <rect
-              x="1008"
-              y="210"
-              width="684"
+              x="32"
+              y="186"
+              width="680"
               height="640"
               fill="url(#shelfBrownBackWall)"
               stroke="#3b2416"
               strokeWidth="2"
             />
 
-            {/* Top Frame Lip of Brown Shelf */}
+            {/* 3D Interior Left Wooden Wall of Shelf (Visible inside cubbies, catching green CRT rays!) */}
+            <polygon
+              points="0,204 32,186 32,826 0,844"
+              fill="url(#shelfBrownLeftWallRay)"
+              stroke="#658c4a"
+              strokeOpacity="0.8"
+              strokeWidth="1.5"
+            />
+
+            {/* 3D Top Wooden Roof Plank of Brown Shelf (Receding into cubby by dx=+32, dy=-18) */}
+            <polygon
+              points="0,204 32,186 712,186 680,204"
+              fill="url(#shelfBrownPlankTop)"
+              stroke="#658c4a"
+              strokeWidth="1.5"
+            />
+
+            {/* Top Frame Front Lip of Brown Shelf */}
             <rect
-              x="1008"
-              y="210"
-              width="698"
+              x="0"
+              y="204"
+              width="680"
               height="14"
               fill="url(#shelfBrownPlankFront)"
             />
-            <line x1="1008" y1="211" x2="1706" y2="211" stroke="#a6e26e" strokeOpacity="0.7" strokeWidth="2" />
+            <line x1="0" y1="205" x2="680" y2="205" stroke="#a6e26e" strokeOpacity="0.7" strokeWidth="2" />
 
-            {/* ============================================================== */}
-            {/* 5 SHELF CUBBIES: EACH WITH ITS 3D WOODEN PLANK FLOOR AND       */}
-            {/* A SIDE-VIEW CARTRIDGE RESTING FLUSH ON THE PLANK               */}
-            {/* ============================================================== */}
+            {/* 5 SHELF CUBBIES WITH PROPERLY SEATED 3D SIDE-VIEW CARTRIDGES */}
             {cubbyFloorYs.map((floorY, idx) => {
               const project = projects[idx];
               const isHovered = project ? hoveredProjectId === project.id : false;
@@ -1234,60 +1188,59 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 activeCartridgeId === project.id &&
                 (cameraMode === 'inserting' || cameraMode === 'zooming-in' || cameraMode === 'ejecting');
 
-              // Cartridge sits directly on top of the cubby plank floor (height = 72)
-              const cartBottomY = floorY;
+              // Cartridge sits recessed on the wooden plank (front bottom at floorY - 3, back bottom at floorY - 16.5)
+              const cartBottomY = floorY - 3;
               const cartTopY = cartBottomY - 72;
-              const cartLeftX = 1044;
-              const cartRightX = 1656;
+              const cartLeftX = 36;
+              const cartRightX = 640;
 
               return (
                 <g key={floorY}>
-                  {/* Inner Left Cubby Wall Shadow / Depth Line */}
-                  <line
-                    x1="1008"
-                    y1={floorY}
-                    x2="1036"
-                    y2={floorY - 14}
-                    stroke="#4e6e3a"
-                    strokeWidth="1.5"
-                    strokeOpacity="0.6"
+                  {/* 3D Top Surface of the Wooden Cubby Plank (Receding by dx=+32, dy=-18) */}
+                  <polygon
+                    points={`0,${floorY} 32,${floorY - 18} 712,${floorY - 18} 680,${floorY}`}
+                    fill="url(#shelfBrownPlankTop)"
                   />
 
-                  {/* 3D Top Surface of the Wooden Cubby Plank (Cartridge rests on this!) */}
-                  <polygon
-                    points={`1008,${floorY} 1036,${floorY - 14} 1680,${floorY - 14} 1706,${floorY}`}
-                    fill="url(#shelfBrownPlankTop)"
+                  {/* Interior Left Cubby Corner Crease (Parallel to depth vector +32, -18) */}
+                  <line
+                    x1="0"
+                    y1={floorY}
+                    x2="32"
+                    y2={floorY - 18}
+                    stroke="#6ea654"
+                    strokeWidth="1.5"
+                    strokeOpacity="0.7"
                   />
 
                   {/* Ray-Traced Contact Shadow on the Plank Directly Under the Cartridge */}
                   {!isCurrentlyInSlot && (
                     <polygon
-                      points={`${cartLeftX - 8},${floorY - 1} ${cartLeftX + 16},${floorY - 11} ${cartRightX + 10},${floorY - 11} ${cartRightX - 4},${floorY - 1}`}
+                      points={`${cartLeftX - 4},${floorY - 2} ${cartLeftX + 22},${floorY - 17} ${cartRightX + 26},${floorY - 17} ${cartRightX + 2},${floorY - 2}`}
                       fill="#050302"
-                      opacity={isHovered ? '0.55' : '0.82'}
+                      opacity={isHovered ? '0.52' : '0.84'}
                     />
                   )}
 
                   {/* Front Thickness Face of the Wooden Shelf Plank */}
                   <rect
-                    x="1008"
+                    x="0"
                     y={floorY}
-                    width="698"
+                    width="680"
                     height="14"
                     fill="url(#shelfBrownPlankFront)"
                   />
-                  {/* Greenish Ray-Traced Highlight on Left Portion of Plank Front Lip */}
                   <line
-                    x1="1008"
+                    x1="0"
                     y1={floorY + 1}
-                    x2="1480"
+                    x2="520"
                     y2={floorY + 1}
                     stroke="#a6e26e"
-                    strokeOpacity="0.6"
+                    strokeOpacity="0.65"
                     strokeWidth="1.5"
                   />
 
-                  {/* 3D SIDE-VIEW CARTRIDGE SITTING FLUSH ON THE PLANK */}
+                  {/* 3D SIDE-VIEW CARTRIDGE SITTING FLUSH INSIDE THE CUBBY */}
                   {project && !isCurrentlyInSlot && (
                     <g
                       onMouseEnter={() => setHoveredProjectId(project.id)}
@@ -1297,8 +1250,9 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                       onClick={() => onSelectProject(project.id)}
                       className="cursor-pointer"
                       style={{
-                        transform: isHovered ? 'translate(-30px, 8px)' : 'translate(0px, 0px)',
-                        transition: 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)',
+                        // Slides straight out of the cubby along the negative depth vector (-24, +13.5)
+                        transform: isHovered ? 'translate(-24px, 13.5px)' : 'translate(0px, 0px)',
+                        transition: 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
                       }}
                     >
                       <defs>
@@ -1311,7 +1265,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                             rx="7"
                           />
                         </clipPath>
-                        {/* Cartridge Spine Body: Greenish ray-traced left side fading into dark slate */}
                         <linearGradient
                           id={`cubby-cart-face-${project.id}`}
                           x1="0"
@@ -1331,23 +1284,23 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                         </linearGradient>
                       </defs>
 
-                      {/* 3D Top Face of Cartridge (Matches Shelf Plank Perspective dx=+24, dy=-12) */}
+                      {/* 3D Top Face of Cartridge (Receding by dx=+24, dy=-13.5 — exact same angle as shelf!) */}
                       <polygon
-                        points={`${cartLeftX},${cartTopY} ${cartLeftX + 24},${cartTopY - 12} ${cartRightX + 24},${cartTopY - 12} ${cartRightX},${cartTopY}`}
+                        points={`${cartLeftX},${cartTopY} ${cartLeftX + 24},${cartTopY - 13.5} ${cartRightX + 24},${cartTopY - 13.5} ${cartRightX},${cartTopY}`}
                         fill={isHovered ? '#4c7350' : '#314a34'}
                         stroke={isHovered ? '#a6e26e' : '#4a6b4e'}
                         strokeWidth="1.2"
                       />
 
-                      {/* 3D Right Depth Face of Cartridge Inside the Cubby */}
+                      {/* 3D Right Depth Face of Cartridge Inside the Cubby (dx=+24, dy=-13.5) */}
                       <polygon
-                        points={`${cartRightX},${cartTopY} ${cartRightX + 24},${cartTopY - 12} ${cartRightX + 24},${cartBottomY - 12} ${cartRightX},${cartBottomY}`}
+                        points={`${cartRightX},${cartTopY} ${cartRightX + 24},${cartTopY - 13.5} ${cartRightX + 24},${cartBottomY - 13.5} ${cartRightX},${cartBottomY}`}
                         fill="#0d110e"
                         stroke="#253027"
                         strokeWidth="1"
                       />
 
-                      {/* Main Cartridge Side Spine Face Resting Flush on `cartBottomY = floorY` */}
+                      {/* Main Cartridge Side Spine Face Resting Flush on the Plank */}
                       <rect
                         x={cartLeftX}
                         y={cartTopY}
@@ -1359,7 +1312,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                         strokeWidth={isHovered ? '2.2' : '1.5'}
                       />
 
-                      {/* Bright Green Ray-Traced Specular Left Edge (Faces the Angled CRT TV) */}
+                      {/* Bright Green Ray-Traced Specular Left Edge */}
                       <line
                         x1={cartLeftX + 1}
                         y1={cartTopY + 3}
@@ -1374,7 +1327,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                       <rect
                         x={cartLeftX + 12}
                         y={cartTopY + 6}
-                        width={495}
+                        width={490}
                         height={60}
                         rx="5"
                         fill="#0c100d"
@@ -1418,7 +1371,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                         x={cartLeftX + 100}
                         y={cartTopY + 43}
                         fill={isHovered ? '#d2dcd2' : '#b4beb4'}
-                        fontFamily="'Press Start 2P', monospace"
+                        fontFamily="var(--font-pixel)"
                         fontSize="16"
                         letterSpacing="0.5"
                       >
@@ -1426,7 +1379,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                       </text>
 
                       {/* Molded Grip Ribs on the Right End of the Cartridge Spine */}
-                      {[528, 542, 556, 570, 584].map((offset) => (
+                      {[522, 536, 550, 564, 578].map((offset) => (
                         <g key={offset}>
                           <line
                             x1={cartLeftX + offset}
@@ -1454,86 +1407,92 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               );
             })}
 
-            {/* Front-Left Vertical Wooden Frame Post of Shelf (Rim-Lit Green on Left Edge) */}
+            {/* Front-Left Vertical Wooden Frame Post of Shelf (Rim-Lit Green on Left Edge Facing the TV) */}
             <rect
-              x="1008"
-              y="210"
+              x="0"
+              y="204"
               width="14"
-              height="640"
+              height="636"
               fill="#423822"
               stroke="#2e2214"
               strokeWidth="1"
             />
             <line
-              x1="1009"
-              y1="210"
-              x2="1009"
-              y2="850"
+              x1="1"
+              y1="204"
+              x2="1"
+              y2="840"
               stroke="#b8f284"
-              strokeOpacity="0.9"
+              strokeOpacity="0.92"
               strokeWidth="2.5"
             />
 
-            {/* Front-Right Vertical Wooden Frame Post of Shelf (Overlaps right cubby edge for 3D depth) */}
+            {/* Front-Right Vertical Wooden Frame Post of Shelf */}
             <rect
-              x="1690"
-              y="210"
-              width="16"
-              height="640"
-              fill="#2e1b0f"
+              x="666"
+              y="204"
+              width="14"
+              height="636"
+              fill="#382214"
               stroke="#1c1008"
+              strokeWidth="1"
+            />
+
+            {/* Exterior 3D Right Side Wooden Wall of Shelf (Receding by dx=+32, dy=-18 in dark brown shadow) */}
+            <polygon
+              points="680,204 712,186 712,822 680,840"
+              fill="url(#shelfBrownRightWallDark)"
+              stroke="#26160c"
               strokeWidth="1.5"
             />
           </g>
 
           {/* ================================================================ */}
-          {/* 5. VOLUMETRIC RAY-TRACED CRT LIGHT BEAMS & GOD-RAYS              */}
-          {/*    Shining from the diagonally angled CRT screen onto the        */}
-          {/*    brown shelf, cartridges, and white console below              */}
+          {/* 6. VOLUMETRIC RAY-TRACED CRT LIGHT BEAMS & GOD-RAYS              */}
           {/* ================================================================ */}
           <g className="animate-tv-tingle pointer-events-none" style={{ mixBlendMode: 'screen' }}>
             {/* Soft Phosphor Halo Around the Angled CRT Screen */}
             <ellipse
-              cx="395"
-              cy="372"
+              cx="368"
+              cy="455"
               rx="235"
               ry="195"
               fill="url(#rtScreenHalo)"
               filter="url(#rtSoftBlur)"
             />
 
-            {/* Primary Volumetric Frustum Cone Shining Diagonally from TV Screen to Shelf */}
+            {/* Primary Volumetric Frustum Cone Shining Diagonally from TV Screen Into the Angled Shelf */}
             <polygon
-              points="240,238 540,252 1705,190 1705,855 540,506 240,494"
+              points="206,314 512,304 1680,224 1680,860 512,601 206,611"
               fill="url(#rtPrimaryBeam)"
               filter="url(#rtSoftBlur)"
             />
 
             {/* Individual Ray-Traced Scanline Light Shafts Hitting Each Shelf Cubby */}
             <polygon
-              points="538,262 1012,215 1680,295 538,312"
+              points="512,315 1002,215 1665,310 512,365"
               fill="url(#rtGodRayShaft)"
               filter="url(#rtFineBlur)"
             />
             <polygon
-              points="538,332 1012,355 1680,455 538,388"
+              points="512,385 1002,355 1665,465 512,435"
               fill="url(#rtGodRayShaft)"
               filter="url(#rtFineBlur)"
             />
             <polygon
-              points="538,408 1012,505 1680,625 538,458"
+              points="512,455 1002,505 1665,630 512,505"
               fill="url(#rtGodRayShaft)"
               filter="url(#rtFineBlur)"
             />
             <polygon
-              points="538,468 1012,655 1680,810 538,504"
+              points="512,525 1002,655 1665,815 512,585"
               fill="url(#rtGodRayShaft)"
               filter="url(#rtFineBlur)"
             />
 
-            {/* Downward Volumetric Ray Cone Illuminating the Top of the White Console */}
+            {/* Downward Volumetric Ray Cone Illuminating the Front Deck of the White Console */}
             <polygon
-              points="236,492 538,504 662,728 182,710"
+              points="206,611 512,601 650,668 198,682"
               fill="url(#rtDownwardCone)"
               filter="url(#rtFineBlur)"
             />

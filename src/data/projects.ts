@@ -117,6 +117,7 @@ Usage:
     demoType: 'interactive',
     originNote: 'Made for a friend during a hackathon for thier hardware IOT project',
     repoUrl: 'https://github.com/deployedreject/sentrictechnologies',
+    liveUrl: 'https://sentrictechnologies.in',
     summary: {
       overview:
         'A web dashboard and Python backend built for a friend\'s hardware IoT project at a hackathon. The hardware sensors send patient vitals and clinic reports over MQTT, and the web app plots them on a map and tracks ambulance dispatch.',
@@ -239,6 +240,7 @@ Usage:
     demoType: 'interactive',
     originNote: 'Wanted to learn JS so made it for a friend who wanted a better way to manage all his sites',
     repoUrl: 'https://github.com/deployedreject/aggregator',
+    liveUrl: 'https://aggregator-registry.mishravaibhav2048.workers.dev',
     summary: {
       overview:
         'A browser extension and website that lets you search and play media across different sites from a single interface. Each site is handled by a small JavaScript plugin, and a Spring Boot backend keeps a list of available plugins.',

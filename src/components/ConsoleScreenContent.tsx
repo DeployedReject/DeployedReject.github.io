@@ -11,8 +11,9 @@ export type ScreenTab = 'status' | 'cartridges' | 'github' | 'pings' | 'hire';
 
 export interface ChannelOption {
   label: string;
-  action: 'ping' | 'url';
+  action: 'ping' | 'url' | 'copy';
   url?: string;
+  copyText?: string;
 }
 
 export function getChannelOptions(
@@ -30,6 +31,11 @@ export function getChannelOptions(
         label: '\uf126  Open Codeberg Profile (codeberg.org/DeployedReject)',
         action: 'url',
         url: 'https://codeberg.org/DeployedReject',
+      },
+      {
+        label: '\uf0e0  Send Email (mishravaibhav2048@gmail.com)',
+        action: 'url',
+        url: 'mailto:mishravaibhav2048@gmail.com',
       },
     ];
   }
@@ -60,33 +66,38 @@ export function getChannelOptions(
         action: 'ping',
       },
       {
-        label: '\uf233  Open Aggregator Server (144.24.141.13)',
+        label: '\uf233  Open Aggregator Registry Worker (aggregator-registry.mishravaibhav2048.workers.dev)',
         action: 'url',
-        url: 'http://144.24.141.13',
+        url: 'https://aggregator-registry.mishravaibhav2048.workers.dev',
       },
       {
-        label: '\uf233  Open Sentric Technologies Server (150.230.141.102)',
+        label: '\uf233  Open Sentric Technologies (sentrictechnologies.in)',
         action: 'url',
-        url: 'http://150.230.141.102',
+        url: 'https://sentrictechnologies.in',
       },
     ];
   }
   if (activeTab === 'hire') {
     return [
       {
-        label: '\uf09b  GitHub   : github.com/DeployedReject',
+        label: '\uf09b  Open GitHub   (github.com/DeployedReject)',
         action: 'url',
         url: 'https://github.com/DeployedReject',
       },
       {
-        label: '\uf126  Codeberg : codeberg.org/DeployedReject',
+        label: '\uf126  Open Codeberg (codeberg.org/DeployedReject)',
         action: 'url',
         url: 'https://codeberg.org/DeployedReject',
       },
       {
-        label: '\uf0e0  Email    : mishravaibhav2048@gmail.com',
+        label: '\uf0e0  Send Email    (mishravaibhav2048@gmail.com)',
         action: 'url',
         url: 'mailto:mishravaibhav2048@gmail.com',
+      },
+      {
+        label: '\uf0c5  Copy Email Address (mishravaibhav2048@gmail.com)',
+        action: 'copy',
+        copyText: 'mishravaibhav2048@gmail.com',
       },
     ];
   }
@@ -217,10 +228,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
         { repo: 'Cireu', message: 'fix light theme colors', date: '10-11' },
       ];
       return [
-        `\uf126 COMMITS (365D): ${s?.totalCommitsYear ?? 482}   |   FOLLOWERS: ${s?.followers ?? 12}`,
-        '----------------------------------------',
-        ...commits.slice(0, 4).map(
-          (c) => `[${c.date}] ${c.repo.slice(0, 10).padEnd(10, ' ')}: ${c.message.slice(0, 26)}`
+        `\uf126 COMMITS (365D): ${s?.totalCommitsYear ?? 482}   |   REPOS: ${s?.publicRepos ?? 14}   |   FOLLOWERS: ${s?.followers ?? 12}`,
+        ...commits.slice(0, 2).map(
+          (c) => `[${c.date}] ${c.repo.slice(0, 10).padEnd(10, ' ')}: ${c.message.slice(0, 32)}`
         ),
       ];
     }
@@ -250,8 +260,15 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
     // hire / contact tab
     return [
-      '\uf0e0 SELECT CONTACT CHANNEL & PRESS ENTER:',
+      '\uf0e0 CONTACT // DEPLOYEDREJECT (VAIBHAV)',
       '----------------------------------------',
+      'WORK     : Linux CLI/TUIs, Daemons & Web Apps',
+      'STACK    : Java, TypeScript, Python, Linux',
+      'TIMEZONE : IST (UTC+5:30)',
+      '----------------------------------------',
+      'GITHUB   : github.com/DeployedReject',
+      'CODEBERG : codeberg.org/DeployedReject',
+      'EMAIL    : mishravaibhav2048@gmail.com',
     ];
   }, [activeTab, stats, pings, insertingProject]);
 
@@ -414,36 +431,109 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               </div>
             )}
 
-            {/* Contribution Matrix on Commits tab */}
-            {activeTab === 'github' && stats && !isTableZoomedOut && (
-              <div className="mt-1.5 pt-1.5 border-t border-[#375224] shrink-0 pointer-events-none">
-                <div className="flex flex-col gap-[3px]">
-                  {stats.contributionGrid.slice(0, 4).map((row, rIdx) => (
-                    <div key={rIdx} className="flex gap-[3px]">
-                      {row.slice(0, 22).map((lvl, cIdx) => {
-                        const colors = ['#18261a', '#2f4d26', '#52803a', '#7ec252', '#c4f78b'];
-                        return (
-                          <div
-                            key={cIdx}
-                            className="w-2.5 h-2.5 rounded-[1px]"
-                            style={{ backgroundColor: colors[Math.min(4, lvl)] }}
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Prominent Full-Width Commit History Chart (Weekly Volume Bars + 7x28 Contribution Heatmap) */}
+            {activeTab === 'github' && stats && !isTableZoomedOut && (() => {
+              const grid = stats.contributionGrid;
+              const numCols = Math.min(28, grid[0]?.length || 20);
+              const colors = ['#121f14', '#274520', '#487a33', '#7ec252', '#c8fa8c'];
+              const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+              const weeklyTotals = Array.from({ length: numCols }, (_, colIdx) =>
+                grid.reduce((sum, row) => sum + (row[colIdx] ?? 0), 0)
+              );
+              const maxWeekly = Math.max(12, ...weeklyTotals);
 
-            {/* Selectable Channel Options (Opened by the TV's single ENTER button) */}
+              return (
+                <div className="my-1.5 p-2.5 sm:p-3 rounded border-2 border-[#4b7533] bg-[#09130a]/90 shadow-[0_0_20px_rgba(166,226,110,0.16),inset_0_0_16px_rgba(0,0,0,0.85)] shrink-0 pointer-events-none flex flex-col gap-2">
+                  {/* Chart Header & Phosphor Legend */}
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2f4d22] pb-1.5"
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
+                    <span className="text-[8px] sm:text-[9px] text-[#b5ec82] tracking-wider flex items-center gap-1.5">
+                      <span>{'\uf080'}</span>
+                      <span>COMMIT HISTORY CHART ({numCols} WEEKS)</span>
+                    </span>
+                    <div className="flex items-center gap-1.5 text-[7px] sm:text-[8px] text-[#7ec252]">
+                      <span>LESS</span>
+                      {colors.map((c, idx) => (
+                        <span
+                          key={idx}
+                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 inline-block border border-[#3a5e29]"
+                          style={{
+                            backgroundColor: c,
+                            boxShadow: idx === 4 ? '0 0 6px rgba(200,250,140,0.75)' : 'none',
+                          }}
+                        />
+                      ))}
+                      <span>MORE</span>
+                    </div>
+                  </div>
+
+                  {/* Weekly Commit Volume Spark-Bar Chart */}
+                  <div className="flex items-end gap-[3px] sm:gap-1 h-7 sm:h-9 pl-7 sm:pl-9 pr-0.5 pt-1 border-b border-[#233b1a]/80 pb-1">
+                    {weeklyTotals.map((tot, cIdx) => {
+                      const pct = Math.max(14, Math.round((tot / maxWeekly) * 100));
+                      const isPeak = tot >= maxWeekly * 0.72;
+                      return (
+                        <div key={cIdx} className="flex-1 h-full flex items-end">
+                          <div
+                            className="w-full rounded-t-[1px]"
+                            style={{
+                              height: `${pct}%`,
+                              backgroundColor: isPeak ? '#b5ec82' : '#58943d',
+                              boxShadow: isPeak ? '0 0 8px rgba(181,236,130,0.55)' : 'none',
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Full 7-Day x 28-Week Contribution Heatmap Grid */}
+                  <div className="flex flex-col gap-[3px] sm:gap-1">
+                    {grid.slice(0, 7).map((row, rIdx) => (
+                      <div key={rIdx} className="flex items-center gap-[3px] sm:gap-1">
+                        <span
+                          className="w-6 sm:w-8 text-[7px] sm:text-[8px] text-[#7ec252] shrink-0 text-left"
+                          style={{ fontFamily: 'var(--font-pixel)' }}
+                        >
+                          {rIdx % 2 === 0 ? dayLabels[rIdx] : ''}
+                        </span>
+                        <div className="flex-1 flex gap-[3px] sm:gap-1">
+                          {row.slice(0, numCols).map((lvl, cIdx) => {
+                            const clamped = Math.min(4, Math.max(0, lvl));
+                            return (
+                              <div
+                                key={cIdx}
+                                className="flex-1 h-2.5 sm:h-3.5 md:h-4 rounded-[2px] border border-[#22381a]/70"
+                                style={{
+                                  backgroundColor: colors[clamped],
+                                  boxShadow:
+                                    clamped >= 4
+                                      ? '0 0 8px rgba(200, 250, 140, 0.65)'
+                                      : clamped === 3
+                                      ? '0 0 4px rgba(126, 194, 82, 0.35)'
+                                      : 'none',
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Selectable Channel Options (Scrolled with SCROLL knob and opened with SELECT button) */}
             {!isTableZoomedOut && activeTab !== 'cartridges' && channelOptions.length > 0 && (
               <div className="mt-2 pt-2 border-t border-[#375224]/90 shrink-0 space-y-1 pointer-events-auto">
                 <div
                   className="text-[8px] text-[#7ec252] uppercase tracking-wider mb-1 flex items-center justify-between"
                   style={{ fontFamily: "var(--font-pixel)" }}
                 >
-                  <span>\uf0a4 OPTIONS (CLICK OR ↑/↓ + ENTER)</span>
+                  <span>{'\uf0a4'} OPTIONS (SCROLL KNOB + SELECT)</span>
                   <span>[{safeOptionIndex + 1}/{channelOptions.length}]</span>
                 </div>
                 {channelOptions.map((opt, idx) => {
@@ -471,7 +561,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                           className="text-[8px] px-1.5 py-0.5 bg-[#09120a] text-[#e6cf65] shrink-0 ml-2"
                           style={{ fontFamily: "var(--font-pixel)" }}
                         >
-                          \uf061 ENTER
+                          {'\uf061'} SELECT
                         </span>
                       )}
                     </div>

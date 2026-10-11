@@ -201,7 +201,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
             style={{ fontFamily: "var(--font-pixel)" }}
           >
-            \uf053\uf054 CHANNEL  |  \uf077\uf078 ROM
+            {'\uf053\uf054'} CHANNEL  |  {'\uf077\uf078'} ROM
           </span>
           <span
             className="text-[7px] sm:text-[8px] text-[#7c2d38] font-bold tracking-wider"
