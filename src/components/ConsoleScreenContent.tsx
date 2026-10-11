@@ -178,11 +178,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   const isTyping = charCount < fullText.length;
 
   const tabs: Array<{ id: ScreenTab; label: string }> = [
-    { id: 'status', label: '1:STAT' },
-    { id: 'github', label: '2:GIT' },
-    { id: 'pings', label: '3:PING' },
-    { id: 'hire', label: '4:HIRE' },
-    { id: 'cartridges', label: '5:ROMS' },
+    { id: 'status', label: 'Overview' },
+    { id: 'github', label: 'Activity' },
+    { id: 'pings', label: 'Network' },
+    { id: 'hire', label: 'Contact' },
+    { id: 'cartridges', label: 'Projects' },
   ];
 
   return (
@@ -310,7 +310,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
         )}
       </div>
 
-      {/* Bottom Action Bar: Zoom Out to Table & Cartridges */}
+      {/* Bottom Action Bar: View Cartridges on Table */}
       <div className="border-t-2 border-[#4b6e32] pt-1.5 flex items-center justify-between gap-2">
         {!isTableZoomedOut ? (
           <button
@@ -322,14 +322,14 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             className="w-full py-1.5 px-2 bg-[#e6cf65] hover:bg-[#f5e48c] text-[#111912] font-bold text-[9px] sm:text-[10px] tracking-wider uppercase cursor-pointer border-2 border-[#fff3b0] shadow-[2px_2px_0px_#000] active:translate-y-0.5 text-center"
             style={{ fontFamily: "'Press Start 2P', monospace" }}
           >
-            ▼ VIEW PROJECTS ON TABLE (5 CARTRIDGES) ▼
+            ▼ VIEW CARTRIDGES ON TABLE ▼
           </button>
         ) : (
           <div
             className="w-full py-1 px-2 bg-[#1c2c1e] text-[#e6cf65] text-[8px] sm:text-[9px] text-center border border-[#5c8244]"
             style={{ fontFamily: "'Press Start 2P', monospace" }}
           >
-            PICK A CARTRIDGE ON THE TABLE OR CLICK SCREEN TO ZOOM IN
+            SELECT A CARTRIDGE ON THE TABLE OR CLICK TO ZOOM IN
           </div>
         )}
       </div>

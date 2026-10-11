@@ -19,6 +19,7 @@ export interface Project {
   repoUrl: string;
   liveUrl?: string;
   summary: ProjectSummary;
+  originNote?: string;
   terminalCommands?: Record<string, string>;
   initialTerminalLogs?: string[];
 }
@@ -35,6 +36,7 @@ export const PROJECTS: Project[] = [
     labelSvg: '/svg/label-murces.svg',
     demoType: 'terminal',
     stars: 'Active Releases (x86_64 & arm64)',
+    originNote: 'Made to controlling my weak minecraft server more convinient while playing with friends.',
     repoUrl: 'https://codeberg.org/DeployedReject/murces',
     summary: {
       overview: 'Compiled ahead-of-time (AOT) with GraalVM Native Image into a standalone ~30MB Linux executable that cold-boots in <20ms using <40MB resident memory (eliminating the 500MB-1.5GB overhead of bloated Docker/Node web panels). Supervises Minecraft instances in detached tmux sessions, orchestrates Playit.gg tunnels, provisions portable Eclipse Temurin OpenJDKs on demand, and resolves mod dependencies directly over REST APIs.',
@@ -122,6 +124,7 @@ Usage:
     accentBg: 'rgba(239, 68, 68, 0.15)',
     labelSvg: '/svg/label-sentric.svg',
     demoType: 'interactive',
+    originNote: 'Made for a friend during a hackathon for thier hardware IOT project',
     repoUrl: 'https://github.com/deployedreject/sentrictechnologies',
     summary: {
       overview: 'Real-world healthcare surveillance platform architected for state-level monitoring (with dedicated Andhra Pradesh boundary vector polygons & Uber H3 resolution-8 spatial indexing of 210,000+ cached hexagons). Bridges remote clinic IoT nodes via high-throughput MQTT brokers to a FastAPI/Python backend on VPS, fronted by Cloudflare Pages with zero-trust token authentication.',
@@ -145,6 +148,7 @@ Usage:
     accentBg: 'rgba(139, 92, 246, 0.15)',
     labelSvg: '/svg/label-cireu.svg',
     demoType: 'visualizer',
+    originNote: 'Made for assignment during my discrete mathematics class to make up for missed signatures',
     repoUrl: 'https://github.com/deployedreject/cireu',
     liveUrl: 'https://deployedreject.github.io/cireu/',
     summary: {
@@ -169,6 +173,7 @@ Usage:
     accentBg: 'rgba(245, 158, 11, 0.15)',
     labelSvg: '/svg/label-cfplink.svg',
     demoType: 'terminal',
+    originNote: 'Made to expose local dev servers and services through Cloudflare without port forwarding.',
     repoUrl: 'https://github.com/deployedreject/cf-p-link',
     summary: {
       overview: 'A self-healing, native-compiled Java toolchain (`setup-cli-native` and `tunnel-daemon-native`) that automates persistent Cloudflare Tunnels and reverse-proxying Cloudflare Workers for multiple local microservices. Automatically fetches Cloudflare Account IDs via API tokens, continuously monitors cloudflared child process health, and instantaneously recompiles and deploys edge Workers whenever tunnels reconnect or crash.',
@@ -246,6 +251,7 @@ Usage:
     accentBg: 'rgba(132, 204, 22, 0.15)',
     labelSvg: '/svg/label-aggregator.svg',
     demoType: 'interactive',
+    originNote: 'Wanted to learn JS so made it for a friend who wanted a better way to manage all his sites',
     repoUrl: 'https://github.com/deployedreject/aggregator',
     summary: {
       overview: 'Modular cross-browser media aggregation suite (Firefox & Chrome extension + web frontend + Spring Boot registry backend). Designed around an extensible sandboxed plugin runtime where untrusted JavaScript modules execute inside isolated iframes communicating via window.postMessage with zero direct DOM access, paired with an in-browser proxy gateway that bypasses CORS and hotlink protections.',

@@ -200,6 +200,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   // Show the top details/eject bar initially for 3.8s, then hide until mouse enters top/left corner
   const [headerPinnedOpen, setHeaderPinnedOpen] = useState(true);
   const [cornerHovered, setCornerHovered] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   // For Sentric: allow switching between VitalLink (#/vital), Landing (#/), and Docs (#/docs)
   const [sentricSubRoute, setSentricSubRoute] = useState<'/vital' | '/' | '/docs'>('/vital');
 
@@ -228,12 +229,22 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
   const isHeaderVisible = headerPinnedOpen || cornerHovered;
   const gitingest = GITINGEST_TREES[project.id] || GITINGEST_TREES.murces;
 
-  const scrollToSummary = () => {
-    summaryRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const toggleSummary = () => {
+    if (!showSummary) {
+      setShowSummary(true);
+      setTimeout(() => {
+        summaryRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    } else {
+      setShowSummary(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#090a0f] text-stone-100 flex flex-col relative selection:bg-emerald-500 selection:text-black">
+    <div className={`min-h-screen w-full bg-[#090a0f] text-stone-100 flex flex-col relative selection:bg-emerald-500 selection:text-black ${
+      showSummary ? 'overflow-y-auto' : 'h-screen overflow-hidden'
+    }`}>
       {/* CRT-to-Clean Vanish Overlay (fades out over 550ms when entering fullscreen) */}
       <div
         className={`fixed inset-0 z-50 pointer-events-none transition-opacity duration-500 ${
@@ -354,7 +365,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
 
             <button
               type="button"
-              onClick={scrollToSummary}
+              onClick={toggleSummary}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-700 cursor-pointer transition-colors"
             >
               <ChevronDown className="w-3.5 h-3.5" />
@@ -432,22 +443,23 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
           />
         )}
 
-        {/* Bottom Floating Scroll-Down Pill */}
+        {/* Bottom Floating Toggle Pill for Architecture & Digest Summary */}
         <button
           type="button"
-          onClick={scrollToSummary}
-          className="absolute bottom-3 right-4 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900/90 hover:bg-stone-800 text-stone-300 border border-stone-700 text-xs font-mono shadow-xl cursor-pointer"
+          onClick={toggleSummary}
+          className="absolute bottom-3 right-4 z-30 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-900/95 hover:bg-stone-800 text-stone-200 border border-stone-600 text-xs font-mono shadow-2xl cursor-pointer hover:border-emerald-500 transition-colors"
         >
-          <ChevronDown className="w-3.5 h-3.5 text-emerald-400 animate-bounce" />
-          <span>Gitingest + LLM Summary ↓</span>
+          <ChevronDown className={`w-3.5 h-3.5 text-emerald-400 transition-transform ${showSummary ? 'rotate-180' : 'animate-bounce'}`} />
+          <span>{showSummary ? 'Return to Live Demo ↑' : 'Gitingest + Architecture Summary ↓'}</span>
         </button>
       </section>
 
       {/* GITINGEST + LLM ARCHITECTURAL SUMMARY SECTION AT THE BOTTOM */}
-      <section
-        ref={summaryRef}
-        className="max-w-7xl mx-auto w-full px-4 sm:px-8 py-12 space-y-8 border-t border-stone-800 bg-[#0c0d12]"
-      >
+      {showSummary && (
+        <section
+          ref={summaryRef}
+          className="max-w-7xl mx-auto w-full px-4 sm:px-8 py-12 space-y-8 border-t border-stone-800 bg-[#0c0d12]"
+        >
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-6">
           <div>
@@ -577,6 +589,7 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 };

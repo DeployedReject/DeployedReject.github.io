@@ -172,10 +172,23 @@ export const Cartridge: React.FC<CartridgeProps> = ({
       {/* Retro 8-bit Pixel Tooltip on Hover */}
       {showTooltip && (
         <div
-          className="absolute -top-9 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1b1917] border-2 border-[#d9d0c6] text-[#e6cf65] text-[8px] sm:text-[9px] px-2 py-1 shadow-[3px_3px_0px_#000] whitespace-nowrap pointer-events-none z-40"
-          style={{ fontFamily: "'Press Start 2P', monospace" }}
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-200 bg-[#161412]/95 border-2 border-[#d9d0c6] text-[#f5e4d7] px-3 py-2 shadow-[4px_4px_0px_#000] pointer-events-none z-50 w-64 sm:w-72 max-w-[85vw] text-center"
         >
-          ▲ INSERT {project.id.toUpperCase()}.ROM
+          <div
+            className="text-[#e6cf65] text-[9px] font-bold mb-1 tracking-wider"
+            style={{ fontFamily: "'Press Start 2P', monospace" }}
+          >
+            ▶ {project.name.toUpperCase()}
+          </div>
+          <div className="text-[11px] leading-snug font-mono text-stone-200">
+            "{project.originNote || project.tagline}"
+          </div>
+          <div
+            className="text-[#a6e26e] text-[8px] mt-1.5 opacity-90"
+            style={{ fontFamily: "'Press Start 2P', monospace" }}
+          >
+            [CLICK TO INSERT]
+          </div>
         </div>
       )}
     </div>

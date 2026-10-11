@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FakeTerminal } from './FakeTerminal';
 
 type TuiScreen =
@@ -187,6 +187,53 @@ export const MurcesTuiDemo: React.FC<MurcesTuiDemoProps> = ({ initialLogs, comma
     { id: 'themes', key: 'Z', label: '8.  ✎ [Z] Customization & Themes' },
     { id: 'tasks', key: 'J', label: '9.  ☰ [J] Active Tasks & Job Manager' },
   ];
+
+  // Arrow key navigation for interactive Lanterna TUI
+  useEffect(() => {
+    if (mode !== 'tui') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // If typing in an input field, let default behavior occur
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        setScreen('main');
+        return;
+      }
+
+      if (screen === 'main') {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : navItems.length - 1));
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev < navItems.length - 1 ? prev + 1 : 0));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          setScreen(navItems[selectedIndex].id);
+        } else if (['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(e.key)) {
+          const num = parseInt(e.key, 10) - 1;
+          if (num >= 0 && num < navItems.length) {
+            setSelectedIndex(num);
+            setScreen(navItems[num].id);
+          }
+        }
+      } else if (screen === 'mods') {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSelectedModIdx((prev) => (prev > 0 ? prev - 1 : MOD_CATALOG.length - 1));
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSelectedModIdx((prev) => (prev < MOD_CATALOG.length - 1 ? prev + 1 : 0));
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mode, screen, selectedIndex, navItems]);
 
   if (mode === 'cli') {
     return (

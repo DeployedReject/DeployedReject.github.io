@@ -52,6 +52,34 @@
   text-shadow: 0 0 6px currentColor;
 }
 
+/* Atmospheric CRT light throw flicker in dark room */
+@keyframes tvAmbientFlicker {
+  0% {
+    opacity: 0.72;
+    filter: drop-shadow(0 0 45px rgba(166, 226, 110, 0.28));
+  }
+  25% {
+    opacity: 0.78;
+    filter: drop-shadow(0 0 52px rgba(166, 226, 110, 0.35));
+  }
+  50% {
+    opacity: 0.70;
+    filter: drop-shadow(0 0 42px rgba(166, 226, 110, 0.25));
+  }
+  75% {
+    opacity: 0.76;
+    filter: drop-shadow(0 0 48px rgba(166, 226, 110, 0.32));
+  }
+  100% {
+    opacity: 0.72;
+    filter: drop-shadow(0 0 45px rgba(166, 226, 110, 0.28));
+  }
+}
+
+.animate-tv-ambient {
+  animation: tvAmbientFlicker 4s ease-in-out infinite;
+}
+
 /* Custom retro scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
