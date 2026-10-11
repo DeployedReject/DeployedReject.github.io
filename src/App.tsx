@@ -14,8 +14,8 @@ export function App() {
     return 'tv';
   });
 
-  // Starts fullscreen on the CRT TV / Handheld closeup by default
-  const [cameraMode, setCameraMode] = useState<SceneCameraMode>('closeup');
+  // Starts zoomed out on the room / table view by default
+  const [cameraMode, setCameraMode] = useState<SceneCameraMode>('table');
   const [activeCartridgeId, setActiveCartridgeId] = useState<string | null>(null);
   const [isFullscreenProject, setIsFullscreenProject] = useState(false);
   // Hanging room light bulb starts OFF (dark mode) and sets everything to light mode when touched

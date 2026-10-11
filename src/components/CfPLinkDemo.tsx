@@ -170,72 +170,139 @@ addEventListener('fetch', event => {
 
       {activeSubView === 'split' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
-          {/* Left: TunnelDaemon Process Supervisor */}
-          <div className="lg:col-span-6 p-4 border-b lg:border-b-0 lg:border-r border-[#334155] flex flex-col justify-between gap-4 bg-[#090d16]">
-            <div className="space-y-3">
-              <div className="text-amber-400 font-bold uppercase tracking-wider">
-                1. tunnel-daemon-native ProcessHandler Supervisor
+          {/* Left: btop-inspired System Process Manager */}
+          <div className="lg:col-span-6 p-3 bg-[#0a0f18] border-b lg:border-b-0 lg:border-r border-[#1e293b] flex flex-col justify-between gap-3 text-xs select-none">
+            {/* btop Header & Metrics Bar */}
+            <div className="border border-[#334155] bg-[#0c1220] rounded p-2.5 space-y-2">
+              <div className="flex items-center justify-between border-b border-[#1e293b] pb-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 font-bold text-[10px] border border-cyan-800">
+                    btop v1.3.2
+                  </span>
+                  <span className="text-slate-300 font-semibold tracking-wide text-[11px]">
+                    proc // cf-p-link supervisor
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 flex items-center gap-3">
+                  <span>Threads: <strong className="text-amber-400">18</strong></span>
+                  <span>Tasks: <strong className="text-emerald-400">{services.length}</strong></span>
+                  <span>Load: <strong className="text-cyan-300">0.42 0.38 0.29</strong></span>
+                </div>
               </div>
-              <p className="text-slate-400 text-[11px]">
-                Click &quot;Kill Process (SIGKILL)&quot; on any local tunnel below to watch <code className="text-amber-300">TunnelDaemon.java</code> detect process death, prune the route, respawn <code className="text-amber-300">cloudflared</code>, and redeploy the Cloudflare Edge Worker automatically:
-              </p>
 
-              <div className="space-y-2">
-                {services.map((svc) => (
-                  <div
-                    key={svc.name}
-                    className="p-2.5 rounded bg-[#1e293b]/90 border border-[#334155] flex items-center justify-between gap-2"
-                  >
-                    <div className="space-y-0.5 truncate">
-                      <div className="font-bold text-white flex items-center gap-2">
-                        <span>
-                          {svc.name} (localhost:{svc.port} &rarr; {svc.path})
-                        </span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                            svc.status === 'RUNNING'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-700'
-                              : svc.status === 'RESTARTING'
-                              ? 'bg-amber-950 text-amber-300 border border-amber-700'
-                              : 'bg-red-950 text-red-400 border border-red-700'
-                          }`}
-                        >
-                          {svc.status}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 truncate">
-                        PID: {svc.pid} • Edge: {svc.status === 'RUNNING' ? svc.tunnelUrl : 'Reconnecting...'}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={svc.status !== 'RUNNING'}
-                      onClick={() => simulateCrashAndHeal(svc.name)}
-                      className="px-2.5 py-1 rounded bg-red-900/70 hover:bg-red-800 disabled:opacity-40 text-red-100 border border-red-700 text-[11px] font-bold shrink-0 cursor-pointer"
-                    >
-                      Kill Process
-                    </button>
+              {/* Resource meters (CPU / MEM Braille/Bar meters) */}
+              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div className="bg-[#070b12] p-1.5 rounded border border-[#1e293b]">
+                  <div className="flex justify-between text-slate-400 mb-1">
+                    <span>CPU [GraalVM Native]</span>
+                    <span className="text-emerald-400 font-bold">14.2%</span>
                   </div>
-                ))}
+                  <div className="font-mono text-emerald-400 tracking-tighter text-[9px] overflow-hidden whitespace-nowrap">
+                    [||||||||................................]
+                  </div>
+                </div>
+                <div className="bg-[#070b12] p-1.5 rounded border border-[#1e293b]">
+                  <div className="flex justify-between text-slate-400 mb-1">
+                    <span>MEM [RSS: 32MB / 16GB]</span>
+                    <span className="text-cyan-400 font-bold">0.2%</span>
+                  </div>
+                  <div className="font-mono text-cyan-400 tracking-tighter text-[9px] overflow-hidden whitespace-nowrap">
+                    [|||||...................................]
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Live stdout stream of TunnelDaemon.java */}
-            <div className="bg-black/80 border border-[#334155] rounded p-2.5 h-44 overflow-y-auto space-y-1 text-[11px]">
-              <div className="text-slate-500 border-b border-slate-800 pb-1 mb-1">
-                journalctl -u cf-p-link.service -f
+            {/* btop Process List */}
+            <div className="border border-[#334155] bg-[#0c1220] rounded p-2 flex-1 flex flex-col">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-[#1e293b] pb-1 px-1 font-bold uppercase tracking-wider">
+                <span className="w-14">PID</span>
+                <span className="w-24">Program</span>
+                <span className="flex-1">Target & Tunnel Edge</span>
+                <span className="w-12 text-right">CPU%</span>
+                <span className="w-12 text-right">Status</span>
+                <span className="w-20 text-right">Action</span>
               </div>
-              {daemonFeed.slice(-9).map((line, i) => (
+
+              <div className="divide-y divide-[#1e293b]/60 my-1 overflow-y-auto max-h-[220px]">
+                {services.map((svc) => (
+                  <div
+                    key={svc.name}
+                    className={`flex items-center justify-between py-1.5 px-1 text-[11px] font-mono transition-colors ${
+                      svc.status === 'CRASHED'
+                        ? 'bg-red-950/40 text-red-300'
+                        : svc.status === 'RESTARTING'
+                        ? 'bg-amber-950/30 text-amber-300'
+                        : 'hover:bg-slate-800/40 text-slate-200'
+                    }`}
+                  >
+                    <span className="w-14 font-mono text-cyan-400 font-bold text-[10px]">
+                      {svc.pid}
+                    </span>
+                    <span className="w-24 truncate font-bold text-slate-200" title={svc.name}>
+                      cloudflared
+                    </span>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <div className="truncate text-slate-300 text-[10px]">
+                        :{svc.port} &rarr; <span className="text-amber-400">{svc.path}</span>
+                      </div>
+                      <div className="truncate text-[9px] text-slate-500 font-mono">
+                        {svc.status === 'RUNNING' ? svc.tunnelUrl : 'Disconnected [Healing...]'}
+                      </div>
+                    </div>
+                    <span className="w-12 text-right text-[10px] text-slate-400">
+                      {svc.status === 'RUNNING' ? '1.8%' : '0.0%'}
+                    </span>
+                    <span className="w-12 text-right text-[9px] font-bold">
+                      <span
+                        className={`px-1 py-0.5 rounded text-[8px] uppercase ${
+                          svc.status === 'RUNNING'
+                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                            : svc.status === 'RESTARTING'
+                            ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                            : 'bg-red-950 text-red-400 border border-red-800 animate-pulse'
+                        }`}
+                      >
+                        {svc.status === 'RUNNING' ? 'RUN' : svc.status === 'RESTARTING' ? 'RST' : 'DIE'}
+                      </span>
+                    </span>
+                    <div className="w-20 text-right">
+                      <button
+                        type="button"
+                        disabled={svc.status !== 'RUNNING'}
+                        onClick={() => simulateCrashAndHeal(svc.name)}
+                        className="px-2 py-0.5 rounded bg-red-950/80 hover:bg-red-800 disabled:opacity-30 text-red-200 border border-red-700 hover:border-red-500 text-[10px] font-bold cursor-pointer transition-all active:scale-95 shadow-sm"
+                        title={`Send SIGKILL to PID ${svc.pid}`}
+                      >
+                        [k] Kill
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-[10px] text-slate-500 border-t border-[#1e293b] pt-1 px-1 flex justify-between">
+                <span>Tip: Click <strong>[k] Kill</strong> to SIGKILL a tunnel process</span>
+                <span>Self-healing: <strong>ENABLED</strong></span>
+              </div>
+            </div>
+
+            {/* Live systemd supervisor log output */}
+            <div className="border border-[#334155] bg-black/90 rounded p-2 text-[10px] font-mono h-32 overflow-y-auto space-y-0.5">
+              <div className="text-slate-500 border-b border-slate-800 pb-0.5 mb-1 flex items-center justify-between">
+                <span>&bull; journalctl -u cf-p-link.service -f</span>
+                <span className="text-[9px] text-slate-600">LIVE SUPERVISOR LOGS</span>
+              </div>
+              {daemonFeed.slice(-7).map((line, i) => (
                 <div
                   key={i}
-                  className={
+                  className={`leading-tight ${
                     line.includes('crash') || line.includes('exited')
                       ? 'text-red-400 font-bold'
                       : line.includes('Successfully') || line.includes('generated:')
                       ? 'text-emerald-400'
-                      : 'text-slate-300'
-                  }
+                      : 'text-slate-400'
+                  }`}
                 >
                   {line}
                 </div>

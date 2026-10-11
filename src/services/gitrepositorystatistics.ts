@@ -17,7 +17,7 @@ export interface CommitTickerItem {
 export interface PingResult {
   name: string;
   target: string;
-  status: 'UP' | 'DOWN' | 'PINGING' | 'HIDDEN';
+  status: 'UP' | 'DOWN' | 'PINGING' | 'HIDDEN' | 'UNPINGABLE';
   latencyMs: number | null;
 }
 
@@ -273,40 +273,40 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
 }
 
 export async function measureEndpointPings(): Promise<PingResult[]> {
-  const servers = [
-    { name: 'Aggregator Server', ip: '144.24.141.13' },
-    { name: 'Sentric Technologies', ip: '150.230.141.102' },
-  ];
-
-  const liveChecks = await Promise.all(
-    servers.map(async (srv) => {
-      const t0 = performance.now();
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 3500);
-      try {
-        await fetch(`https://${srv.ip}`, {
-          method: 'HEAD',
-          mode: 'no-cors',
-          cache: 'no-store',
-          signal: controller.signal,
-        });
-        window.clearTimeout(timeout);
-        const ms = Math.max(8, Math.round(performance.now() - t0));
-        return { name: srv.name, target: srv.ip, status: 'UP' as const, latencyMs: ms };
-      } catch {
-        window.clearTimeout(timeout);
-        const elapsed = Math.round(performance.now() - t0);
-        // If connection reset / TLS handshake rejected quickly (< 2500ms), host is reachable on the network
-        if (elapsed < 2500) {
-          return { name: srv.name, target: srv.ip, status: 'UP' as const, latencyMs: Math.max(12, elapsed) };
-        }
-        return { name: srv.name, target: srv.ip, status: 'DOWN' as const, latencyMs: null };
+  const sentricCheck = (async () => {
+    const t0 = performance.now();
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 3500);
+    try {
+      await fetch('https://150.230.141.102', {
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      window.clearTimeout(timeout);
+      const ms = Math.max(8, Math.round(performance.now() - t0));
+      return { name: 'Sentric Technologies', target: '150.230.141.102', status: 'UP' as const, latencyMs: ms };
+    } catch {
+      window.clearTimeout(timeout);
+      const elapsed = Math.round(performance.now() - t0);
+      if (elapsed < 2500) {
+        return { name: 'Sentric Technologies', target: '150.230.141.102', status: 'UP' as const, latencyMs: Math.max(12, elapsed) };
       }
-    })
-  );
+      return { name: 'Sentric Technologies', target: '150.230.141.102', status: 'DOWN' as const, latencyMs: null };
+    }
+  })();
+
+  const sentricResult = await sentricCheck;
 
   return [
-    ...liveChecks,
+    {
+      name: 'Aggregator Backend',
+      target: '144.24.141.13',
+      status: 'UNPINGABLE',
+      latencyMs: null,
+    },
+    sentricResult,
     {
       name: 'Home Server',
       target: '[API NOT REVEALED]',

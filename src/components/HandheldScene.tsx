@@ -1,7 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { flushSync } from 'react-dom';
 import type { Project } from '../data/projects';
-import { ConsoleScreenContent, type ScreenTab } from './ConsoleScreenContent';
+import {
+  ConsoleScreenContent,
+  getChannelOptions,
+  type ScreenTab,
+} from './ConsoleScreenContent';
+import { fetchDeveloperStats, type DeveloperStats } from '../services/gitrepositorystatistics';
 import type { SceneCameraMode } from './TVConsoleScene';
 
 interface HandheldSceneProps {
@@ -127,43 +132,50 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
     }
   };
 
+  const [stats, setStats] = useState<DeveloperStats | null>(null);
+
+  useEffect(() => {
+    fetchDeveloperStats().then(setStats);
+  }, []);
+
+  const currentChannelOptions = useMemo(
+    () => getChannelOptions(screenTab, stats),
+    [screenTab, stats]
+  );
+
+  const safeOptionIndex =
+    currentChannelOptions.length > 0
+      ? ((optionIndex % currentChannelOptions.length) + currentChannelOptions.length) %
+        currentChannelOptions.length
+      : 0;
+
   const handleActionA = () => {
-    if (screenTab === 'pings') {
+    if (screenTab === 'cartridges') {
+      onSelectProject(highlightedProject.id);
+      return;
+    }
+
+    if (currentChannelOptions.length === 0) return;
+    const opt = currentChannelOptions[safeOptionIndex];
+    if (!opt) return;
+
+    if (opt.action === 'ping') {
       setPingRefreshKey((prev) => prev + 1);
       return;
     }
-    if (screenTab === 'hire') {
-      const urls = [
-        'https://github.com/DeployedReject',
-        'https://codeberg.org/DeployedReject',
-        'mailto:deployedreject@proton.me',
-      ];
-      window.open(urls[optionIndex % urls.length], '_blank', 'noopener,noreferrer');
+    if (opt.action === 'copy' && opt.copyText) {
+      navigator.clipboard?.writeText(opt.copyText).catch(() => {});
       return;
     }
-    if (screenTab === 'github') {
-      const urls = [
-        'https://github.com/DeployedReject',
-        'https://codeberg.org/DeployedReject',
-      ];
-      window.open(urls[optionIndex % urls.length], '_blank', 'noopener,noreferrer');
-      return;
+    if (opt.url) {
+      window.open(opt.url, '_blank', 'noopener,noreferrer');
     }
-    if (screenTab === 'status') {
-      const urls = [
-        'https://github.com/DeployedReject',
-        'https://codeberg.org/DeployedReject',
-      ];
-      window.open(urls[optionIndex % urls.length], '_blank', 'noopener,noreferrer');
-      return;
-    }
-    onSelectProject(highlightedProject.id);
   };
 
   return (
     <div
       className={`w-screen h-screen flex flex-col overflow-hidden select-none transition-colors duration-300 ${
-        isLightMode ? 'bg-[#ede4d3]' : 'bg-[#1a1614]'
+        isLightMode ? 'bg-[#f5ecdd]' : 'bg-[#080706]'
       }`}
     >
       {/* ==================================================================== */}
@@ -173,11 +185,12 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         className="w-full h-1/2 p-2.5 sm:p-4 flex flex-col relative transition-all duration-300"
         style={{
           background: isLightMode
-            ? 'linear-gradient(165deg, #d8cfc2 0%, #c2b6a6 55%, #ab9e8d 100%)'
-            : 'linear-gradient(165deg, #4a4340 0%, #332e2c 55%, #211d1c 100%)',
-          boxShadow:
-            'inset 0 2px 4px rgba(255,255,255,0.18), inset 0 -8px 20px rgba(0,0,0,0.65)',
-          borderBottom: isLightMode ? '4px solid #8c7d6b' : '4px solid #171412',
+            ? 'linear-gradient(165deg, #e3dacb 0%, #d1c3b0 55%, #b8a692 100%)'
+            : 'linear-gradient(165deg, #2b2624 0%, #1c1817 55%, #100e0d 100%)',
+          boxShadow: isLightMode
+            ? 'inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -8px 20px rgba(80,60,40,0.35)'
+            : 'inset 0 2px 4px rgba(255,255,255,0.08), inset 0 -8px 20px rgba(0,0,0,0.85)',
+          borderBottom: isLightMode ? '4px solid #8c7d6b' : '4px solid #080605',
         }}
       >
         {/* Top Lens Bezel Header: Power LED + Backlight Status */}
@@ -186,13 +199,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             <span
               className="w-2.5 h-2.5 rounded-full animate-pulse"
               style={{
-                backgroundColor: isLightMode ? '#f59e0b' : '#5ec299',
-                boxShadow: isLightMode ? '0 0 8px #f59e0b' : '0 0 8px #5ec299',
+                backgroundColor: isLightMode ? '#f59e0b' : '#39e89b',
+                boxShadow: isLightMode ? '0 0 10px #f59e0b' : '0 0 12px #39e89b',
               }}
             />
             <span
-              className={`text-[7px] tracking-wider uppercase ${
-                isLightMode ? 'text-[#3d342c]' : 'text-[#b8aca3]'
+              className={`text-[7px] tracking-wider uppercase font-bold ${
+                isLightMode ? 'text-[#3d342c]' : 'text-[#e2deda]'
               }`}
               style={{ fontFamily: 'var(--font-pixel)' }}
             >
@@ -202,7 +215,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
 
           <span
             className={`text-[7px] tracking-wider ${
-              isLightMode ? 'text-[#4f4339]' : 'text-[#a89c94]'
+              isLightMode ? 'text-[#4f4339]' : 'text-[#b8aba0]'
             }`}
             style={{ fontFamily: 'var(--font-pixel)' }}
           >
@@ -213,13 +226,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         {/* Deep Recessed Screen Cavity */}
         <div
           className={`relative flex-1 w-full rounded-[14px] overflow-hidden crt-screen-container transition-all duration-300 ${
-            isLightMode ? 'bg-[#e8f0e6]' : 'bg-[#0c130d]'
+            isLightMode ? 'bg-[#edf5eb]' : 'bg-[#040805]'
           }`}
           style={{
             boxShadow: isLightMode
               ? 'inset 0 4px 12px rgba(0,0,0,0.22), 0 2px 0 rgba(255,255,255,0.5)'
-              : 'inset 0 8px 24px rgba(0,0,0,0.95), 0 2px 0 rgba(255,255,255,0.12), 0 0 30px rgba(166,226,110,0.15)',
-            border: isLightMode ? '3px solid #6b7869' : '3px solid #181c18',
+              : 'inset 0 8px 28px rgba(0,0,0,0.98), 0 2px 0 rgba(255,255,255,0.06), 0 0 40px rgba(57,232,155,0.22)',
+            border: isLightMode ? '3px solid #738a70' : '3px solid #0e1610',
           }}
         >
           <ConsoleScreenContent
@@ -250,10 +263,11 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         className="w-full h-1/2 flex flex-col justify-between p-4 sm:p-6 relative overflow-hidden"
         style={{
           background: isLightMode
-            ? 'linear-gradient(155deg, #f7efe4 0%, #eadbc9 48%, #d6c3ad 88%, #bfa890 100%)'
-            : 'linear-gradient(155deg, #ebe0d2 0%, #d8c8b5 48%, #bfa992 88%, #a38d76 100%)',
-          boxShadow:
-            'inset 0 4px 6px rgba(255,255,255,0.7), inset 0 -12px 24px rgba(66,50,36,0.65), inset 6px 0 12px rgba(255,255,255,0.35), inset -6px 0 14px rgba(66,50,36,0.45)',
+            ? 'linear-gradient(155deg, #faf3e8 0%, #ece0ce 48%, #d8c6b2 88%, #c4af98 100%)'
+            : 'linear-gradient(155deg, #3d3532 0%, #292321 48%, #1c1715 88%, #120e0d 100%)',
+          boxShadow: isLightMode
+            ? 'inset 0 4px 6px rgba(255,255,255,0.8), inset 0 -12px 24px rgba(66,50,36,0.65), inset 6px 0 12px rgba(255,255,255,0.4), inset -6px 0 14px rgba(66,50,36,0.45)'
+            : 'inset 0 4px 6px rgba(255,255,255,0.15), inset 0 -12px 24px rgba(0,0,0,0.9), inset 6px 0 12px rgba(255,255,255,0.08), inset -6px 0 14px rgba(0,0,0,0.7)',
         }}
       >
         {/* Subtle Baked Plastic Texture Overlay from handheld-body.webp */}
@@ -350,9 +364,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             </div>
           </div>
 
-          {/* RIGHT: Angled Recessed Pill Well + 3D Burgundy B (Light Mode) & A (Action) Buttons */}
+          {/* RIGHT: Single Recessed Circular 3D SELECT Action Button (A & B merged) */}
           <div
-            className="px-4 py-3 sm:px-5 sm:py-3.5 rounded-full flex items-center gap-5 sm:gap-7 -rotate-24"
+            className="p-3 sm:p-4 rounded-full flex items-center justify-center -rotate-12"
             style={{
               background: 'linear-gradient(180deg, #bfa992 0%, #d6c5b2 100%)',
               boxShadow:
@@ -360,65 +374,27 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               border: '1px solid #b09a82',
             }}
           >
-            {/* B Button: Toggle Light Mode (Unique function) */}
-            <div className="flex flex-col items-center">
-              <button
-                type="button"
-                onClick={(e) => toggleLightModeWithTransition(e.currentTarget)}
-                className="w-13 h-13 sm:w-15 sm:h-15 rounded-full cursor-pointer active:translate-y-1 transition-transform flex items-center justify-center relative"
-                style={{
-                  background: isLightMode
-                    ? 'radial-gradient(circle at 35% 30%, #fbbf24 0%, #d97706 65%, #92400e 100%)'
-                    : 'radial-gradient(circle at 35% 30%, #b83b4a 0%, #872330 60%, #57121b 100%)',
-                  boxShadow:
-                    '0 6px 0 #380a10, 0 8px 12px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,210,215,0.45)',
-                  border: '2px solid #6b1823',
-                }}
-                title="Toggle Light / Dark Mode"
-              >
-                <span
-                  className="text-[#fceee0] text-xs font-bold rotate-24"
-                  style={{ fontFamily: "'Press Start 2P', monospace" }}
-                >
-                  B
-                </span>
-              </button>
-              <span
-                className="text-[8px] text-[#45382d] font-bold tracking-wider mt-2 rotate-24"
-                style={{ fontFamily: "'Press Start 2P', monospace" }}
-              >
-                LIGHT
-              </span>
-            </div>
-
-            {/* A Button: Trigger Selected Item / Load ROM */}
             <div className="flex flex-col items-center">
               <button
                 type="button"
                 onClick={handleActionA}
-                className="w-13 h-13 sm:w-15 sm:h-15 rounded-full cursor-pointer active:translate-y-1 transition-transform flex items-center justify-center relative"
+                className="w-16 h-16 sm:w-18 sm:h-18 rounded-full cursor-pointer active:translate-y-1 transition-transform flex flex-col items-center justify-center relative group"
                 style={{
                   background:
-                    'radial-gradient(circle at 35% 30%, #b83b4a 0%, #872330 60%, #57121b 100%)',
+                    'radial-gradient(circle at 35% 30%, #c2384a 0%, #8f202e 60%, #571018 100%)',
                   boxShadow:
-                    '0 6px 0 #380a10, 0 8px 12px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,210,215,0.45)',
-                  border: '2px solid #6b1823',
+                    '0 7px 0 #360a0f, 0 10px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,215,220,0.55)',
+                  border: '2px solid #6b1420',
                 }}
-                title="Select / Load Highlighted Item"
+                title="Select / Load Highlighted Option"
               >
                 <span
-                  className="text-[#fceee0] text-xs font-bold rotate-24"
+                  className="text-[#fceee0] text-sm font-black tracking-wider"
                   style={{ fontFamily: "'Press Start 2P', monospace" }}
                 >
-                  A
+                  SELECT
                 </span>
               </button>
-              <span
-                className="text-[8px] text-[#7c2d38] font-bold tracking-wider mt-2 rotate-24"
-                style={{ fontFamily: "'Press Start 2P', monospace" }}
-              >
-                SELECT
-              </span>
             </div>
           </div>
         </div>

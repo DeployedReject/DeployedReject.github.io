@@ -43,16 +43,38 @@ const MatchingSvgRotaryKnob: React.FC<{
   accentColor,
   isLightMode = false,
 }) => {
+  const [isKnobHovered, setIsKnobHovered] = useState<boolean>(false);
+  const isChannel = label.toUpperCase().includes('CHANNEL');
+
   return (
-    <div className="flex flex-col items-center select-none w-full gap-1.5">
-      <span
-        className={`text-[8px] tracking-wider uppercase ${
-          isLightMode ? 'text-[#e2e8f0]' : 'text-[#b4beb4]'
+    <div
+      onMouseEnter={() => setIsKnobHovered(true)}
+      onMouseLeave={() => setIsKnobHovered(false)}
+      className="flex flex-col items-center select-none w-full gap-1.5 relative"
+    >
+      <div className="flex items-center gap-1.5">
+        <span
+          className={`text-[8px] tracking-wider uppercase font-bold ${
+            isLightMode ? 'text-[#e2e8f0]' : 'text-[#b4beb4]'
+          }`}
+          style={{ fontFamily: 'var(--font-pixel)' }}
+        >
+          {label}
+        </span>
+      </div>
+
+      {/* Directed Knob Navigation Tooltip */}
+      <div
+        className={`transition-all duration-200 pointer-events-none flex flex-col items-center gap-0.5 ${
+          isKnobHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
         }`}
-        style={{ fontFamily: 'var(--font-pixel)' }}
       >
-        {label}
-      </span>
+        <div className="px-2 py-0.5 rounded bg-[#070d14]/95 border border-[#60a5fa]/60 shadow-[0_2px_8px_rgba(0,0,0,0.8)] text-[8px] font-mono whitespace-nowrap text-cyan-200 flex items-center gap-1.5">
+          <span className="text-amber-400 font-bold">&larr; Left: {isChannel ? 'Prev Tab' : 'Prev Opt'}</span>
+          <span className="text-slate-500">|</span>
+          <span className="text-emerald-400 font-bold">Right: {isChannel ? 'Next Tab' : 'Next Opt'} &rarr;</span>
+        </div>
+      </div>
 
       <div
         onClick={(e) => {
@@ -75,8 +97,19 @@ const MatchingSvgRotaryKnob: React.FC<{
           if (e.deltaY > 0) onTurnClockwise();
           else onTurnCounterClockwise();
         }}
-        className="relative w-22 h-22 xl:w-24 xl:h-24 rounded-full cursor-pointer group flex items-center justify-center"
+        title={`Click Left half: Prev ${isChannel ? 'Channel' : 'Option'} | Click Right half: Next ${isChannel ? 'Channel' : 'Option'}`}
+        className="relative w-22 h-22 xl:w-24 xl:h-24 rounded-full cursor-pointer group flex items-center justify-center transition-transform active:scale-95"
       >
+        {/* Left / Right Click Zone Visual Guides on Hover */}
+        <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none flex opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="w-1/2 h-full bg-cyan-500/10 hover:bg-cyan-500/20 flex items-center justify-start pl-1 text-[9px] text-cyan-300 font-bold font-mono">
+            &#9664;
+          </div>
+          <div className="w-1/2 h-full bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-end pr-1 text-[9px] text-emerald-300 font-bold font-mono">
+            &#9654;
+          </div>
+        </div>
+
         {/* Exact Same SVG Dial Geometry as the Zoomed-Out TV */}
         <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
           {/* Outer Tick Marks */}
@@ -170,11 +203,41 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [isYankingChain, setIsYankingChain] = useState<boolean>(false);
   const [staticBurst, setStaticBurst] = useState<boolean>(false);
   const [showGuideTooltip, setShowGuideTooltip] = useState<boolean>(true);
+  const [edgeProximity, setEdgeProximity] = useState<number>(0);
   const [stats, setStats] = useState<DeveloperStats | null>(null);
 
   const bulbRef = useRef<SVGGElement | null>(null);
   const zoomCooldownRef = useRef<number>(0);
   const bulbCooldownRef = useRef<number>(0);
+
+  // Track cursor distance to viewport edges when in closeup TV mode
+  useEffect(() => {
+    if (cameraMode !== 'closeup') {
+      setEdgeProximity(0);
+      return;
+    }
+
+    const handlePointerMove = (e: MouseEvent) => {
+      const edgeThreshold = 80; // Distance in px where edge glow begins
+      const minDistance = Math.min(
+        e.clientX,
+        e.clientY,
+        window.innerWidth - e.clientX,
+        window.innerHeight - e.clientY
+      );
+
+      if (minDistance < edgeThreshold) {
+        // 0 at edgeThreshold, 1 at the extreme edge (0px)
+        const intensity = Math.max(0, Math.min(1, (edgeThreshold - minDistance) / edgeThreshold));
+        setEdgeProximity(intensity);
+      } else {
+        setEdgeProximity(0);
+      }
+    };
+
+    window.addEventListener('mousemove', handlePointerMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handlePointerMove);
+  }, [cameraMode]);
 
   useEffect(() => {
     fetchDeveloperStats().then(setStats);
@@ -474,6 +537,22 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               </div>
             </div>
           </>
+        )}
+
+        {/* Dynamic Edge Proximity Glow: Illuminates as cursor approaches the screen border */}
+        {edgeProximity > 0 && (
+          <div
+            className="fixed inset-0 z-[45] pointer-events-none transition-opacity duration-150"
+            style={{
+              opacity: edgeProximity,
+              boxShadow: `inset 0 0 ${Math.round(20 + edgeProximity * 50)}px ${Math.round(4 + edgeProximity * 12)}px rgba(166, 226, 110, ${0.35 + edgeProximity * 0.45})`,
+              border: `${Math.round(2 + edgeProximity * 4)}px solid rgba(166, 226, 110, ${0.4 + edgeProximity * 0.6})`,
+            }}
+          >
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-[#0a120d]/90 border border-[#a6e26e] text-[#a6e26e] text-[9px] font-mono tracking-wider uppercase font-bold shadow-lg animate-pulse">
+              &bull; Approaching Exit Zone &mdash; Dwell 2s to Return to Room &bull;
+            </div>
+          </div>
         )}
 
         {/* Invisible Screen-Edge Sensors: Hovering 2s at the edge returns to room view */}
@@ -1588,6 +1667,50 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               stroke={isLightMode ? '#85522d' : '#658c4a'}
               strokeWidth="1.5"
             />
+
+            {/* Retro Carved Wooden Signboard: "PROJECTS" on top of the Shelf */}
+            <g transform="translate(180, 118)">
+              {/* Wooden Sign Stand Left & Right Brackets */}
+              <polygon points="40,68 52,68 50,78 38,78" fill="#1b120c" stroke="#3d2719" strokeWidth="1" />
+              <polygon points="268,68 280,68 278,78 266,78" fill="#1b120c" stroke="#3d2719" strokeWidth="1" />
+
+              {/* Wooden Plaque Body */}
+              <polygon
+                points="16,24 304,24 296,68 8,68"
+                fill={isLightMode ? '#8f6443' : '#2b1b12'}
+                stroke={isLightMode ? '#d99763' : '#4a2f20'}
+                strokeWidth="2"
+              />
+              {/* Inner Inset Rim Border */}
+              <polygon
+                points="22,28 298,28 290,64 16,64"
+                fill={isLightMode ? '#a3724c' : '#1f130d'}
+                stroke={isLightMode ? '#6e4427' : '#573826'}
+                strokeWidth="1.2"
+              />
+              {/* Brass Screw Rivets */}
+              <circle cx="28" cy="46" r="2.5" fill={isLightMode ? '#d97706' : '#7a5a3a'} stroke="#1f130d" strokeWidth="0.8" />
+              <circle cx="286" cy="46" r="2.5" fill={isLightMode ? '#d97706' : '#7a5a3a'} stroke="#1f130d" strokeWidth="0.8" />
+
+              {/* Glowing / Engraved "PROJECTS" Sign Text */}
+              <text
+                x="157"
+                y="52"
+                textAnchor="middle"
+                fill={isLightMode ? '#fef3c7' : '#a6e26e'}
+                fontSize="18"
+                fontWeight="900"
+                letterSpacing="0.25em"
+                style={{
+                  fontFamily: 'var(--font-pixel)',
+                  textShadow: isLightMode
+                    ? '1px 1px 0px #451a03'
+                    : '0 0 10px rgba(166,226,110,0.6), 2px 2px 0px #0c140d',
+                }}
+              >
+                PROJECTS
+              </text>
+            </g>
 
             {/* Top Frame Front Lip of Brown Shelf */}
             <rect

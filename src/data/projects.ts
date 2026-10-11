@@ -228,8 +228,8 @@ Usage:
     id: 'aggregator',
     name: 'Aggregator',
     title: 'Aggregator',
-    tagline: 'A browser extension and web app that loads media from multiple sites in one place using plugins.',
-    badge: 'Browser Extension • React • Spring Boot',
+    tagline: 'A browser extension and backend registry that loads media from multiple sites in one place using sandboxed plugins.',
+    badge: 'Browser Extension • Live Backend • Spring Boot',
     accentColor: '#84cc16',
     accentBg: 'rgba(132, 204, 22, 0.15)',
     labelSvg: '/svg/label-aggregator.svg',
@@ -239,7 +239,7 @@ Usage:
     liveUrl: 'https://aggregator-registry.mishravaibhav2048.workers.dev',
     summary: {
       overview:
-        'A browser extension and website that searches and plays media across multiple sites using sandboxed JavaScript plugins.',
+        'A browser extension and live backend registry that searches and plays media across multiple sites using sandboxed JavaScript plugins.',
       architecture: [
         'Runs each site plugin inside a sandboxed iframe so plugin scripts cannot read the main page.',
         'Uses a browser extension background script to fetch pages and media streams that would normally be blocked by CORS.',
