@@ -378,4 +378,121 @@
   animation: cameraZoomOutAnim 0.56s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Expanding Ball of Light Transition (Dark -> Light Mode) */
+@keyframes expandLightOrb {
+  0% {
+    transform: scale(0.04);
+    opacity: 1;
+    filter: drop-shadow(0 0 25px #ffffff);
+  }
+  25% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 80px #fef08a);
+  }
+  60% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 160px #fde047);
+  }
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+    filter: drop-shadow(0 0 260px #fbbf24);
+  }
+}
+
+/* Contracting Dark Wave (Light -> Dark Mode) */
+@keyframes contractDarkOrb {
+  0% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 60px #eab308);
+  }
+  75% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.04);
+    opacity: 0;
+  }
+}
+
+/* Filament flash ignition when bulb is turned on */
+@keyframes filamentIgnite {
+  0% {
+    stroke: #ffffff;
+    stroke-width: 5px;
+    filter: drop-shadow(0 0 16px #ffffff);
+  }
+  40% {
+    stroke: #fffbeb;
+    stroke-width: 3.5px;
+    filter: drop-shadow(0 0 10px #fef08a);
+  }
+  100% {
+    stroke: #ffffff;
+    stroke-width: 2.4px;
+    filter: none;
+  }
+}
+
+/* Tactile pull chain spring bounce */
+@keyframes pullChainYank {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(14px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+  85% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-expandLightOrb {
+  will-change: transform, opacity;
+  animation: expandLightOrb 0.75s cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+}
+
+.animate-contractDarkOrb {
+  will-change: transform, opacity;
+  animation: contractDarkOrb 0.65s cubic-bezier(0.32, 0, 0.67, 0) forwards;
+}
+
+.animate-filamentIgnite {
+  animation: filamentIgnite 0.6s ease-out forwards;
+}
+
+.animate-pullChainYank {
+  animation: pullChainYank 0.45s ease-out forwards;
+}
+
+/* TV Static Transition Burst (Using assets/tv-static.gif) */
+@keyframes tvStaticBurstAnim {
+  0% {
+    opacity: 0.95;
+  }
+  65% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-tvStaticBurst {
+  will-change: opacity;
+  animation: tvStaticBurstAnim 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+
+
 

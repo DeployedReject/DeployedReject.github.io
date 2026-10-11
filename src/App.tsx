@@ -20,6 +20,7 @@ export function App() {
   const [isFullscreenProject, setIsFullscreenProject] = useState(false);
   // Hanging room light bulb starts OFF (dark mode) and sets everything to light mode when touched
   const [isLightMode, setIsLightMode] = useState(false);
+  const [staticBurst, setStaticBurst] = useState(false);
 
   const timersRef = useRef<number[]>([]);
 
@@ -50,30 +51,38 @@ export function App() {
 
     if (deviceLayout === 'handheld') {
       setCameraMode('inserting');
+      const tBurst = window.setTimeout(() => setStaticBurst(true), 240);
       const t1 = window.setTimeout(() => {
         setIsFullscreenProject(true);
       }, 400);
-      timersRef.current.push(t1);
+      const tClear = window.setTimeout(() => setStaticBurst(false), 600);
+      timersRef.current.push(tBurst, t1, tClear);
       return;
     }
 
-    // Desktop: Slide cartridge into the console slot (700ms), then open the project view directly
+    // Desktop: Slide cartridge into console slot, then burst static as ROM boots
     setCameraMode('inserting');
+    const tBurst = window.setTimeout(() => setStaticBurst(true), 480);
 
     const t1 = window.setTimeout(() => {
       setIsFullscreenProject(true);
     }, 700);
 
-    timersRef.current.push(t1);
+    const tClear = window.setTimeout(() => setStaticBurst(false), 900);
+
+    timersRef.current.push(tBurst, t1, tClear);
   };
 
   const handleEject = () => {
     clearTimers();
+    setStaticBurst(true);
     setIsFullscreenProject(false);
 
     if (deviceLayout === 'handheld') {
       setCameraMode('closeup');
       setActiveCartridgeId(null);
+      const tClear = window.setTimeout(() => setStaticBurst(false), 380);
+      timersRef.current.push(tClear);
       return;
     }
 
@@ -85,18 +94,31 @@ export function App() {
       setActiveCartridgeId(null);
     }, 650);
 
-    timersRef.current.push(t1);
+    const tClear = window.setTimeout(() => setStaticBurst(false), 420);
+
+    timersRef.current.push(t1, tClear);
   };
 
   const activeProject = PROJECTS.find((p) => p.id === activeCartridgeId) || null;
 
   if (isFullscreenProject && activeProject) {
     return (
-      <FullscreenProjectView
-        project={activeProject}
-        onEject={handleEject}
-        isLightMode={isLightMode}
-      />
+      <>
+        <FullscreenProjectView
+          project={activeProject}
+          onEject={handleEject}
+          isLightMode={isLightMode}
+        />
+        {staticBurst && (
+          <div className="fixed inset-0 z-[120] pointer-events-none overflow-hidden animate-tvStaticBurst">
+            <img
+              src="/img/tv-static.gif"
+              alt="TV Static Transition"
+              className="w-full h-full object-cover opacity-90"
+            />
+          </div>
+        )}
+      </>
     );
   }
 
@@ -126,6 +148,17 @@ export function App() {
           isLightMode={isLightMode}
           onToggleLightMode={() => setIsLightMode((prev) => !prev)}
         />
+      )}
+
+      {/* Global TV Static Transition Overlay */}
+      {staticBurst && (
+        <div className="fixed inset-0 z-[120] pointer-events-none overflow-hidden animate-tvStaticBurst">
+          <img
+            src="/img/tv-static.gif"
+            alt="TV Static Transition"
+            className="w-full h-full object-cover opacity-90"
+          />
+        </div>
       )}
     </div>
   );
