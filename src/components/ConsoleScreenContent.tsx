@@ -3,8 +3,10 @@ import type { Project } from '../data/projects';
 import {
   fetchDeveloperStats,
   measureEndpointPings,
+  fetchRepoCommits,
   type DeveloperStats,
   type PingResult,
+  type CommitTickerItem,
 } from '../services/gitrepositorystatistics';
 
 export type ScreenTab = 'status' | 'cartridges' | 'github' | 'pings' | 'hire';
@@ -40,16 +42,19 @@ export function getChannelOptions(
     ];
   }
   if (activeTab === 'github') {
-    const commits = stats?.recentCommits || [
-      { repo: 'murces', message: 'drop windows support, wsl only', date: '10-11' },
-      { repo: 'SentricTechnologies', message: 'update map view and mqtt handler', date: '10-04' },
-      { repo: 'Cireu', message: 'fix light theme colors', date: '10-11' },
-    ];
-    const uniqueRepos = Array.from(new Set(commits.map((c) => c.repo))).slice(0, 3);
-    return uniqueRepos.map((repo) => ({
-      label: `\uf126  DeployedReject/${repo}`,
+    const repos = stats?.repos && stats.repos.length > 0
+      ? stats.repos
+      : [
+          { name: 'murces', source: 'codeberg' as const, url: 'https://codeberg.org/DeployedReject/murces' },
+          { name: 'SentricTechnologies', source: 'github' as const, url: 'https://github.com/DeployedReject/SentricTechnologies' },
+          { name: 'Cireu', source: 'github' as const, url: 'https://github.com/DeployedReject/Cireu' },
+          { name: 'cf-p-link', source: 'github' as const, url: 'https://github.com/DeployedReject/cf-p-link' },
+        ];
+    return repos.map((repo) => ({
+      label: `\uf126  DeployedReject/${repo.name}`,
       action: 'url' as const,
-      url: `https://github.com/DeployedReject/${repo}`,
+      url: repo.url || (repo.source === 'codeberg' ? `https://codeberg.org/DeployedReject/${repo.name}` : `https://github.com/DeployedReject/${repo.name}`),
+      copyText: repo.name,
     }));
   }
   if (activeTab === 'pings') {
@@ -233,6 +238,48 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
       : 0;
 
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  // Dynamic commit cache for individual repos
+  const [repoCommits, setRepoCommits] = useState<Record<string, CommitTickerItem[]>>({});
+  const [isLoadingRepoCommits, setIsLoadingRepoCommits] = useState<boolean>(false);
+
+  // Poll commits for the selected repository when browsing the github channel
+  useEffect(() => {
+    if (activeTab !== 'github' || channelOptions.length === 0) return;
+    const currentOpt = channelOptions[safeOptionIndex];
+    if (!currentOpt?.copyText) return;
+    const repoName = currentOpt.copyText;
+
+    // If already loaded in state, no need to re-fetch immediately
+    if (repoCommits[repoName]) return;
+
+    let isMounted = true;
+    setIsLoadingRepoCommits(true);
+
+    // Find repo source if available in stats.repos
+    const repoMeta = stats?.repos?.find(
+      (r) => r.name.toLowerCase() === repoName.toLowerCase()
+    );
+    const source = repoMeta?.source || (repoName.toLowerCase() === 'murces' ? 'codeberg' : 'github');
+
+    fetchRepoCommits(repoName, source)
+      .then((items) => {
+        if (!isMounted) return;
+        setRepoCommits((prev) => ({
+          ...prev,
+          [repoName]: items,
+        }));
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingRepoCommits(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, safeOptionIndex, channelOptions, stats?.repos, repoCommits]);
 
   // Ensure the selected option or ROM is always scrolled into view when navigating
   useEffect(() => {
@@ -684,7 +731,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                 grid.reduce((sum, row) => sum + (row[colIdx] ?? 0), 0)
               );
               const maxWeekly = Math.max(12, ...weeklyTotals);
-              const commits = stats.recentCommits || [];
+              const selectedOption = channelOptions[safeOptionIndex];
+              const selectedRepoName = selectedOption?.copyText || '';
+              const displayedCommits = (selectedRepoName && repoCommits[selectedRepoName]?.length)
+                ? repoCommits[selectedRepoName]
+                : (stats.recentCommits || []);
 
               return (
                 <div className="flex-1 min-h-0 flex flex-col justify-between gap-2 overflow-hidden pointer-events-none">
@@ -702,34 +753,54 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                       }`}
                       style={{ fontFamily: 'var(--font-pixel)' }}
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 truncate">
                         <span className="nf-glyph">{'\uf126'}</span>
-                        <span>LATEST COMMITS</span>
+                        <span className="truncate">
+                          {selectedRepoName ? `${selectedRepoName} COMMITS` : 'LATEST COMMITS'}
+                        </span>
                       </span>
-                      <span className="text-[8px] opacity-80">
-                        TOTAL: {stats.totalCommitsYear}
+                      <span className="text-[8px] opacity-80 shrink-0">
+                        {isLoadingRepoCommits ? '[FETCHING...]' : `TOTAL: ${stats.totalCommitsYear}`}
                       </span>
                     </div>
 
                     <div className="space-y-1 my-1 overflow-y-auto max-h-[105px]">
-                      {commits.slice(0, 4).map((c, i) => (
+                      {isLoadingRepoCommits && !repoCommits[selectedRepoName] ? (
                         <div
-                          key={i}
-                          className={`text-[12px] sm:text-[14px] md:text-[15px] font-mono leading-tight flex items-center gap-1.5 truncate ${
+                          className={`text-xs font-mono animate-pulse ${
                             isLightMode ? 'text-[#1b3d22]' : 'text-[#8ce06e]'
                           }`}
                         >
-                          <span className="text-[10px] sm:text-xs opacity-70 shrink-0">
-                            [{c.date}]
-                          </span>
-                          <span className="font-bold text-amber-500 shrink-0">
-                            {c.repo}:
-                          </span>
-                          <span className="truncate">
-                            {c.message}
-                          </span>
+                          POLLING REPOSITORY COMMITS...
                         </div>
-                      ))}
+                      ) : displayedCommits.length === 0 ? (
+                        <div
+                          className={`text-xs font-mono opacity-70 ${
+                            isLightMode ? 'text-[#1b3d22]' : 'text-[#8ce06e]'
+                          }`}
+                        >
+                          NO COMMITS RECORDED
+                        </div>
+                      ) : (
+                        displayedCommits.slice(0, 4).map((c, i) => (
+                          <div
+                            key={i}
+                            className={`text-[12px] sm:text-[14px] md:text-[15px] font-mono leading-tight flex items-center gap-1.5 truncate ${
+                              isLightMode ? 'text-[#1b3d22]' : 'text-[#8ce06e]'
+                            }`}
+                          >
+                            <span className="text-[10px] sm:text-xs opacity-70 shrink-0">
+                              [{c.date}]
+                            </span>
+                            <span className="font-bold text-amber-500 shrink-0">
+                              {c.repo}:
+                            </span>
+                            <span className="truncate">
+                              {c.message}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
 

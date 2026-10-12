@@ -36,8 +36,8 @@ export interface DeveloperStats {
   fetchedLive: boolean;
 }
 
-const CACHE_KEY = 'dr_retro_stats_v4';
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_KEY = 'dr_retro_stats_v5';
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 const FALLBACK_STATS: DeveloperStats = {
   handle: 'DEPLOYEDREJECT',
@@ -257,7 +257,7 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
       languages: sortedLangs.length >= 3 ? sortedLangs : FALLBACK_STATS.languages,
       recentCommits: recentCommits.length > 0 ? recentCommits : FALLBACK_STATS.recentCommits,
       contributionGrid,
-      repos: repoList.slice(0, 6),
+      repos: repoList,
       fetchedLive: true,
     };
 
@@ -270,6 +270,82 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
   } catch {
     return FALLBACK_STATS;
   }
+}
+
+const repoCommitsCache = new Map<string, { timestamp: number; commits: CommitTickerItem[] }>();
+
+/**
+ * Dynamically poll the latest commits from a specific public GitHub/Codeberg repository
+ */
+export async function fetchRepoCommits(
+  repoName: string,
+  source: 'github' | 'codeberg' = 'github'
+): Promise<CommitTickerItem[]> {
+  const cached = repoCommitsCache.get(repoName);
+  if (cached && Date.now() - cached.timestamp < 3 * 60 * 1000) {
+    return cached.commits;
+  }
+
+  try {
+    if (source === 'github') {
+      const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' };
+      const envToken = import.meta.env.VITE_GITHUB_TOKEN as string | undefined;
+      if (envToken) {
+        headers.Authorization = `Bearer ${envToken}`;
+      }
+
+      const res = await fetch(
+        `https://api.github.com/repos/DeployedReject/${repoName}/commits?per_page=6`,
+        { headers }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const commits: CommitTickerItem[] = data.map((item) => {
+            const rawDate = item.commit?.author?.date || item.commit?.committer?.date || '';
+            const date = rawDate ? rawDate.slice(5, 10) : 'RECENT';
+            const message = (item.commit?.message || 'code update').split('\n')[0].slice(0, 60);
+            return {
+              repo: repoName,
+              message,
+              date,
+            };
+          });
+
+          repoCommitsCache.set(repoName, { timestamp: Date.now(), commits });
+          return commits;
+        }
+      }
+    } else {
+      // Codeberg commits endpoint
+      const res = await fetch(
+        `https://codeberg.org/api/v1/repos/DeployedReject/${repoName}/commits?limit=6`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const commits: CommitTickerItem[] = data.map((item) => {
+            const rawDate = item.created || item.commit?.author?.date || '';
+            const date = rawDate ? rawDate.slice(5, 10) : 'RECENT';
+            const message = (item.commit?.message || 'code update').split('\n')[0].slice(0, 60);
+            return {
+              repo: repoName,
+              message,
+              date,
+            };
+          });
+
+          repoCommitsCache.set(repoName, { timestamp: Date.now(), commits });
+          return commits;
+        }
+      }
+    }
+  } catch {
+    // ignore network errors
+  }
+
+  return [];
 }
 
 export async function measureEndpointPings(): Promise<PingResult[]> {
