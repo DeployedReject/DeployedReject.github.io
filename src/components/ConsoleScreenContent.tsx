@@ -488,7 +488,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             )}
 
             {/* Scrollable Flavour Text & Diagnostics Area filling the rest of the space */}
-            {activeTab !== 'cartridges' && activeTab !== 'hire' && (
+            {activeTab !== 'cartridges' && activeTab !== 'hire' && activeTab !== 'github' && (
               <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-between pr-1">
                 {fullText && (
                   <pre
@@ -672,138 +672,185 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               </div>
             )}
 
-            {/* Prominent Full-Width Commit History Chart (Weekly Volume Bars + 7x28 Contribution Heatmap) */}
+            {/* Split Commits View: Half Latest Commits & Half Activity Chart */}
             {activeTab === 'github' && stats && !isTableZoomedOut && (() => {
               const grid = stats.contributionGrid;
-              const numCols = Math.min(28, grid[0]?.length || 20);
+              const numCols = Math.min(24, grid[0]?.length || 20);
               const colors = isLightMode
                 ? ['#d5e4d2', '#9ec497', '#639c5a', '#356e2d', '#163d12']
                 : ['#121f14', '#274520', '#487a33', '#7ec252', '#c8fa8c'];
-              const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+              const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
               const weeklyTotals = Array.from({ length: numCols }, (_, colIdx) =>
                 grid.reduce((sum, row) => sum + (row[colIdx] ?? 0), 0)
               );
               const maxWeekly = Math.max(12, ...weeklyTotals);
+              const commits = stats.recentCommits || [];
 
               return (
-                <div
-                  className={`my-1.5 p-2.5 sm:p-3 rounded border-2 shrink-0 pointer-events-none flex flex-col gap-2 ${
-                    isLightMode
-                      ? 'border-[#5c8754] bg-[#dbead8]/90 shadow-inner'
-                      : 'border-[#4b7533] bg-[#09130a]/90 shadow-[0_0_20px_rgba(166,226,110,0.16),inset_0_0_16px_rgba(0,0,0,0.85)]'
-                  }`}
-                >
-                  {/* Chart Header & Phosphor Legend */}
+                <div className="flex-1 min-h-0 flex flex-col justify-between gap-2 overflow-hidden pointer-events-none">
+                  {/* Top Half: Latest Commits Feed */}
                   <div
-                    className={`flex flex-wrap items-center justify-between gap-2 border-b pb-1.5 ${
-                      isLightMode ? 'border-[#8ab083]' : 'border-[#2f4d22]'
+                    className={`flex-1 min-h-0 rounded border p-2 flex flex-col justify-between overflow-hidden ${
+                      isLightMode
+                        ? 'border-[#5c8754] bg-[#dbead8]/80'
+                        : 'border-[#325224] bg-[#09130a]/85'
                     }`}
-                    style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    <span
-                      className={`text-[8px] sm:text-[9px] tracking-wider flex items-center gap-1.5 ${
-                        isLightMode ? 'text-[#142918]' : 'text-[#b5ec82]'
-                      }`}
-                    >
-                      <span>{'\uf080'}</span>
-                      <span>28-WEEK ACTIVITY</span>
-                    </span>
                     <div
-                      className={`flex items-center gap-1.5 text-[7px] sm:text-[8px] ${
-                        isLightMode ? 'text-[#2d5434]' : 'text-[#7ec252]'
+                      className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border-b pb-1 flex items-center justify-between ${
+                        isLightMode ? 'text-[#142918] border-[#8ab083]' : 'text-[#a6e26e] border-[#223d18]'
                       }`}
+                      style={{ fontFamily: 'var(--font-pixel)' }}
                     >
-                      <span>LESS</span>
-                      {colors.map((c, idx) => (
-                        <span
-                          key={idx}
-                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 inline-block border ${
-                            isLightMode ? 'border-[#6d9666]' : 'border-[#3a5e29]'
+                      <span className="flex items-center gap-1.5">
+                        <span className="nf-glyph">{'\uf126'}</span>
+                        <span>LATEST COMMITS</span>
+                      </span>
+                      <span className="text-[8px] opacity-80">
+                        TOTAL: {stats.totalCommitsYear}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 my-1 overflow-y-auto max-h-[105px]">
+                      {commits.slice(0, 4).map((c, i) => (
+                        <div
+                          key={i}
+                          className={`text-[12px] sm:text-[14px] md:text-[15px] font-mono leading-tight flex items-center gap-1.5 truncate ${
+                            isLightMode ? 'text-[#1b3d22]' : 'text-[#8ce06e]'
                           }`}
-                          style={{
-                            backgroundColor: c,
-                            boxShadow:
-                              !isLightMode && idx === 4
-                                ? '0 0 6px rgba(200,250,140,0.75)'
-                                : 'none',
-                          }}
-                        />
+                        >
+                          <span className="text-[10px] sm:text-xs opacity-70 shrink-0">
+                            [{c.date}]
+                          </span>
+                          <span className="font-bold text-amber-500 shrink-0">
+                            {c.repo}:
+                          </span>
+                          <span className="truncate">
+                            {c.message}
+                          </span>
+                        </div>
                       ))}
-                      <span>MORE</span>
                     </div>
                   </div>
 
-                  {/* Weekly Commit Volume Spark-Bar Chart */}
+                  {/* Bottom Half: Activity Spark-Bar + Heatmap Chart */}
                   <div
-                    className={`flex items-end gap-[3px] sm:gap-1 h-7 sm:h-9 pl-7 sm:pl-9 pr-0.5 pt-1 border-b pb-1 ${
-                      isLightMode ? 'border-[#8ab083]/70' : 'border-[#233b1a]/80'
+                    className={`rounded border-2 p-2 flex flex-col gap-1.5 shrink-0 ${
+                      isLightMode
+                        ? 'border-[#5c8754] bg-[#dbead8]/90'
+                        : 'border-[#4b7533] bg-[#09130a]/90 shadow-[0_0_16px_rgba(166,226,110,0.15)]'
                     }`}
                   >
-                    {weeklyTotals.map((tot, cIdx) => {
-                      const pct = Math.max(14, Math.round((tot / maxWeekly) * 100));
-                      const isPeak = tot >= maxWeekly * 0.72;
-                      return (
-                        <div key={cIdx} className="flex-1 h-full flex items-end">
-                          <div
-                            className="w-full rounded-t-[1px]"
+                    {/* Chart Header & Phosphor Legend */}
+                    <div
+                      className={`flex items-center justify-between border-b pb-1 ${
+                        isLightMode ? 'border-[#8ab083]' : 'border-[#2f4d22]'
+                      }`}
+                      style={{ fontFamily: 'var(--font-pixel)' }}
+                    >
+                      <span
+                        className={`text-[8px] sm:text-[9px] tracking-wider flex items-center gap-1 ${
+                          isLightMode ? 'text-[#142918]' : 'text-[#b5ec82]'
+                        }`}
+                      >
+                        <span className="nf-glyph">{'\uf080'}</span>
+                        <span>24-WEEK ACTIVITY</span>
+                      </span>
+                      <div
+                        className={`flex items-center gap-1 text-[7px] sm:text-[8px] ${
+                          isLightMode ? 'text-[#2d5434]' : 'text-[#7ec252]'
+                        }`}
+                      >
+                        <span>LESS</span>
+                        {colors.map((c, idx) => (
+                          <span
+                            key={idx}
+                            className={`w-2 h-2 sm:w-2.5 sm:h-2.5 inline-block border ${
+                              isLightMode ? 'border-[#6d9666]' : 'border-[#3a5e29]'
+                            }`}
                             style={{
-                              height: `${pct}%`,
-                              backgroundColor: isLightMode
-                                ? isPeak
-                                  ? '#163d12'
-                                  : '#4b8243'
-                                : isPeak
-                                ? '#b5ec82'
-                                : '#58943d',
+                              backgroundColor: c,
                               boxShadow:
-                                !isLightMode && isPeak
-                                  ? '0 0 8px rgba(181,236,130,0.55)'
+                                !isLightMode && idx === 4
+                                  ? '0 0 6px rgba(200,250,140,0.75)'
                                   : 'none',
                             }}
                           />
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Full 7-Day x 28-Week Contribution Heatmap Grid */}
-                  <div className="flex flex-col gap-[3px] sm:gap-1">
-                    {grid.slice(0, 7).map((row, rIdx) => (
-                      <div key={rIdx} className="flex items-center gap-[3px] sm:gap-1">
-                        <span
-                          className={`w-6 sm:w-8 text-[7px] sm:text-[8px] shrink-0 text-left ${
-                            isLightMode ? 'text-[#2d5434]' : 'text-[#7ec252]'
-                          }`}
-                          style={{ fontFamily: 'var(--font-pixel)' }}
-                        >
-                          {rIdx % 2 === 0 ? dayLabels[rIdx] : ''}
-                        </span>
-                        <div className="flex-1 flex gap-[3px] sm:gap-1">
-                          {row.slice(0, numCols).map((lvl, cIdx) => {
-                            const clamped = Math.min(4, Math.max(0, lvl));
-                            return (
-                              <div
-                                key={cIdx}
-                                className={`flex-1 h-2.5 sm:h-3.5 md:h-4 rounded-[2px] border ${
-                                  isLightMode
-                                    ? 'border-[#8ab083]/70'
-                                    : 'border-[#22381a]/70'
-                                }`}
-                                style={{
-                                  backgroundColor: colors[clamped],
-                                  boxShadow:
-                                    !isLightMode && clamped >= 4
-                                      ? '0 0 8px rgba(200, 250, 140, 0.65)'
-                                      : !isLightMode && clamped === 3
-                                      ? '0 0 4px rgba(126, 194, 82, 0.35)'
-                                      : 'none',
-                                }}
-                              />
-                            );
-                          })}
-                        </div>
+                        ))}
+                        <span>MORE</span>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Weekly Commit Volume Spark-Bar Chart */}
+                    <div
+                      className={`flex items-end gap-[2px] h-5 sm:h-6 pl-4 pr-0.5 pt-0.5 border-b pb-0.5 ${
+                        isLightMode ? 'border-[#8ab083]/70' : 'border-[#233b1a]/80'
+                      }`}
+                    >
+                      {weeklyTotals.map((tot, cIdx) => {
+                        const pct = Math.max(14, Math.round((tot / maxWeekly) * 100));
+                        const isPeak = tot >= maxWeekly * 0.72;
+                        return (
+                          <div key={cIdx} className="flex-1 h-full flex items-end">
+                            <div
+                              className="w-full rounded-t-[1px]"
+                              style={{
+                                height: `${pct}%`,
+                                backgroundColor: isLightMode
+                                  ? isPeak
+                                    ? '#163d12'
+                                    : '#4b8243'
+                                  : isPeak
+                                  ? '#b5ec82'
+                                  : '#58943d',
+                                boxShadow:
+                                  !isLightMode && isPeak
+                                    ? '0 0 6px rgba(181,236,130,0.55)'
+                                    : 'none',
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Heatmap Grid */}
+                    <div className="flex flex-col gap-[2px]">
+                      {grid.slice(0, 7).map((row, rIdx) => (
+                        <div key={rIdx} className="flex items-center gap-[2px]">
+                          <span
+                            className={`w-3.5 text-[7px] shrink-0 text-left ${
+                              isLightMode ? 'text-[#2d5434]' : 'text-[#7ec252]'
+                            }`}
+                            style={{ fontFamily: 'var(--font-pixel)' }}
+                          >
+                            {rIdx % 2 === 0 ? dayLabels[rIdx] : ''}
+                          </span>
+                          <div className="flex-1 flex gap-[2px]">
+                            {row.slice(0, numCols).map((lvl, cIdx) => {
+                              const clamped = Math.min(4, Math.max(0, lvl));
+                              return (
+                                <div
+                                  key={cIdx}
+                                  className={`flex-1 h-2 sm:h-2.5 rounded-[1px] border ${
+                                    isLightMode
+                                      ? 'border-[#8ab083]/70'
+                                      : 'border-[#22381a]/70'
+                                  }`}
+                                  style={{
+                                    backgroundColor: colors[clamped],
+                                    boxShadow:
+                                      !isLightMode && clamped >= 4
+                                        ? '0 0 6px rgba(200, 250, 140, 0.65)'
+                                        : 'none',
+                                  }}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );

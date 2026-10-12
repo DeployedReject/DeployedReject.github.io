@@ -378,7 +378,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               <button
                 type="button"
                 onClick={handleActionA}
-                className="w-16 h-16 sm:w-18 sm:h-18 rounded-full cursor-pointer active:translate-y-1 transition-transform flex flex-col items-center justify-center relative group"
+                className="w-16 h-16 sm:w-18 sm:h-18 rounded-full cursor-pointer active:translate-y-1 transition-transform flex flex-col items-center justify-center relative group px-1"
                 style={{
                   background:
                     'radial-gradient(circle at 35% 30%, #c2384a 0%, #8f202e 60%, #571018 100%)',
@@ -389,7 +389,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 title="Select / Load Highlighted Option"
               >
                 <span
-                  className="text-[#fceee0] text-sm font-black tracking-wider"
+                  className="text-[#fceee0] text-[10px] sm:text-xs font-black tracking-normal uppercase"
                   style={{ fontFamily: "'Press Start 2P', monospace" }}
                 >
                   SELECT
@@ -400,40 +400,40 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         </div>
 
         {/* BOTTOM ROW: SINGLE BACKLIGHT PILL + SPEAKER GRILLE */}
-        <div className="relative z-10 flex items-end justify-between px-2 pt-1">
-          <div className="w-12 hidden sm:block" />
+        <div className="relative z-10 flex items-end justify-between px-2 pt-2">
+          <div className="w-10 hidden sm:block" />
 
-          {/* Center: Single Molded Rubber Pill Button for BACKLIGHT (toggles Light / Dark mode) */}
-          <div className="flex items-center">
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className="p-1 rounded-full -rotate-24"
+          {/* Center-Left: Single Molded Rubber Pill Button with label beside/parallel to it */}
+          <div className="flex items-center gap-2.5 pb-1">
+            <div
+              className="p-1 rounded-full -rotate-24"
+              style={{
+                background: '#b8a38c',
+                boxShadow: 'inset 0 2px 4px rgba(50,38,28,0.5), 0 1px 0 rgba(255,255,255,0.6)',
+              }}
+            >
+              <button
+                ref={lightButtonRef}
+                type="button"
+                onClick={(e) => toggleLightModeWithTransition(e.currentTarget)}
+                className="w-13 h-3.5 sm:w-15 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
                 style={{
-                  background: '#b8a38c',
-                  boxShadow: 'inset 0 2px 4px rgba(50,38,28,0.5), 0 1px 0 rgba(255,255,255,0.6)',
+                  background: isLightMode
+                    ? 'linear-gradient(180deg, #d97706 0%, #b45309 100%)'
+                    : 'linear-gradient(180deg, #5c534d 0%, #38322e 100%)',
+                  boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.3)',
                 }}
-              >
-                <button
-                  ref={lightButtonRef}
-                  type="button"
-                  onClick={(e) => toggleLightModeWithTransition(e.currentTarget)}
-                  className="w-14 h-3.5 sm:w-16 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
-                  style={{
-                    background: isLightMode
-                      ? 'linear-gradient(180deg, #d97706 0%, #b45309 100%)'
-                      : 'linear-gradient(180deg, #5c534d 0%, #38322e 100%)',
-                    boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.3)',
-                  }}
-                  title="Toggle Backlight (Light / Dark Mode)"
-                />
-              </div>
-              <span
-                className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
-                style={{ fontFamily: "'Press Start 2P', monospace" }}
-              >
-                BACKLIGHT
-              </span>
+                title="Toggle Backlight (Light / Dark Mode)"
+              />
             </div>
+            <span
+              className={`text-[8px] sm:text-[9px] font-bold tracking-wider -rotate-24 ${
+                isLightMode ? 'text-[#3d3228]' : 'text-[#a89b8d]'
+              }`}
+              style={{ fontFamily: "'Press Start 2P', monospace" }}
+            >
+              BACKLIGHT
+            </span>
           </div>
 
           {/* Bottom-Right Diagonal Speaker Grille Slots */}

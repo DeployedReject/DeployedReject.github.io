@@ -49,7 +49,8 @@ export const PROJECTS: Project[] = [
         'Manages a Playit.gg tunnel process so friends can join without port forwarding.',
       ],
       techStack: ['Java 21', 'GraalVM Native Image', 'Lanterna TUI', 'tmux', 'Playit.gg', 'Modrinth API', 'CurseForge API'],
-      clientValue: '',
+      clientValue:
+        'Zero-headache self-hosting for low-spec boxes. Automates JDK provisioning, live log attachment via tmux, automatic rclone offsite backups, Playit.gg tunneling without NAT punching, and single-click modpack synchronization.',
     },
     initialTerminalLogs: [
       '[MurCes] MurCes v1.6.0 initialized',
@@ -127,7 +128,8 @@ Usage:
         'Includes a basic login check to separate clinic staff from dashboard operators.',
       ],
       techStack: ['React', 'TypeScript', 'Tailwind CSS', 'MapLibre GL', 'Uber H3', 'FastAPI', 'Mosquitto MQTT', 'PostgreSQL'],
-      clientValue: '',
+      clientValue:
+        'Turns fragmented IoT telemetry into real-time emergency dispatch triage. Clusters field alerts into geospatial H3 hexagons and routes ambulance fleets with live MQTT telemetry and sub-second socket latency.',
     },
   },
   {
@@ -153,7 +155,8 @@ Usage:
         'Includes playback controls (play, pause, step forward/backward) to watch the algorithm walk the graph.',
       ],
       techStack: ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'SVG'],
-      clientValue: '',
+      clientValue:
+        'Visual, interactive discrete mathematics graph inspector. Bridges matrix incidence representations with live SVG canvases, executing step-by-step backtracking and Fleury algorithms with pause/scrub time travel.',
     },
   },
   {
@@ -178,7 +181,8 @@ Usage:
         'Includes a setup command that writes the config file and creates a `systemd` service to run on boot.',
       ],
       techStack: ['Java 21', 'GraalVM Native Image', 'Cloudflare API', 'Cloudflare Workers', 'cloudflared', 'systemd'],
-      clientValue: '',
+      clientValue:
+        'Permanent public endpoints on top of free ephemeral Cloudflare Quick Tunnels. Automatically captures volatile trycloudflare.com URLs, prunes dead services, respawns crashed tunnels, and hot-patches an edge Worker routing layer in under 2 seconds without requiring paid named tunnels or static IPs.',
     },
     initialTerminalLogs: [
       '[cf-p-link] Loaded 3 local services from /opt/cf-p-link/config.json',
@@ -247,7 +251,8 @@ Usage:
         'Lets users vote on whether a plugin works and hides plugins that stop working.',
       ],
       techStack: ['JavaScript', 'WebExtensions API', 'React', 'Spring Boot', 'PostgreSQL', 'JGit'],
-      clientValue: '',
+      clientValue:
+        'Unified cross-site media stream aggregator with iframe security isolation. Bypasses CORS restrictions via extension background workers while syncing community-vetted scraper scripts from Git repos via Spring Boot.',
     },
   },
 ];

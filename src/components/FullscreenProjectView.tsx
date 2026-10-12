@@ -390,6 +390,45 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
                   {gitingest.tree}
                 </pre>
               </div>
+
+              {/* LLM Summary / Why You Should Use It */}
+              {project.summary.clientValue && (
+                <div
+                  className={`mt-6 rounded-lg border p-5 space-y-2.5 ${
+                    isLightMode
+                      ? 'border-amber-400/80 bg-amber-50/70 shadow-sm'
+                      : 'border-amber-500/40 bg-stone-900/60 shadow-[0_0_20px_rgba(245,158,11,0.06)]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`flex items-center gap-2 font-mono text-xs font-bold tracking-wider uppercase ${
+                        isLightMode ? 'text-amber-800' : 'text-amber-400'
+                      }`}
+                    >
+                      <span>{'\uf0eb'}</span>
+                      <span>LLM Summary // Why Use It</span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                        isLightMode
+                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                          : 'bg-amber-950/60 text-amber-300 border-amber-800/80'
+                      }`}
+                    >
+                      AI Digest
+                    </span>
+                  </div>
+
+                  <p
+                    className={`text-xs sm:text-[13px] leading-relaxed font-sans ${
+                      isLightMode ? 'text-stone-800' : 'text-stone-300'
+                    }`}
+                  >
+                    {project.summary.clientValue}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Right 6 Cols: How It Works & Built With */}
