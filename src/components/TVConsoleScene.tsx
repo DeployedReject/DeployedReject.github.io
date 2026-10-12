@@ -221,41 +221,11 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [isYankingChain, setIsYankingChain] = useState<boolean>(false);
   const [staticBurst, setStaticBurst] = useState<boolean>(false);
   const [showGuideTooltip, setShowGuideTooltip] = useState<boolean>(true);
-  const [edgeProximity, setEdgeProximity] = useState<number>(0);
   const [stats, setStats] = useState<DeveloperStats | null>(() => getCachedDeveloperStats());
 
   const bulbRef = useRef<SVGGElement | null>(null);
   const zoomCooldownRef = useRef<number>(0);
   const bulbCooldownRef = useRef<number>(0);
-
-  // Track cursor distance to viewport edges when in closeup TV mode
-  useEffect(() => {
-    if (cameraMode !== 'closeup') {
-      setEdgeProximity(0);
-      return;
-    }
-
-    const handlePointerMove = (e: MouseEvent) => {
-      const edgeThreshold = 80; // Distance in px where edge glow begins
-      const minDistance = Math.min(
-        e.clientX,
-        e.clientY,
-        window.innerWidth - e.clientX,
-        window.innerHeight - e.clientY
-      );
-
-      if (minDistance < edgeThreshold) {
-        // 0 at edgeThreshold, 1 at the extreme edge (0px)
-        const intensity = Math.max(0, Math.min(1, (edgeThreshold - minDistance) / edgeThreshold));
-        setEdgeProximity(intensity);
-      } else {
-        setEdgeProximity(0);
-      }
-    };
-
-    window.addEventListener('mousemove', handlePointerMove, { passive: true });
-    return () => window.removeEventListener('mousemove', handlePointerMove);
-  }, [cameraMode]);
 
   useEffect(() => {
     fetchDeveloperStats().then(setStats);
@@ -581,8 +551,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] cursor-pointer animate-fadeIn"
           >
             <div className="relative max-w-xl w-full p-6 sm:p-7 rounded-2xl bg-[#09130b]/98 border-3 border-[#a6e26e] text-[#a6e26e] shadow-[0_0_50px_rgba(166,226,110,0.6)] flex flex-col items-center gap-4 text-center font-mono">
-              <div className="flex items-center gap-2 text-sm sm:text-base font-bold tracking-wider">
-                <span className="inline-block w-3 h-3 rounded-full bg-[#a6e26e] animate-ping shrink-0" />
+              <div className="flex items-center justify-center text-sm sm:text-base font-bold tracking-wider">
                 <span className="text-white text-base sm:text-lg uppercase" style={{ fontFamily: 'var(--font-pixel)' }}>
                   TV CONTROLS & NAVIGATION
                 </span>
@@ -624,22 +593,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 <span>Mouse clicks on screen & tabs enabled</span>
                 <span className="text-white font-bold px-2 py-0.5 rounded bg-[#1c3b22] border border-[#a6e26e]">CLICK ANYWHERE TO DISMISS</span>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Dynamic Edge Proximity Glow: Illuminates as cursor approaches the screen border */}
-        {edgeProximity > 0 && (
-          <div
-            className="fixed inset-0 z-[45] pointer-events-none transition-opacity duration-150"
-            style={{
-              opacity: edgeProximity,
-              boxShadow: `inset 0 0 ${Math.round(20 + edgeProximity * 50)}px ${Math.round(4 + edgeProximity * 12)}px rgba(166, 226, 110, ${0.35 + edgeProximity * 0.45})`,
-              border: `${Math.round(2 + edgeProximity * 4)}px solid rgba(166, 226, 110, ${0.4 + edgeProximity * 0.6})`,
-            }}
-          >
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-[#0a120d]/90 border border-[#a6e26e] text-[#a6e26e] text-[9px] font-mono tracking-wider uppercase font-bold shadow-lg animate-pulse">
-              &bull; Approaching Exit Zone &mdash; Dwell 2s to Return to Room &bull;
             </div>
           </div>
         )}
@@ -1476,12 +1429,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                         className="w-full h-full object-cover opacity-90 mix-blend-screen"
                       />
                       <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-                      <div
-                        className="absolute bottom-4 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-black/80 border border-red-500/80 text-red-400 text-[10px] font-bold font-mono tracking-wider animate-pulse whitespace-nowrap shadow-lg"
-                        style={{ fontFamily: 'var(--font-pixel)' }}
-                      >
-                        [ TV STANDBY - CLICK TO POWER ON ]
-                      </div>
                     </div>
                   ) : (
                     <ConsoleScreenContent
