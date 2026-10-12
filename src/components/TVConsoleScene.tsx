@@ -627,7 +627,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
         {/* Outer 3D Moulded Blue CRT Television Cabinet */}
         <div
-          className="relative w-full h-full p-3 sm:p-5 md:p-6 flex items-stretch transition-colors duration-300"
+          className="relative w-full h-full p-3 sm:p-5 md:p-6 flex flex-col items-stretch transition-colors duration-300"
           style={{
             background: isLightMode
               ? 'linear-gradient(145deg, #3b76b8 0%, #2b5c94 52%, #1d426e 100%)'
@@ -637,9 +637,62 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               : 'inset 0 2px 6px rgba(140,185,240,0.22), inset 0 -10px 30px rgba(0,0,0,0.95)',
           }}
         >
+          {/* Top TV Cabinet Header Bar: Molded Badge / Sign "PRESS TO GO BACK" to Room View */}
+          <div className="w-full pb-2 sm:pb-3 flex items-center justify-between gap-3 shrink-0 select-none">
+            {/* Retro Brand / Model Badge */}
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-[9px] sm:text-[10px] tracking-widest font-black uppercase px-2 py-0.5 rounded border ${
+                  isLightMode
+                    ? 'bg-[#1e4675] text-[#e0f0ff] border-[#60a5fa]'
+                    : 'bg-[#091524] text-[#8cbef5] border-[#22446d]'
+                }`}
+                style={{ fontFamily: 'var(--font-pixel)' }}
+              >
+                TRINITRON &bull; KV-1326R
+              </span>
+              <span
+                className={`hidden md:inline text-[9px] tracking-wider uppercase opacity-70 ${
+                  isLightMode ? 'text-slate-800' : 'text-slate-300'
+                }`}
+                style={{ fontFamily: 'var(--font-pixel)' }}
+              >
+                [AUTO DWELL / ESC / BUTTON BACK]
+              </span>
+            </div>
+
+            {/* Tactile Retro "PRESS TO GO BACK" Sign / Button */}
+            <button
+              type="button"
+              onClick={triggerZoomOut}
+              title="Return to room view (or press Esc / dwell near screen edges)"
+              className="cursor-pointer group flex items-center gap-2 px-3 py-1 sm:py-1.5 rounded-lg active:translate-y-0.5 transition-all duration-150"
+              style={{
+                background: isLightMode
+                  ? 'linear-gradient(180deg, #b91c1c 0%, #991b1b 100%)'
+                  : 'linear-gradient(180deg, #7f1d1d 0%, #450a0a 100%)',
+                boxShadow: isLightMode
+                  ? '0 3px 0 #7f1d1d, 0 4px 10px rgba(0,0,0,0.35), inset 0 1px 2px rgba(254,202,202,0.6)'
+                  : '0 3px 0 #2b0606, 0 4px 12px rgba(0,0,0,0.7), inset 0 1px 2px rgba(248,113,113,0.5)',
+                border: isLightMode ? '2px solid #f87171' : '2px solid #ef4444',
+              }}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#fca5a5] animate-ping shrink-0" />
+              <span
+                className="text-[9px] sm:text-[10px] md:text-[11px] text-[#fee2e2] font-black tracking-wider uppercase group-hover:text-white transition-colors"
+                style={{ fontFamily: 'var(--font-pixel)' }}
+              >
+                &#9664; PRESS TO GO BACK [ROOM VIEW]
+              </span>
+              <kbd className="hidden sm:inline px-1 py-0.2 rounded bg-black/40 text-[8px] text-[#fecaca] font-mono border border-red-400/40">
+                ESC
+              </kbd>
+            </button>
+          </div>
+
           {/* Inner Recessed Blue CRT Bezel Well */}
           <div
-            className="relative flex-1 h-full rounded-[26px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden transition-colors duration-300"
+            className="relative flex-1 h-full min-h-0 rounded-[26px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden transition-colors duration-300"
             style={{
               background: isLightMode
                 ? 'linear-gradient(180deg, #254f80 0%, #2f629c 50%, #3a74b5 100%)'

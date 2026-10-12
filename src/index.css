@@ -267,7 +267,7 @@
 }
 
 .animate-romLoadBar {
-  animation: romLoadBarAnim 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: romLoadBarAnim 4.9s cubic-bezier(0.25, 0.9, 0.35, 1) forwards;
 }
 
 @keyframes fadeInAnim {

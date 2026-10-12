@@ -457,37 +457,211 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
       {/* Main CRT Display Area */}
       <div className="flex-1 pt-2 sm:pt-3 min-h-0 flex flex-col md:flex-row gap-4 items-stretch justify-between overflow-hidden">
         {/* ROM Loading Animation with Logo & Progress Bar */}
+        {/* ROM Loading View: Detailed Instructions, Overview & What It's About */}
         {insertingProject ? (
-          <div className="w-full h-full flex flex-col items-center justify-center text-center p-2 gap-3 animate-fadeIn pointer-events-none">
-            <img
-              src={insertingProject.labelSvg}
-              alt={insertingProject.name}
-              className={`w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg border-2 ${
-                isLightMode
-                  ? 'border-[#1c3b22] shadow-md'
-                  : 'border-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.5)]'
-              }`}
-            />
+          <div className="w-full h-full flex flex-col justify-between p-2 sm:p-3 overflow-y-auto animate-fadeIn pointer-events-none gap-2 font-mono">
+            {/* Top: Identity Header & Tagline */}
             <div
-              className={`text-sm sm:text-base tracking-wide ${
-                isLightMode ? 'text-[#142918] font-bold' : 'pixel-dull-white'
+              className={`p-2.5 sm:p-3 rounded border flex items-center justify-between gap-3 shrink-0 ${
+                isLightMode
+                  ? 'bg-[#dbead8] border-[#5c8754]'
+                  : 'bg-[#0a140b]/95 border-[#345c26] shadow-[0_0_15px_rgba(166,226,110,0.2)]'
               }`}
-              style={{ fontFamily: 'var(--font-pixel)' }}
             >
-              {SHORT_NAMES[insertingProject.id] || insertingProject.name}
+              <div className="flex items-center gap-3">
+                <img
+                  src={insertingProject.labelSvg}
+                  alt={insertingProject.name}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 object-cover rounded border ${
+                    isLightMode
+                      ? 'border-[#1c3b22]'
+                      : 'border-[#a6e26e] shadow-[0_0_12px_rgba(166,226,110,0.4)]'
+                  }`}
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-sm sm:text-base font-bold ${
+                        isLightMode ? 'text-[#142918]' : 'text-emerald-400'
+                      }`}
+                      style={{ fontFamily: 'var(--font-pixel)' }}
+                    >
+                      {SHORT_NAMES[insertingProject.id] || insertingProject.name}
+                    </span>
+                    <span
+                      className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold ${
+                        isLightMode
+                          ? 'border-[#5c8754] text-[#20421e] bg-[#cde0ca]'
+                          : 'border-[#a6e26e]/60 text-[#a6e26e] bg-[#142618]'
+                      }`}
+                    >
+                      {insertingProject.badge}
+                    </span>
+                  </div>
+                  <div
+                    className={`text-[10px] sm:text-xs mt-0.5 ${
+                      isLightMode ? 'text-[#234220]' : 'text-slate-300'
+                    }`}
+                  >
+                    {insertingProject.tagline}
+                  </div>
+                </div>
+              </div>
+
+              <div className="hidden sm:flex flex-col items-end text-[9px] opacity-75 shrink-0">
+                <span>FORMAT: CARTRIDGE ROM</span>
+                <span>STATE: MOUNTING VFS</span>
+              </div>
             </div>
+
+            {/* Middle: 2 Columns - "WHAT IT IS" & "HOW TO INTERACT" */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0 text-[10px] sm:text-xs">
+              {/* Left Column: What It's About */}
+              <div
+                className={`p-2.5 rounded border flex flex-col justify-between overflow-hidden ${
+                  isLightMode
+                    ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
+                    : 'bg-[#081009]/90 border-[#28481e]'
+                }`}
+              >
+                <div>
+                  <div
+                    className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${
+                      isLightMode ? 'text-[#142918]' : 'text-emerald-400'
+                    }`}
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
+                    <span>{'\uf05a'}</span>
+                    <span>WHAT THIS IS ABOUT:</span>
+                  </div>
+                  <p
+                    className={`leading-relaxed text-[10px] sm:text-[11px] ${
+                      isLightMode ? 'text-[#1b3518]' : 'text-[#a2db79]'
+                    }`}
+                  >
+                    {insertingProject.summary.overview}
+                  </p>
+                </div>
+
+                <div
+                  className={`mt-2 pt-2 border-t text-[9px] sm:text-[10px] italic leading-snug ${
+                    isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#78b355]'
+                  }`}
+                >
+                  "{insertingProject.originNote || insertingProject.summary.clientValue.slice(0, 120)}..."
+                </div>
+              </div>
+
+              {/* Right Column: How to Interact with It */}
+              <div
+                className={`p-2.5 rounded border flex flex-col justify-between overflow-hidden ${
+                  isLightMode
+                    ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
+                    : 'bg-[#081009]/90 border-[#28481e]'
+                }`}
+              >
+                <div>
+                  <div
+                    className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${
+                      isLightMode ? 'text-[#142918]' : 'text-amber-400'
+                    }`}
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
+                    <span>{'\uf11c'}</span>
+                    <span>HOW TO INTERACT:</span>
+                  </div>
+
+                  <ul className="space-y-1 text-[10px] sm:text-[11px] leading-tight">
+                    {insertingProject.demoType === 'terminal' ? (
+                      <>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Click quick command chips to dispatch CLI tasks</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Type interactive commands (e.g. <strong className="text-amber-400">help</strong>, <strong className="text-amber-400">status</strong>)</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Simulate process crashes and witness automatic healing</span>
+                        </li>
+                      </>
+                    ) : insertingProject.demoType === 'visualizer' ? (
+                      <>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Click nodes & edges on the live SVG canvas to edit graphs</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Use the playback scrub bar to step through Eulerian paths</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Edit incidence matrix tables to see live canvas updates</span>
+                        </li>
+                      </>
+                    ) : (
+                      <>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Explore real-time interactive mapping and telemetry streams</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Navigate live routes and subviews in the embedded sandbox</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-emerald-400 font-bold">&bull;</span>
+                          <span>Check architecture breakdowns and live backend status</span>
+                        </li>
+                      </>
+                    )}
+                    <li className="flex items-start gap-1 pt-0.5">
+                      <span className="text-emerald-400 font-bold">&bull;</span>
+                      <span>Press <kbd className="px-1 py-0.2 rounded bg-black/40 border border-[#a6e26e] text-[9px] font-bold">ESC</kbd> or click <strong>EJECT</strong> anytime to exit</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div
+                  className={`mt-1 pt-1 border-t text-[9px] flex items-center justify-between ${
+                    isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#6fa84b]'
+                  }`}
+                >
+                  <span>STACK: {insertingProject.summary.techStack.slice(0, 3).join(', ')}</span>
+                  <span>{insertingProject.demoType.toUpperCase()} MODE</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom: Progress Bar & Ready Status */}
             <div
-              className={`w-44 sm:w-64 h-3 border rounded overflow-hidden mt-1 ${
-                isLightMode
-                  ? 'bg-[#cfe0cd] border-[#5c8754]'
-                  : 'bg-[#142016] border-[#5c8244]'
+              className={`p-2 rounded border shrink-0 ${
+                isLightMode ? 'bg-[#dbead8] border-[#5c8754]' : 'bg-[#09120a] border-[#2b4c20]'
               }`}
             >
+              <div className="flex items-center justify-between text-[10px] font-bold mb-1">
+                <span className="flex items-center gap-1 text-emerald-400 animate-pulse">
+                  <span>{'\uf021'}</span>
+                  <span>LOADING ROM DATA & SHADERS...</span>
+                </span>
+                <span className="text-slate-400 text-[9px]">PLEASE STAND BY</span>
+              </div>
               <div
-                className={`h-full animate-romLoadBar ${
-                  isLightMode ? 'bg-[#1c3b22]' : 'bg-[#a6e26e]'
+                className={`w-full h-3 border rounded overflow-hidden p-0.5 ${
+                  isLightMode
+                    ? 'bg-[#cfe0cd] border-[#5c8754]'
+                    : 'bg-[#060c07] border-[#345c26]'
                 }`}
-              />
+              >
+                <div
+                  className={`h-full animate-romLoadBar rounded-sm ${
+                    isLightMode ? 'bg-[#1c3b22]' : 'bg-gradient-to-r from-[#345c26] to-[#a6e26e]'
+                  }`}
+                />
+              </div>
             </div>
           </div>
         ) : (

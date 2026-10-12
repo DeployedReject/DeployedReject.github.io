@@ -16,8 +16,8 @@ export function App() {
     return 'tv';
   });
 
-  // Starts zoomed out on the room / table view by default
-  const [cameraMode, setCameraMode] = useState<SceneCameraMode>('table');
+  // Starts in fullscreen closeup view on the TV by default
+  const [cameraMode, setCameraMode] = useState<SceneCameraMode>('closeup');
   const [activeCartridgeId, setActiveCartridgeId] = useState<string | null>(null);
   const [isFullscreenProject, setIsFullscreenProject] = useState(false);
   // Hanging room light bulb starts OFF (dark mode) and sets everything to light mode when touched
@@ -62,15 +62,15 @@ export function App() {
       return;
     }
 
-    // Desktop: Slide cartridge into console slot, then burst static as ROM boots
+    // Extended loading time for cartridges to provide interactive instructions & project details
     setCameraMode('inserting');
-    const tBurst = window.setTimeout(() => setStaticBurst(true), 480);
+    const tBurst = window.setTimeout(() => setStaticBurst(true), 5000);
 
     const t1 = window.setTimeout(() => {
       setIsFullscreenProject(true);
-    }, 700);
+    }, 5200);
 
-    const tClear = window.setTimeout(() => setStaticBurst(false), 900);
+    const tClear = window.setTimeout(() => setStaticBurst(false), 5450);
 
     timersRef.current.push(tBurst, t1, tClear);
   };
