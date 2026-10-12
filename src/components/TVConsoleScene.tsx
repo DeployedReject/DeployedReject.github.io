@@ -711,11 +711,26 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     showCartridgeLockedToast('channel');
                     return;
                   }
+                  if (tab === screenTab) return;
+                  const currentIdx = TV_TABS.indexOf(screenTab);
+                  const newIdx = TV_TABS.indexOf(tab);
+                  if (currentIdx !== -1 && newIdx !== -1) {
+                    const diff = newIdx - currentIdx;
+                    setChannelKnobAngle((prev) => prev + diff * 45);
+                  } else {
+                    setChannelKnobAngle((prev) => prev + 45);
+                  }
                   setScreenTab(tab);
                   setOptionIndex(0);
                 }}
                 optionIndex={safeOptionIndex}
-                onSelectOption={(idx) => setOptionIndex(idx)}
+                onSelectOption={(idx) => {
+                  const diff = idx - safeOptionIndex;
+                  if (diff !== 0) {
+                    setScrollKnobAngle((prev) => prev + diff * 35);
+                  }
+                  setOptionIndex(idx);
+                }}
                 onTriggerOption={(opt) => triggerOption(opt)}
                 pingRefreshKey={pingRefreshKey}
                 isTableZoomedOut={false}
@@ -802,22 +817,18 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   </span>
                 </div>
 
-                {/* OBVIOUS POWER SWITCH BUTTON TO TURN OFF & EXIT TV */}
+                {/* MINIMAL POWER SWITCH BUTTON TO TURN OFF & EXIT TV */}
                 <button
                   type="button"
                   onClick={() => {
                     setIsTvPoweredOff(true);
                     triggerZoomOut();
                   }}
-                  title="Turn off TV and zoom out to room"
-                  className="w-full py-2.5 px-3 rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg border-2 border-red-500/80 bg-gradient-to-b from-red-600 via-red-700 to-red-900 text-white font-bold group"
+                  title="Power Off (Exit TV)"
+                  className="w-full py-2.5 px-3 rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg border-2 border-red-500/80 bg-gradient-to-b from-red-600 via-red-700 to-red-900 text-white font-bold group hover:border-red-400 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]"
                 >
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-200 group-hover:bg-white animate-pulse" />
-                  <span
-                    className="text-[10px] xl:text-[11px] uppercase tracking-wider font-mono text-red-100 group-hover:text-white"
-                    style={{ fontFamily: 'var(--font-pixel)' }}
-                  >
-                    ⏻ POWER OFF (EXIT)
+                  <span className="text-base sm:text-lg text-red-100 group-hover:text-white group-hover:scale-110 transition-transform font-mono select-none">
+                    ⏻
                   </span>
                 </button>
               </div>
