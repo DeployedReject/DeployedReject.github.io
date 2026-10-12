@@ -415,12 +415,10 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     window.setTimeout(() => setStaticBurst(false), 320);
   };
 
-  // Trigger zoom in to fullscreen closeup TV view
+  // Trigger zoom in to fullscreen closeup TV view (instant on click or after 2s dwell)
   const triggerZoomIn = () => {
     clearZoomTimers();
     if (cameraMode !== 'table') return;
-    if (Date.now() < zoomCooldownRef.current) return;
-    zoomCooldownRef.current = Date.now() + 500;
     setStaticBurst(true);
     setCameraMode('closeup');
     window.setTimeout(() => setStaticBurst(false), 320);
@@ -460,10 +458,43 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     }
   };
 
-  // Keyboard navigation removed per user request: navigation is purely via mouse clicks and knob scrolling
+  // Arrow key navigation in TV mode: Left/Right turns Channel knob, Up/Down turns Scroll knob
   useEffect(() => {
-    // No keyboard hotkeys active
-  }, []);
+    if (cameraMode !== 'closeup') return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept arrow keys if user is typing in form inputs or textareas
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        turnChannel('next');
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        turnChannel('prev');
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        turnScroll('next');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        turnScroll('prev');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handlePressSelectButton();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [cameraMode, screenTab, currentChannelOptions, safeOptionIndex]);
 
   // ============================================================================
   // MODE 1: FULLSCREEN CRT VIEW (cameraMode === 'closeup')
@@ -1279,9 +1310,9 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 points="206,314 512,304 512,601 206,611"
                 fill={isLightMode ? '#e6f0e2' : '#070c08'}
               />
-              <foreignObject x="204" y="302" width="310" height="310">
+              <foreignObject x="204" y="302" width="310" height="310" className="pointer-events-none">
                 <div
-                  className="w-full h-full crt-screen-container overflow-hidden"
+                  className="w-full h-full crt-screen-container overflow-hidden pointer-events-none"
                   style={{
                     transform: 'skewY(-1.9deg)',
                     transformOrigin: 'left center',
