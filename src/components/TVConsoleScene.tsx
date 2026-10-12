@@ -7,7 +7,11 @@ import {
   type ScreenTab,
   type ChannelOption,
 } from './ConsoleScreenContent';
-import { fetchDeveloperStats, type DeveloperStats } from '../services/gitrepositorystatistics';
+import {
+  fetchDeveloperStats,
+  getCachedDeveloperStats,
+  type DeveloperStats,
+} from '../services/gitrepositorystatistics';
 
 export type SceneCameraMode = 'closeup' | 'table' | 'inserting' | 'zooming-in' | 'ejecting';
 
@@ -204,7 +208,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [staticBurst, setStaticBurst] = useState<boolean>(false);
   const [showGuideTooltip, setShowGuideTooltip] = useState<boolean>(true);
   const [edgeProximity, setEdgeProximity] = useState<number>(0);
-  const [stats, setStats] = useState<DeveloperStats | null>(null);
+  const [stats, setStats] = useState<DeveloperStats | null>(() => getCachedDeveloperStats());
 
   const bulbRef = useRef<SVGGElement | null>(null);
   const zoomCooldownRef = useRef<number>(0);
@@ -241,12 +245,20 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   useEffect(() => {
     fetchDeveloperStats().then(setStats);
-    // Dismiss directed guidance tooltip after 5 seconds
-    const guideTimer = window.setTimeout(() => {
-      setShowGuideTooltip(false);
-    }, 5000);
-    return () => window.clearTimeout(guideTimer);
   }, []);
+
+  // Show navigation guide tooltip whenever entering closeup TV mode
+  useEffect(() => {
+    if (cameraMode === 'closeup') {
+      setShowGuideTooltip(true);
+      const timer = window.setTimeout(() => {
+        setShowGuideTooltip(false);
+      }, 5500);
+      return () => window.clearTimeout(timer);
+    } else {
+      setShowGuideTooltip(false);
+    }
+  }, [cameraMode]);
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
   const hoveredProject = projects.find((p) => p.id === hoveredProjectId) || null;
@@ -525,19 +537,47 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           </div>
         )}
 
-        {/* Directed Tooltip & Edge Highlight on Load (Active for 5s) */}
+        {/* Directed Navigation Tooltip on Entering TV Closeup Mode */}
         {showGuideTooltip && (
           <>
             {/* Visual Edge Highlight Border */}
-            <div className="fixed inset-0 z-40 pointer-events-none border-4 border-[#a6e26e]/80 animate-edgeGuidePulse" />
+            <div className="fixed inset-0 z-40 pointer-events-none border-2 border-[#a6e26e]/60 animate-edgeGuidePulse" />
 
             {/* Directed Tooltip Banner at top */}
-            <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[60] pointer-events-none flex flex-col items-center gap-1.5 animate-bounce">
-              <div className="px-3.5 py-1.5 rounded-md bg-[#0a120d]/95 border border-[#a6e26e] text-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.5)] flex items-center gap-2">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#a6e26e] animate-ping" />
-                <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase">
-                  Hover edges for 2s to return to room view
-                </span>
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-none flex flex-col items-center gap-1.5 animate-fadeIn">
+              <div className="px-4 py-2 rounded-lg bg-[#08110b]/95 border-2 border-[#a6e26e] text-[#a6e26e] shadow-[0_0_25px_rgba(166,226,110,0.55)] flex flex-wrap items-center justify-center gap-3 font-mono text-[11px] sm:text-xs">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#a6e26e] animate-ping shrink-0" />
+                  <span className="text-white tracking-wide uppercase">NAVIGATE:</span>
+                </div>
+                
+                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">←</kbd>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">→</kbd>
+                  <span className="text-slate-300">Channels</span>
+                </div>
+
+                <span className="text-emerald-700 font-bold hidden sm:inline">&bull;</span>
+
+                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">↑</kbd>
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">↓</kbd>
+                  <span className="text-slate-300">Scroll</span>
+                </div>
+
+                <span className="text-emerald-700 font-bold hidden sm:inline">&bull;</span>
+
+                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">Enter</kbd>
+                  <span className="text-slate-300">Select</span>
+                </div>
+
+                <span className="text-emerald-700 font-bold hidden md:inline">&bull;</span>
+
+                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">Esc</kbd>
+                  <span className="text-slate-300">Exit</span>
+                </div>
               </div>
             </div>
           </>

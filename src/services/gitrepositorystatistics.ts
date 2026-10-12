@@ -39,7 +39,7 @@ export interface DeveloperStats {
 const CACHE_KEY = 'dr_retro_stats_v5';
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-const FALLBACK_STATS: DeveloperStats = {
+export const FALLBACK_STATS: DeveloperStats = {
   handle: 'DEPLOYEDREJECT',
   level: 24,
   totalCommitsYear: 482,
@@ -76,6 +76,21 @@ const FALLBACK_STATS: DeveloperStats = {
   ],
   fetchedLive: false,
 };
+
+export function getCachedDeveloperStats(): DeveloperStats {
+  try {
+    const cachedRaw = localStorage.getItem(CACHE_KEY);
+    if (cachedRaw) {
+      const parsed = JSON.parse(cachedRaw);
+      if (Date.now() - parsed.timestamp < CACHE_TTL_MS && parsed.data) {
+        return parsed.data as DeveloperStats;
+      }
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return FALLBACK_STATS;
+}
 
 export async function fetchDeveloperStats(): Promise<DeveloperStats> {
   try {

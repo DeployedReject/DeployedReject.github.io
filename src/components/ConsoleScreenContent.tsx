@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Project } from '../data/projects';
 import {
   fetchDeveloperStats,
+  getCachedDeveloperStats,
   measureEndpointPings,
   fetchRepoCommits,
   type DeveloperStats,
@@ -133,7 +134,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   hideRomsTab = false,
   isLightMode = false,
 }) => {
-  const [stats, setStats] = useState<DeveloperStats | null>(null);
+  const [stats, setStats] = useState<DeveloperStats | null>(() => getCachedDeveloperStats());
   const [pings, setPings] = useState<PingResult[]>([
     { name: 'Aggregator Backend', target: '144.24.141.13', status: 'UNPINGABLE', latencyMs: null },
     { name: 'Sentric Technologies', target: '150.230.141.102', status: 'PINGING', latencyMs: null },

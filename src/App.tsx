@@ -3,8 +3,10 @@ import { PROJECTS } from './data/projects';
 import { TVConsoleScene, type SceneCameraMode } from './components/TVConsoleScene';
 import { HandheldScene } from './components/HandheldScene';
 import { FullscreenProjectView } from './components/FullscreenProjectView';
+import { RetroLoadingScreen } from './components/RetroLoadingScreen';
 
 export function App() {
+  const [isLoading, setIsLoading] = useState(true);
   const [deviceLayout, setDeviceLayout] = useState<'tv' | 'handheld'>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768 || (window.innerWidth < 1024 && window.innerHeight > window.innerWidth)
@@ -160,6 +162,9 @@ export function App() {
           />
         </div>
       )}
+
+      {/* Themed BIOS Boot Loading Screen to prevent flashing unrendered SVG/elements */}
+      {isLoading && <RetroLoadingScreen onComplete={() => setIsLoading(false)} />}
     </div>
   );
 }

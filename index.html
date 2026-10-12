@@ -9,10 +9,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- Critical Resource Preloads for instant rendering -->
     <link rel="preload" href="/fonts/SymbolsNerdFontMono-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/img/tv-static.gif" as="image">
+    <link rel="preload" href="/img/handheld-body.webp" as="image">
   </head>
-  <body class="bg-stone-950 text-stone-100 antialiased overflow-x-hidden selection:bg-emerald-500 selection:text-black">
-    <div id="root"></div>
+  <body class="bg-[#070b08] text-stone-100 antialiased overflow-x-hidden selection:bg-emerald-500 selection:text-black">
+    <div id="root">
+      <div style="position:fixed;inset:0;background:#070b08;color:#a6e26e;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:14px;letter-spacing:1px;z-index:9999;">
+        [ INITIALIZING SYSTEM BUS... ]
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
