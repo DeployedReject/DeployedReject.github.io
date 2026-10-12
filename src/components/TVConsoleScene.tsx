@@ -474,6 +474,12 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         return;
       }
 
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        triggerZoomOut();
+        return;
+      }
+
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         turnChannel('next');

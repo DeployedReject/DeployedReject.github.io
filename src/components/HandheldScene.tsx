@@ -404,9 +404,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
           <div className="w-10 hidden sm:block" />
 
           {/* Center-Left: Single Molded Rubber Pill Button with label beside/parallel to it */}
-          <div className="flex items-center gap-2.5 pb-1">
+          <div className="flex items-center gap-2 -rotate-24 origin-center pb-2 pl-1">
             <div
-              className="p-1 rounded-full -rotate-24"
+              className="p-1 rounded-full shrink-0"
               style={{
                 background: '#b8a38c',
                 boxShadow: 'inset 0 2px 4px rgba(50,38,28,0.5), 0 1px 0 rgba(255,255,255,0.6)',
@@ -416,7 +416,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 ref={lightButtonRef}
                 type="button"
                 onClick={(e) => toggleLightModeWithTransition(e.currentTarget)}
-                className="w-13 h-3.5 sm:w-15 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
+                className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
                 style={{
                   background: isLightMode
                     ? 'linear-gradient(180deg, #d97706 0%, #b45309 100%)'
@@ -427,7 +427,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
               />
             </div>
             <span
-              className={`text-[8px] sm:text-[9px] font-bold tracking-wider -rotate-24 ${
+              className={`text-[8px] sm:text-[9px] font-bold tracking-wider leading-none select-none ${
                 isLightMode ? 'text-[#3d3228]' : 'text-[#a89b8d]'
               }`}
               style={{ fontFamily: "'Press Start 2P', monospace" }}
