@@ -15,6 +15,9 @@ interface HandheldSceneProps {
   setCameraMode: (mode: SceneCameraMode) => void;
   onSelectProject: (projectId: string) => void;
   activeCartridgeId: string | null;
+  isRomLoading?: boolean;
+  isRomReady?: boolean;
+  onLaunchRom?: () => void;
   isLightMode?: boolean;
   onToggleLightMode?: () => void;
 }
@@ -23,9 +26,12 @@ const TABS: ScreenTab[] = ['status', 'cartridges', 'github', 'pings', 'hire'];
 
 export const HandheldScene: React.FC<HandheldSceneProps> = ({
   projects,
-  cameraMode,
+  cameraMode: _cameraMode,
   onSelectProject,
   activeCartridgeId,
+  isRomLoading = false,
+  isRomReady = false,
+  onLaunchRom,
   isLightMode = false,
   onToggleLightMode,
 }) => {
@@ -214,12 +220,12 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
           </div>
 
           <span
-            className={`text-[7px] tracking-wider ${
+            className={`text-[7px] tracking-wider uppercase ${
               isLightMode ? 'text-[#4f4339]' : 'text-[#b8aba0]'
             }`}
             style={{ fontFamily: 'var(--font-pixel)' }}
           >
-            PORTFOLIO BOY :D
+            legally distinct handheld
           </span>
         </div>
 
@@ -242,7 +248,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             optionIndex={optionIndex}
             pingRefreshKey={pingRefreshKey}
             isTableZoomedOut={false}
-            insertingProject={cameraMode === 'inserting' ? activeCartridge : null}
+            insertingProject={isRomLoading || isRomReady ? activeCartridge : null}
+            isRomReady={isRomReady}
+            onLaunchRom={onLaunchRom}
             isLightMode={isLightMode}
           />
 

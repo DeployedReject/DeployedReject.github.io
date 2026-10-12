@@ -47,36 +47,59 @@ export function App() {
     return () => clearTimers();
   }, []);
 
+  const [isRomReady, setIsRomReady] = useState<boolean>(false);
+  const [isRomLoading, setIsRomLoading] = useState<boolean>(false);
+
+  const handleLaunchRom = () => {
+    if (!isRomReady && !isRomLoading) return;
+    clearTimers();
+    setIsRomReady(false);
+    setIsRomLoading(false);
+    setStaticBurst(true);
+    const tBoot = window.setTimeout(() => {
+      setIsFullscreenProject(true);
+    }, 240);
+    const tClear = window.setTimeout(() => setStaticBurst(false), 520);
+    timersRef.current.push(tBoot, tClear);
+  };
+
+  // Listen for Enter key when ROM is ready to launch
+  useEffect(() => {
+    if (!isRomReady) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleLaunchRom();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRomReady]);
+
   const handleSelectProject = (projectId: string) => {
     clearTimers();
     setActiveCartridgeId(projectId);
+    setIsRomLoading(true);
+    setIsRomReady(false);
 
-    if (deviceLayout === 'handheld') {
-      setCameraMode('inserting');
-      const tBurst = window.setTimeout(() => setStaticBurst(true), 240);
-      const t1 = window.setTimeout(() => {
-        setIsFullscreenProject(true);
-      }, 400);
-      const tClear = window.setTimeout(() => setStaticBurst(false), 600);
-      timersRef.current.push(tBurst, t1, tClear);
-      return;
-    }
+    // Zoom straight to TV closeup so user sees the 5s loading screen & briefing
+    setCameraMode('closeup');
 
-    // Extended loading time for cartridges to provide interactive instructions & project details
-    setCameraMode('inserting');
-    const tBurst = window.setTimeout(() => setStaticBurst(true), 5000);
+    // 5 second loading time before showing "Press Enter"
+    const tReady = window.setTimeout(() => {
+      setIsRomLoading(false);
+      setIsRomReady(true);
+    }, 5000);
 
-    const t1 = window.setTimeout(() => {
-      setIsFullscreenProject(true);
-    }, 5200);
-
-    const tClear = window.setTimeout(() => setStaticBurst(false), 5450);
-
-    timersRef.current.push(tBurst, t1, tClear);
+    timersRef.current.push(tReady);
   };
 
   const handleEject = () => {
     clearTimers();
+    setIsRomLoading(false);
+    setIsRomReady(false);
     setStaticBurst(true);
     setIsFullscreenProject(false);
 
@@ -137,6 +160,9 @@ export function App() {
           setCameraMode={setCameraMode}
           onSelectProject={handleSelectProject}
           activeCartridgeId={activeCartridgeId}
+          isRomLoading={isRomLoading}
+          isRomReady={isRomReady}
+          onLaunchRom={handleLaunchRom}
           isLightMode={isLightMode}
           onToggleLightMode={() => setIsLightMode((prev) => !prev)}
         />
@@ -147,6 +173,9 @@ export function App() {
           setCameraMode={setCameraMode}
           onSelectProject={handleSelectProject}
           activeCartridgeId={activeCartridgeId}
+          isRomLoading={isRomLoading}
+          isRomReady={isRomReady}
+          onLaunchRom={handleLaunchRom}
           isLightMode={isLightMode}
           onToggleLightMode={() => setIsLightMode((prev) => !prev)}
         />

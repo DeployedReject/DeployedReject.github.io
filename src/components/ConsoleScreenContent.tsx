@@ -106,6 +106,8 @@ interface ConsoleScreenContentProps {
   pingRefreshKey?: number;
   isTableZoomedOut: boolean;
   insertingProject?: Project | null;
+  isRomReady?: boolean;
+  onLaunchRom?: () => void;
   hideRomsTab?: boolean;
   isLightMode?: boolean;
 }
@@ -131,6 +133,8 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   pingRefreshKey = 0,
   isTableZoomedOut,
   insertingProject = null,
+  isRomReady = false,
+  onLaunchRom,
   hideRomsTab = false,
   isLightMode = false,
 }) => {
@@ -456,10 +460,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
       {/* Main CRT Display Area */}
       <div className="flex-1 pt-2 sm:pt-3 min-h-0 flex flex-col md:flex-row gap-4 items-stretch justify-between overflow-hidden">
-        {/* ROM Loading Animation with Logo & Progress Bar */}
         {/* ROM Loading View: Detailed Instructions, Overview & What It's About */}
         {insertingProject ? (
-          <div className="w-full h-full flex flex-col justify-between p-2 sm:p-3 overflow-y-auto animate-fadeIn pointer-events-none gap-2 font-mono">
+          <div className="w-full h-full flex flex-col justify-between p-2 sm:p-3 overflow-y-auto animate-fadeIn pointer-events-auto gap-2 font-mono">
             {/* Top: Identity Header & Tagline */}
             <div
               className={`p-2.5 sm:p-3 rounded border flex items-center justify-between gap-3 shrink-0 ${
@@ -514,11 +517,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               </div>
             </div>
 
-            {/* Middle: 2 Columns - "WHAT IT IS" & "HOW TO INTERACT" */}
+            {/* Middle: Clean Overview & Interaction guide */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0 text-[10px] sm:text-xs">
-              {/* Left Column: What It's About */}
+              {/* Left Column: Overview */}
               <div
-                className={`p-2.5 rounded border flex flex-col justify-between overflow-hidden ${
+                className={`p-2 rounded border flex flex-col justify-between overflow-hidden ${
                   isLightMode
                     ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
                     : 'bg-[#081009]/90 border-[#28481e]'
@@ -532,29 +535,30 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                     style={{ fontFamily: 'var(--font-pixel)' }}
                   >
                     <span>{'\uf05a'}</span>
-                    <span>WHAT THIS IS ABOUT:</span>
+                    <span>ABOUT:</span>
                   </div>
                   <p
                     className={`leading-relaxed text-[10px] sm:text-[11px] ${
                       isLightMode ? 'text-[#1b3518]' : 'text-[#a2db79]'
                     }`}
                   >
-                    {insertingProject.summary.overview}
+                    {insertingProject.tagline}
                   </p>
                 </div>
 
                 <div
-                  className={`mt-2 pt-2 border-t text-[9px] sm:text-[10px] italic leading-snug ${
+                  className={`mt-1.5 pt-1 border-t text-[9px] flex items-center justify-between ${
                     isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#78b355]'
                   }`}
                 >
-                  "{insertingProject.originNote || insertingProject.summary.clientValue.slice(0, 120)}..."
+                  <span>STACK: {insertingProject.summary.techStack.slice(0, 3).join(', ')}</span>
+                  <span>{insertingProject.badge}</span>
                 </div>
               </div>
 
-              {/* Right Column: How to Interact with It */}
+              {/* Right Column: Quick Controls */}
               <div
-                className={`p-2.5 rounded border flex flex-col justify-between overflow-hidden ${
+                className={`p-2 rounded border flex flex-col justify-between overflow-hidden ${
                   isLightMode
                     ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
                     : 'bg-[#081009]/90 border-[#28481e]'
@@ -568,100 +572,82 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                     style={{ fontFamily: 'var(--font-pixel)' }}
                   >
                     <span>{'\uf11c'}</span>
-                    <span>HOW TO INTERACT:</span>
+                    <span>CONTROLS:</span>
                   </div>
 
                   <ul className="space-y-1 text-[10px] sm:text-[11px] leading-tight">
-                    {insertingProject.demoType === 'terminal' ? (
-                      <>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Click quick command chips to dispatch CLI tasks</span>
-                        </li>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Type interactive commands (e.g. <strong className="text-amber-400">help</strong>, <strong className="text-amber-400">status</strong>)</span>
-                        </li>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Simulate process crashes and witness automatic healing</span>
-                        </li>
-                      </>
-                    ) : insertingProject.demoType === 'visualizer' ? (
-                      <>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Click nodes & edges on the live SVG canvas to edit graphs</span>
-                        </li>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Use the playback scrub bar to step through Eulerian paths</span>
-                        </li>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Edit incidence matrix tables to see live canvas updates</span>
-                        </li>
-                      </>
-                    ) : (
-                      <>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Explore real-time interactive mapping and telemetry streams</span>
-                        </li>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Navigate live routes and subviews in the embedded sandbox</span>
-                        </li>
-                        <li className="flex items-start gap-1">
-                          <span className="text-emerald-400 font-bold">&bull;</span>
-                          <span>Check architecture breakdowns and live backend status</span>
-                        </li>
-                      </>
-                    )}
-                    <li className="flex items-start gap-1 pt-0.5">
+                    <li className="flex items-start gap-1">
                       <span className="text-emerald-400 font-bold">&bull;</span>
-                      <span>Press <kbd className="px-1 py-0.2 rounded bg-black/40 border border-[#a6e26e] text-[9px] font-bold">ESC</kbd> or click <strong>EJECT</strong> anytime to exit</span>
+                      <span>Interactive {insertingProject.demoType} sandbox</span>
+                    </li>
+                    <li className="flex items-start gap-1">
+                      <span className="text-emerald-400 font-bold">&bull;</span>
+                      <span>Press <kbd className="px-1 py-0.2 rounded bg-black/40 border border-[#a6e26e] text-[9px] font-bold">ESC</kbd> or click <strong>EJECT</strong> to exit</span>
                     </li>
                   </ul>
                 </div>
 
                 <div
-                  className={`mt-1 pt-1 border-t text-[9px] flex items-center justify-between ${
+                  className={`mt-1.5 pt-1 border-t text-[9px] flex items-center justify-between ${
                     isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#6fa84b]'
                   }`}
                 >
-                  <span>STACK: {insertingProject.summary.techStack.slice(0, 3).join(', ')}</span>
-                  <span>{insertingProject.demoType.toUpperCase()} MODE</span>
+                  <span>MODE: {insertingProject.demoType.toUpperCase()}</span>
+                  <span>ESC = EXIT</span>
                 </div>
               </div>
             </div>
 
             {/* Bottom: Progress Bar & Ready Status */}
             <div
-              className={`p-2 rounded border shrink-0 ${
-                isLightMode ? 'bg-[#dbead8] border-[#5c8754]' : 'bg-[#09120a] border-[#2b4c20]'
+              className={`p-2 sm:p-2.5 rounded border shrink-0 transition-colors duration-200 ${
+                isRomReady
+                  ? isLightMode
+                    ? 'bg-[#c3e2bd] border-[#387a32] shadow-[0_0_15px_rgba(56,122,50,0.3)]'
+                    : 'bg-[#102413] border-[#a6e26e] shadow-[0_0_20px_rgba(166,226,110,0.35)]'
+                  : isLightMode
+                  ? 'bg-[#dbead8] border-[#5c8754]'
+                  : 'bg-[#09120a] border-[#2b4c20]'
               }`}
             >
-              <div className="flex items-center justify-between text-[10px] font-bold mb-1">
-                <span className="flex items-center gap-1 text-emerald-400 animate-pulse">
-                  <span>{'\uf021'}</span>
-                  <span>LOADING ROM DATA & SHADERS...</span>
-                </span>
-                <span className="text-slate-400 text-[9px]">PLEASE STAND BY</span>
-              </div>
-              <div
-                className={`w-full h-3 border rounded overflow-hidden p-0.5 ${
-                  isLightMode
-                    ? 'bg-[#cfe0cd] border-[#5c8754]'
-                    : 'bg-[#060c07] border-[#345c26]'
-                }`}
-              >
+              {isRomReady ? (
                 <div
-                  className={`h-full animate-romLoadBar rounded-sm ${
-                    isLightMode ? 'bg-[#1c3b22]' : 'bg-gradient-to-r from-[#345c26] to-[#a6e26e]'
+                  onClick={() => onLaunchRom?.()}
+                  className={`w-full py-1.5 px-3 rounded flex items-center justify-center cursor-pointer select-none border transition-transform active:scale-[0.99] ${
+                    isLightMode
+                      ? 'bg-[#1c3b22] text-[#d9f9cf] border-[#387a32] hover:bg-[#152e1a]'
+                      : 'bg-[#193d1f] text-[#a6e26e] border-[#a6e26e] hover:bg-[#1e4a26]'
                   }`}
-                />
-              </div>
+                  style={{ fontFamily: 'var(--font-pixel)' }}
+                >
+                  <span className="text-xs sm:text-sm animate-pulse tracking-wider font-bold">
+                    PRESS ENTER
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-[10px] font-bold mb-1">
+                    <span className="flex items-center gap-1 text-emerald-400 animate-pulse">
+                      <span>{'\uf021'}</span>
+                      <span>LOADING...</span>
+                    </span>
+                    <span className="text-slate-400 text-[9px]">5s</span>
+                  </div>
+                  <div
+                    className={`w-full h-3 border rounded overflow-hidden p-0.5 ${
+                      isLightMode
+                        ? 'bg-[#cfe0cd] border-[#5c8754]'
+                        : 'bg-[#060c07] border-[#345c26]'
+                    }`}
+                  >
+                    <div
+                      className={`h-full animate-romLoadBar rounded-sm ${
+                        isLightMode ? 'bg-[#1c3b22]' : 'bg-gradient-to-r from-[#345c26] to-[#a6e26e]'
+                      }`}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ) : (
@@ -669,7 +655,9 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             {/* Highlighted Channel Options (AT TOP for instant visibility, scrolled via SCROLL / D-pad, triggered via SELECT) */}
             {!isTableZoomedOut && activeTab !== 'cartridges' && channelOptions.length > 0 && (
               <div
-                className={`pb-2 border-b shrink-0 space-y-1.5 overflow-y-auto max-h-[46%] pointer-events-none ${
+                className={`pb-1.5 border-b shrink-0 space-y-1 overflow-y-auto ${
+                  activeTab === 'github' ? 'max-h-[32%] sm:max-h-[38%]' : 'max-h-[46%]'
+                } pointer-events-auto ${
                   isLightMode ? 'border-[#6d9666]' : 'border-[#375224]/90'
                 }`}
               >
@@ -913,17 +901,17 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                 : (stats.recentCommits || []);
 
               return (
-                <div className="flex-1 min-h-0 flex flex-col justify-between gap-2 overflow-hidden pointer-events-none">
+                <div className="flex-1 min-h-0 flex flex-col justify-between gap-1.5 overflow-hidden pointer-events-auto">
                   {/* Top Half: Latest Commits Feed */}
                   <div
-                    className={`flex-1 min-h-0 rounded border p-2 flex flex-col justify-between overflow-hidden ${
+                    className={`flex-1 min-h-0 rounded border p-1.5 sm:p-2 flex flex-col justify-between overflow-hidden ${
                       isLightMode
                         ? 'border-[#5c8754] bg-[#dbead8]/80'
                         : 'border-[#325224] bg-[#09130a]/85'
                     }`}
                   >
                     <div
-                      className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border-b pb-1 flex items-center justify-between ${
+                      className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border-b pb-1 flex items-center justify-between shrink-0 ${
                         isLightMode ? 'text-[#142918] border-[#8ab083]' : 'text-[#a6e26e] border-[#223d18]'
                       }`}
                       style={{ fontFamily: 'var(--font-pixel)' }}
@@ -935,11 +923,11 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                         </span>
                       </span>
                       <span className="text-[8px] opacity-80 shrink-0">
-                        {isLoadingRepoCommits ? '[FETCHING...]' : `TOTAL: ${stats.totalCommitsYear}`}
+                        {isLoadingRepoCommits ? '[...]' : `TOTAL: ${stats.totalCommitsYear}`}
                       </span>
                     </div>
 
-                    <div className="space-y-1 my-1 overflow-y-auto max-h-[105px]">
+                    <div className="space-y-1 my-1 overflow-y-auto flex-1 min-h-0 pr-0.5">
                       {isLoadingRepoCommits && !repoCommits[selectedRepoName] ? (
                         <div
                           className={`text-xs font-mono animate-pulse ${
@@ -957,20 +945,20 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                           NO COMMITS RECORDED
                         </div>
                       ) : (
-                        displayedCommits.slice(0, 4).map((c, i) => (
+                        displayedCommits.map((c, i) => (
                           <div
                             key={i}
-                            className={`text-[12px] sm:text-[14px] md:text-[15px] font-mono leading-tight flex items-center gap-1.5 truncate ${
+                            className={`text-[11px] sm:text-[13px] md:text-[15px] font-mono leading-tight flex items-start gap-1.5 py-0.5 border-b border-white/5 ${
                               isLightMode ? 'text-[#1b3d22]' : 'text-[#8ce06e]'
                             }`}
                           >
-                            <span className="text-[10px] sm:text-xs opacity-70 shrink-0">
+                            <span className="text-[9px] sm:text-[10px] opacity-70 shrink-0 mt-0.5">
                               [{c.date}]
                             </span>
-                            <span className="font-bold text-amber-500 shrink-0">
+                            <span className="font-bold text-amber-500 shrink-0 text-[10px] sm:text-xs">
                               {c.repo}:
                             </span>
-                            <span className="truncate">
+                            <span className="break-words line-clamp-2">
                               {c.message}
                             </span>
                           </div>
