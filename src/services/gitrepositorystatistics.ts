@@ -36,15 +36,15 @@ export interface DeveloperStats {
   fetchedLive: boolean;
 }
 
-const CACHE_KEY = 'dr_retro_stats_v5';
+const CACHE_KEY = 'dr_retro_stats_v6';
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export const FALLBACK_STATS: DeveloperStats = {
   handle: 'DEPLOYEDREJECT',
   level: 24,
   totalCommitsYear: 482,
-  publicRepos: 12,
-  totalStars: 18,
+  publicRepos: 17,
+  totalStars: 19,
   murcesStars: 16,
   followers: 12,
   languages: [
@@ -260,19 +260,21 @@ export async function fetchDeveloperStats(): Promise<DeveloperStats> {
     }
 
     const level = Math.max(15, Math.min(99, Math.floor(totalCommitsYear / 15) + publicRepos));
+    const finalStars = totalStars > 0 ? totalStars : FALLBACK_STATS.totalStars;
+    const finalMurcesStars = murcesStars > 0 ? murcesStars : FALLBACK_STATS.murcesStars;
 
     const result: DeveloperStats = {
       handle: 'DEPLOYEDREJECT',
       level,
       totalCommitsYear,
       publicRepos,
-      totalStars,
-      murcesStars,
+      totalStars: finalStars,
+      murcesStars: finalMurcesStars,
       followers,
       languages: sortedLangs.length >= 3 ? sortedLangs : FALLBACK_STATS.languages,
       recentCommits: recentCommits.length > 0 ? recentCommits : FALLBACK_STATS.recentCommits,
       contributionGrid,
-      repos: repoList,
+      repos: repoList.length > 0 ? repoList : FALLBACK_STATS.repos,
       fetchedLive: true,
     };
 

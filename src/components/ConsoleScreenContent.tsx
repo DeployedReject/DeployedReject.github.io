@@ -128,6 +128,69 @@ const SHORT_NAMES: Record<string, string> = {
   aggregator: 'Aggregator',
 };
 
+interface ProjectRomDetails {
+  about: string;
+  highlights: string[];
+  controls: Array<{ label: string; action: string }>;
+}
+
+const PROJECT_ROM_DETAILS: Record<string, ProjectRomDetails> = {
+  murces: {
+    about:
+      'Zero-config Minecraft server orchestrator. Automates background tmux sessions, OpenJDK 8/17/21 provisioning, Modrinth/CurseForge syncing, rclone offsite backups, and Playit.gg NAT-punching tunnels.',
+    highlights: ['OpenJDK 8/17/21 Auto-Fetch', 'tmux Live Log Attachment', 'Modrinth & CurseForge Sync', 'Playit.gg Zero-Port Tunnel'],
+    controls: [
+      { label: 'QUICK CHIPS', action: 'Click commands below the terminal or type in prompt' },
+      { label: 'BACKUP & SYNC', action: 'Run ./murces backup & ./murces update-mods' },
+      { label: 'EJECT / QUIT', action: 'Press ESC or click EJECT top-right to return' },
+    ],
+  },
+  sentric: {
+    about:
+      'Real-time emergency triage & IoT ambulance dispatch. Ingests patient telemetry over Mosquitto MQTT, groups field incidents into Uber H3 geospatial hexagons, and coordinates emergency response.',
+    highlights: ['Uber H3 Hexagon Clustering', 'Mosquitto MQTT Live Ingestion', 'Interactive MapLibre GL Routing', 'Fleet & Clinic Triage Hub'],
+    controls: [
+      { label: 'MAP & HEXES', action: 'Click hexagon zones to inspect clustered field incidents' },
+      { label: 'DISPATCH FLEET', action: 'Assign available ambulances to priority emergencies' },
+      { label: 'SUBVIEWS', action: 'Switch tabs: VitalLink, Incident Dispatch, Docs' },
+      { label: 'EJECT / QUIT', action: 'Press ESC or click EJECT top-right to return' },
+    ],
+  },
+  cireu: {
+    about:
+      'Interactive discrete mathematics graph theory workbench. Bridges incidence and adjacency matrix tables with an SVG canvas, computing Eulerian walks (Fleury) and Hamiltonian cycles with full time-travel scrubbing.',
+    highlights: ['Bidirectional SVG & Matrix Sync', "Fleury's Eulerian Walk Engine", 'Hamiltonian Cycle Backtracker', 'Step-by-Step Playback Scrubber'],
+    controls: [
+      { label: 'CANVAS & NODES', action: 'Click & drag vertices or pick presets (Petersen, Königsberg)' },
+      { label: 'MATRIX EDIT', action: 'Type in adjacency/incidence cells for instant graph updates' },
+      { label: 'TIME SCRUBBER', action: 'Play, pause, or step forward/backward through algorithms' },
+      { label: 'EJECT / QUIT', action: 'Press ESC or click EJECT top-right to return' },
+    ],
+  },
+  'cf-p-link': {
+    about:
+      'Continuous Cloudflare quick tunnel daemon. Monitors local service ports, intercepts ephemeral trycloudflare.com URLs upon crash/respawn, and hot-patches an edge Cloudflare Worker routing layer in seconds.',
+    highlights: ['cloudflared Process Supervisor', 'Ephemeral URL Interceptor', 'Auto Cloudflare Worker Hot-Patch', 'Zero Static IPs / Free Quota'],
+    controls: [
+      { label: 'COMMAND CHIPS', action: 'Click chips or type status, show-config, simulate-crash' },
+      { label: 'TEST AUTO-HEAL', action: 'Execute simulate-crash to witness PID failover & re-route' },
+      { label: 'WORKER ROUTES', action: 'Check live path mapping for /api/*, /metrics/*, /grafana/*' },
+      { label: 'EJECT / QUIT', action: 'Press ESC or click EJECT top-right to return' },
+    ],
+  },
+  aggregator: {
+    about:
+      'Unified cross-site media stream aggregator with iframe security isolation. Bypasses CORS restrictions via browser extension background scripts while syncing community plugins from Git via Spring Boot.',
+    highlights: ['Sandboxed iframe Plugin Runtime', 'WebExtension CORS Bypass Engine', 'Spring Boot & JGit Plugin Registry', 'Community Health & Upvote Telemetry'],
+    controls: [
+      { label: 'MEDIA SEARCH', action: 'Browse and query external media catalog inside sandbox' },
+      { label: 'PLUGIN REGISTRY', action: 'Inspect sandboxed plugin status, upvotes, and scrapers' },
+      { label: 'LIVE DEMO', action: 'Interact with the embedded responsive frontend workspace' },
+      { label: 'EJECT / QUIT', action: 'Press ESC or click EJECT top-right to return' },
+    ],
+  },
+};
+
 export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   projects,
   activeTab,
@@ -528,85 +591,125 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
             </div>
 
             {/* Middle: Clean Overview & Interaction guide */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0 text-[10px] sm:text-xs">
-              {/* Left Column: Overview */}
-              <div
-                className={`p-2 rounded border flex flex-col justify-between overflow-hidden ${
-                  isLightMode
-                    ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
-                    : 'bg-[#081009]/90 border-[#28481e]'
-                }`}
-              >
-                <div>
+            {(() => {
+              const details = PROJECT_ROM_DETAILS[insertingProject.id] || {
+                about: insertingProject.tagline,
+                highlights: insertingProject.summary.techStack.slice(0, 4),
+                controls: [
+                  { label: 'DEMO', action: `Interactive ${insertingProject.demoType} sandbox` },
+                  { label: 'EJECT / QUIT', action: 'Press ESC or click EJECT to return' },
+                ],
+              };
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0 text-[10px] sm:text-xs">
+                  {/* Left Column: About & Key Highlights */}
                   <div
-                    className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${
-                      isLightMode ? 'text-[#142918]' : 'text-emerald-400'
+                    className={`p-2 rounded border flex flex-col justify-between overflow-hidden ${
+                      isLightMode
+                        ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
+                        : 'bg-[#081009]/90 border-[#28481e]'
                     }`}
-                    style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    <span>{'\uf05a'}</span>
-                    <span>ABOUT:</span>
+                    <div className="space-y-1.5 overflow-hidden">
+                      <div
+                        className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                          isLightMode ? 'text-[#142918]' : 'text-emerald-400'
+                        }`}
+                        style={{ fontFamily: 'var(--font-pixel)' }}
+                      >
+                        <span>{'\uf05a'}</span>
+                        <span>ABOUT:</span>
+                      </div>
+                      <p
+                        className={`leading-relaxed text-[10px] sm:text-[11px] ${
+                          isLightMode ? 'text-[#1b3518]' : 'text-[#a2db79]'
+                        }`}
+                      >
+                        {details.about}
+                      </p>
+
+                      <div className="pt-1 flex flex-wrap gap-1">
+                        {details.highlights.map((h, i) => (
+                          <span
+                            key={i}
+                            className={`text-[8.5px] px-1 py-0.2 rounded border font-mono ${
+                              isLightMode
+                                ? 'bg-[#c3d8bf] border-[#6b9464] text-[#1c3818]'
+                                : 'bg-[#0e2111] border-[#2f5e23] text-[#86ce5b]'
+                            }`}
+                          >
+                            + {h}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`mt-1.5 pt-1 border-t text-[9px] flex items-center justify-between ${
+                        isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#78b355]'
+                      }`}
+                    >
+                      <span className="truncate pr-1">STACK: {insertingProject.summary.techStack.slice(0, 3).join(', ')}</span>
+                      <span className="shrink-0">{insertingProject.badge}</span>
+                    </div>
                   </div>
-                  <p
-                    className={`leading-relaxed text-[10px] sm:text-[11px] ${
-                      isLightMode ? 'text-[#1b3518]' : 'text-[#a2db79]'
-                    }`}
-                  >
-                    {insertingProject.tagline}
-                  </p>
-                </div>
 
-                <div
-                  className={`mt-1.5 pt-1 border-t text-[9px] flex items-center justify-between ${
-                    isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#78b355]'
-                  }`}
-                >
-                  <span>STACK: {insertingProject.summary.techStack.slice(0, 3).join(', ')}</span>
-                  <span>{insertingProject.badge}</span>
-                </div>
-              </div>
-
-              {/* Right Column: Quick Controls */}
-              <div
-                className={`p-2 rounded border flex flex-col justify-between overflow-hidden ${
-                  isLightMode
-                    ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
-                    : 'bg-[#081009]/90 border-[#28481e]'
-                }`}
-              >
-                <div>
+                  {/* Right Column: Interactive Controls */}
                   <div
-                    className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${
-                      isLightMode ? 'text-[#142918]' : 'text-amber-400'
+                    className={`p-2 rounded border flex flex-col justify-between overflow-hidden ${
+                      isLightMode
+                        ? 'bg-[#d5e4d2]/80 border-[#6d9666]'
+                        : 'bg-[#081009]/90 border-[#28481e]'
                     }`}
-                    style={{ fontFamily: 'var(--font-pixel)' }}
                   >
-                    <span>{'\uf11c'}</span>
-                    <span>CONTROLS:</span>
+                    <div className="space-y-1.5 overflow-hidden">
+                      <div
+                        className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                          isLightMode ? 'text-[#142918]' : 'text-amber-400'
+                        }`}
+                        style={{ fontFamily: 'var(--font-pixel)' }}
+                      >
+                        <span>{'\uf11c'}</span>
+                        <span>CONTROLS:</span>
+                      </div>
+
+                      <div className="space-y-1 text-[9.5px] sm:text-[10.5px] leading-tight">
+                        {details.controls.map((ctrl, i) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <span
+                              className={`shrink-0 px-1 py-0.2 rounded border text-[8px] font-bold tracking-wider ${
+                                isLightMode
+                                  ? 'bg-[#c5dec2] border-[#5e8b57] text-[#142e12]'
+                                  : 'bg-[#122814] border-[#386b2a] text-[#a6e26e]'
+                              }`}
+                            >
+                              {ctrl.label}
+                            </span>
+                            <span
+                              className={`flex-1 ${
+                                isLightMode ? 'text-[#1b3518]' : 'text-[#c6e6b8]'
+                              }`}
+                            >
+                              {ctrl.action}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`mt-1.5 pt-1 border-t text-[9px] flex items-center justify-between ${
+                        isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#6fa84b]'
+                      }`}
+                    >
+                      <span>MODE: {insertingProject.demoType.toUpperCase()}</span>
+                      <span>ESC = EXIT</span>
+                    </div>
                   </div>
-
-                  <ul className="space-y-1 text-[10px] sm:text-[11px] leading-tight">
-                    <li className="flex items-start gap-1">
-                      <span className="text-emerald-400 font-bold">&bull;</span>
-                      <span>Interactive {insertingProject.demoType} sandbox</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <span className="text-emerald-400 font-bold">&bull;</span>
-                      <span>Press <kbd className="px-1 py-0.2 rounded bg-black/40 border border-[#a6e26e] text-[9px] font-bold">ESC</kbd> or click <strong>EJECT</strong> to exit</span>
-                    </li>
-                  </ul>
                 </div>
-
-                <div
-                  className={`mt-1.5 pt-1 border-t text-[9px] flex items-center justify-between ${
-                    isLightMode ? 'border-[#8ab083] text-[#33562d]' : 'border-[#1e3816] text-[#6fa84b]'
-                  }`}
-                >
-                  <span>MODE: {insertingProject.demoType.toUpperCase()}</span>
-                  <span>ESC = EXIT</span>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Bottom: Progress Bar & Ready Status */}
             <div
