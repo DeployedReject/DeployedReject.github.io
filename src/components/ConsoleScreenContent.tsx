@@ -101,8 +101,11 @@ export function getChannelOptions(
 interface ConsoleScreenContentProps {
   projects: Project[];
   activeTab: ScreenTab;
+  onSelectTab?: (tab: ScreenTab) => void;
   selectedIndex?: number;
   optionIndex?: number;
+  onSelectOption?: (index: number) => void;
+  onTriggerOption?: (opt: ChannelOption) => void;
   pingRefreshKey?: number;
   isTableZoomedOut: boolean;
   insertingProject?: Project | null;
@@ -128,8 +131,11 @@ const SHORT_NAMES: Record<string, string> = {
 export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   projects,
   activeTab,
+  onSelectTab,
   selectedIndex = 0,
   optionIndex = 0,
+  onSelectOption,
+  onTriggerOption,
   pingRefreshKey = 0,
   isTableZoomedOut,
   insertingProject = null,
@@ -426,37 +432,41 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
           : 'radial-gradient(circle at 50% 45%, #121f14 0%, #09100a 68%, #040704 100%)',
       }}
     >
-      {/* Top CRT On-Screen Display (OSD) Channel Bar */}
-      <div
-        className={`border-b-2 pb-2.5 flex items-center justify-between gap-2 shrink-0 pointer-events-none ${
-          isLightMode ? 'border-[#5c8754]/70' : 'border-[#4b6e32]/80'
-        }`}
-      >
+      {/* Top CRT On-Screen Display (OSD) Channel Bar - Hidden when cartridge is loaded */}
+      {!insertingProject && (
         <div
-          className="flex flex-wrap gap-2 sm:gap-2.5"
-          style={{ fontFamily: "var(--font-pixel)" }}
+          className={`border-b-2 pb-2.5 flex items-center justify-between gap-2 shrink-0 ${
+            isLightMode ? 'border-[#5c8754]/70' : 'border-[#4b6e32]/80'
+          }`}
         >
-          {tabs.map((t) => {
-            const active = activeTab === t.id;
-            return (
-              <div
-                key={t.id}
-                className={`px-2.5 py-1.5 text-[10px] sm:text-[12px] md:text-[13px] leading-none uppercase border transition-all duration-200 ${
-                  active
-                    ? isLightMode
-                      ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold shadow-sm scale-105'
-                      : 'bg-[#a6e26e] text-[#0b120c] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.6)] scale-105'
-                    : isLightMode
-                    ? 'bg-[#d5e4d2] text-[#2d5434] border-[#8ab083] opacity-85'
-                    : 'bg-[#121c13]/90 text-[#6ca144] border-[#355224] opacity-75'
-                }`}
-              >
-                {t.label}
-              </div>
-            );
-          })}
+          <div
+            className="flex flex-wrap gap-2 sm:gap-2.5"
+            style={{ fontFamily: "var(--font-pixel)" }}
+          >
+            {tabs.map((t) => {
+              const active = activeTab === t.id;
+              return (
+                <button
+                  type="button"
+                  key={t.id}
+                  onClick={() => onSelectTab?.(t.id)}
+                  className={`px-2.5 py-1.5 text-[10px] sm:text-[12px] md:text-[13px] leading-none uppercase border transition-all duration-200 cursor-pointer ${
+                    active
+                      ? isLightMode
+                        ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold shadow-sm scale-105'
+                        : 'bg-[#a6e26e] text-[#0b120c] border-[#d4f7b5] font-bold shadow-[0_0_12px_rgba(166,226,110,0.6)] scale-105'
+                      : isLightMode
+                      ? 'bg-[#d5e4d2] text-[#2d5434] border-[#8ab083] opacity-85 hover:opacity-100'
+                      : 'bg-[#121c13]/90 text-[#6ca144] border-[#355224] opacity-75 hover:opacity-100 hover:border-[#a6e26e]/60'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main CRT Display Area */}
       <div className="flex-1 pt-2 sm:pt-3 min-h-0 flex flex-col md:flex-row gap-4 items-stretch justify-between overflow-hidden">
@@ -677,14 +687,18 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
                       ref={(el) => {
                         optionRefs.current[idx] = el;
                       }}
-                      className={`px-3 py-1.5 border text-[17px] sm:text-[21px] md:text-[23px] flex items-center justify-between transition-all ${
+                      onClick={() => {
+                        onSelectOption?.(idx);
+                        onTriggerOption?.(opt);
+                      }}
+                      className={`px-3 py-1.5 border text-[17px] sm:text-[21px] md:text-[23px] flex items-center justify-between transition-all cursor-pointer ${
                         isSel
                           ? isLightMode
                             ? 'bg-[#1c3b22] text-[#f2f8ef] border-[#0f2413] font-bold shadow-sm'
                             : 'bg-[#a6e26e] text-[#09120a] border-[#d4f7b5] font-bold shadow-[0_0_14px_rgba(166,226,110,0.55)]'
                           : isLightMode
-                          ? 'bg-[#d5e4d2]/90 text-[#1c3b22] border-[#8ab083]'
-                          : 'bg-[#101a11]/85 text-[#9cd66c] border-[#2d4520]'
+                          ? 'bg-[#d5e4d2]/90 text-[#1c3b22] border-[#8ab083] hover:bg-[#c3d8bf]'
+                          : 'bg-[#101a11]/85 text-[#9cd66c] border-[#2d4520] hover:bg-[#1a2d1c] hover:border-[#a6e26e]/50'
                       }`}
                     >
                       <span className="truncate">

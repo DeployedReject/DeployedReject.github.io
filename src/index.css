@@ -283,6 +283,31 @@
   animation: fadeInAnim 0.4s ease-out forwards;
 }
 
+@keyframes knobWiggleAnim {
+  0% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-12deg);
+  }
+  40% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-8deg);
+  }
+  80% {
+    transform: rotate(5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-knobWiggle {
+  animation: knobWiggleAnim 0.4s ease-in-out;
+}
+
 /* Rapid CRT analog static snow jitter (pure GPU transform3d — no CPU repaint) */
 @keyframes crtStaticJitter {
   0% {

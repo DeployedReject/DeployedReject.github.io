@@ -42,6 +42,7 @@ const MatchingSvgRotaryKnob: React.FC<{
   label: string;
   accentColor: string;
   isLightMode?: boolean;
+  isWiggling?: boolean;
 }> = ({
   angle,
   onTurnClockwise,
@@ -49,6 +50,7 @@ const MatchingSvgRotaryKnob: React.FC<{
   label,
   accentColor,
   isLightMode = false,
+  isWiggling = false,
 }) => {
   const [isKnobHovered, setIsKnobHovered] = useState<boolean>(false);
   const isChannel = label.toUpperCase().includes('CHANNEL');
@@ -105,7 +107,9 @@ const MatchingSvgRotaryKnob: React.FC<{
           else onTurnCounterClockwise();
         }}
         title={`Click Left half: Prev ${isChannel ? 'Channel' : 'Option'} | Click Right half: Next ${isChannel ? 'Channel' : 'Option'}`}
-        className="relative w-22 h-22 xl:w-24 xl:h-24 rounded-full cursor-pointer group flex items-center justify-center transition-transform active:scale-95"
+        className={`relative w-22 h-22 xl:w-24 xl:h-24 rounded-full cursor-pointer group flex items-center justify-center transition-transform active:scale-95 ${
+          isWiggling ? 'animate-knobWiggle' : ''
+        }`}
       >
         {/* Left / Right Click Zone Visual Guides on Hover */}
         <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none flex opacity-0 group-hover:opacity-100 transition-opacity">
@@ -207,6 +211,10 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [channelKnobAngle, setChannelKnobAngle] = useState<number>(0);
   const [scrollKnobAngle, setScrollKnobAngle] = useState<number>(35);
   const [copiedBanner, setCopiedBanner] = useState<string | null>(null);
+  const [knobToast, setKnobToast] = useState<string | null>(null);
+  const [knobWiggleChannel, setKnobWiggleChannel] = useState<boolean>(false);
+  const [knobWiggleScroll, setKnobWiggleScroll] = useState<boolean>(false);
+  const [isTvPoweredOff, setIsTvPoweredOff] = useState<boolean>(false);
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
   const [hoveredConsole, setHoveredConsole] = useState<boolean>(false);
   const [hoveredBulb, setHoveredBulb] = useState<boolean>(false);
@@ -280,7 +288,25 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         currentChannelOptions.length
       : 0;
 
+  const isCartridgeActive = Boolean(activeCartridge || isRomLoading || isRomReady);
+
+  const showCartridgeLockedToast = (type: 'channel' | 'scroll') => {
+    setKnobToast("CAN'T CHANGE CHANNEL: CARTRIDGE LOADED");
+    if (type === 'channel') {
+      setKnobWiggleChannel(true);
+      window.setTimeout(() => setKnobWiggleChannel(false), 420);
+    } else {
+      setKnobWiggleScroll(true);
+      window.setTimeout(() => setKnobWiggleScroll(false), 420);
+    }
+    window.setTimeout(() => setKnobToast(null), 2500);
+  };
+
   const turnChannel = (dir: 'next' | 'prev') => {
+    if (isCartridgeActive) {
+      showCartridgeLockedToast('channel');
+      return;
+    }
     const idx = TV_TABS.indexOf(screenTab);
     const safeIdx = idx === -1 ? 0 : idx;
     const nextIdx =
@@ -291,6 +317,10 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   };
 
   const turnScroll = (dir: 'next' | 'prev') => {
+    if (isCartridgeActive) {
+      showCartridgeLockedToast('scroll');
+      return;
+    }
     const total = Math.max(1, currentChannelOptions.length);
     setOptionIndex((prev) =>
       dir === 'next' ? (prev + 1) % total : (prev - 1 + total) % total
@@ -437,6 +467,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const triggerZoomIn = () => {
     clearZoomTimers();
     if (cameraMode !== 'table') return;
+    setIsTvPoweredOff(false);
     setStaticBurst(true);
     setCameraMode('closeup');
     window.setTimeout(() => setStaticBurst(false), 320);
@@ -545,48 +576,56 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
         {/* Directed Navigation Tooltip on Entering TV Closeup Mode */}
         {showGuideTooltip && (
-          <>
-            {/* Visual Edge Highlight Border */}
-            <div className="fixed inset-0 z-40 pointer-events-none border-2 border-[#a6e26e]/60 animate-edgeGuidePulse" />
+          <div
+            onClick={() => setShowGuideTooltip(false)}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] cursor-pointer animate-fadeIn"
+          >
+            <div className="relative max-w-xl w-full p-6 sm:p-7 rounded-2xl bg-[#09130b]/98 border-3 border-[#a6e26e] text-[#a6e26e] shadow-[0_0_50px_rgba(166,226,110,0.6)] flex flex-col items-center gap-4 text-center font-mono">
+              <div className="flex items-center gap-2 text-sm sm:text-base font-bold tracking-wider">
+                <span className="inline-block w-3 h-3 rounded-full bg-[#a6e26e] animate-ping shrink-0" />
+                <span className="text-white text-base sm:text-lg uppercase" style={{ fontFamily: 'var(--font-pixel)' }}>
+                  TV CONTROLS & NAVIGATION
+                </span>
+              </div>
 
-            {/* Directed Tooltip Banner at top */}
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-none flex flex-col items-center gap-1.5 animate-fadeIn">
-              <div className="px-4 py-2 rounded-lg bg-[#08110b]/95 border-2 border-[#a6e26e] text-[#a6e26e] shadow-[0_0_25px_rgba(166,226,110,0.55)] flex flex-wrap items-center justify-center gap-3 font-mono text-[11px] sm:text-xs">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <span className="inline-block w-2 h-2 rounded-full bg-[#a6e26e] animate-ping shrink-0" />
-                  <span className="text-white tracking-wide uppercase">NAVIGATE:</span>
-                </div>
-                
-                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
-                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">←</kbd>
-                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">→</kbd>
-                  <span className="text-slate-300">Channels</span>
-                </div>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed">
+                Click tabs or items on the screen directly, turn knobs, or use keyboard navigation:
+              </p>
 
-                <span className="text-emerald-700 font-bold hidden sm:inline">&bull;</span>
-
-                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
-                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">↑</kbd>
-                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">↓</kbd>
-                  <span className="text-slate-300">Scroll</span>
-                </div>
-
-                <span className="text-emerald-700 font-bold hidden sm:inline">&bull;</span>
-
-                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
-                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">Enter</kbd>
-                  <span className="text-slate-300">Select</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full py-2">
+                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
+                  <div className="flex gap-1">
+                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">←</kbd>
+                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">→</kbd>
+                  </div>
+                  <span className="text-[11px] sm:text-xs text-white font-bold">Channels</span>
                 </div>
 
-                <span className="text-emerald-700 font-bold hidden md:inline">&bull;</span>
+                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
+                  <div className="flex gap-1">
+                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">↑</kbd>
+                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">↓</kbd>
+                  </div>
+                  <span className="text-[11px] sm:text-xs text-white font-bold">Scroll</span>
+                </div>
 
-                <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
-                  <kbd className="px-1.5 py-0.5 rounded bg-[#142618] border border-[#a6e26e] text-[#a6e26e] font-bold shadow-sm">Esc</kbd>
-                  <span className="text-slate-300">Exit</span>
+                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
+                  <kbd className="px-2.5 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">Enter</kbd>
+                  <span className="text-[11px] sm:text-xs text-white font-bold">Select</span>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
+                  <kbd className="px-2.5 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">Esc</kbd>
+                  <span className="text-[11px] sm:text-xs text-white font-bold">Exit / Zoom Out</span>
                 </div>
               </div>
+
+              <div className="w-full pt-1 flex items-center justify-between text-[10px] sm:text-xs text-[#a6e26e]/80 border-t border-[#2d4d24]">
+                <span>Mouse clicks on screen & tabs enabled</span>
+                <span className="text-white font-bold px-2 py-0.5 rounded bg-[#1c3b22] border border-[#a6e26e]">CLICK ANYWHERE TO DISMISS</span>
+              </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Dynamic Edge Proximity Glow: Illuminates as cursor approaches the screen border */}
@@ -667,7 +706,17 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               <ConsoleScreenContent
                 projects={projects}
                 activeTab={screenTab}
+                onSelectTab={(tab) => {
+                  if (isCartridgeActive) {
+                    showCartridgeLockedToast('channel');
+                    return;
+                  }
+                  setScreenTab(tab);
+                  setOptionIndex(0);
+                }}
                 optionIndex={safeOptionIndex}
+                onSelectOption={(idx) => setOptionIndex(idx)}
+                onTriggerOption={(opt) => triggerOption(opt)}
                 pingRefreshKey={pingRefreshKey}
                 isTableZoomedOut={false}
                 insertingProject={isRomLoading || isRomReady ? activeCartridge : null}
@@ -683,6 +732,15 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   style={{ fontFamily: 'var(--font-pixel)' }}
                 >
                   {'\uf00c'} {copiedBanner}
+                </div>
+              )}
+
+              {knobToast && (
+                <div
+                  className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-[#2d0f0f] border-2 border-[#ff5555] text-[#ff7777] text-xs font-mono font-bold shadow-[0_0_20px_rgba(255,85,85,0.6)] animate-pulse rounded-lg flex items-center gap-2"
+                >
+                  <span>⚠️</span>
+                  <span>{knobToast}</span>
                 </div>
               )}
 
@@ -709,34 +767,59 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 border: isLightMode ? '2px solid #60a5fa' : '2px solid #2b4a6f',
               }}
             >
-              {/* Top Power LED Indicator */}
-              <div
-                className={`rounded-xl p-2.5 border ${
-                  isLightMode
-                    ? 'border-[#60a5fa] bg-[#1a385c]'
-                    : 'border-[#2b4a6f] bg-[#0c1726]'
-                }`}
-                style={{
-                  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.55)',
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full animate-pulse"
-                    style={{
-                      backgroundColor: '#a6e26e',
-                      boxShadow: '0 0 10px #a6e26e',
-                    }}
-                  />
-                  <span
-                    className={`text-[7px] tracking-wider ${
-                      isLightMode ? 'text-[#e2e8f0]' : 'text-[#b4beb4]'
-                    }`}
-                    style={{ fontFamily: 'var(--font-pixel)' }}
-                  >
-                    POWER
+              {/* Top Section: Power LED & Prominent Power Switch Button */}
+              <div className="flex flex-col gap-2">
+                <div
+                  className={`rounded-xl p-2.5 border flex items-center justify-between ${
+                    isLightMode
+                      ? 'border-[#60a5fa] bg-[#1a385c]'
+                      : 'border-[#2b4a6f] bg-[#0c1726]'
+                  }`}
+                  style={{
+                    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.55)',
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full animate-pulse"
+                      style={{
+                        backgroundColor: isTvPoweredOff ? '#ef4444' : '#a6e26e',
+                        boxShadow: isTvPoweredOff ? '0 0 10px #ef4444' : '0 0 10px #a6e26e',
+                      }}
+                    />
+                    <span
+                      className={`text-[8px] font-bold tracking-wider ${
+                        isLightMode ? 'text-[#e2e8f0]' : 'text-[#b4beb4]'
+                      }`}
+                      style={{ fontFamily: 'var(--font-pixel)' }}
+                    >
+                      {isTvPoweredOff ? 'POWER: OFF' : 'POWER: ON'}
+                    </span>
+                  </div>
+
+                  <span className="text-[8px] opacity-75 font-mono text-slate-300">
+                    CRT 60Hz
                   </span>
                 </div>
+
+                {/* OBVIOUS POWER SWITCH BUTTON TO TURN OFF & EXIT TV */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTvPoweredOff(true);
+                    triggerZoomOut();
+                  }}
+                  title="Turn off TV and zoom out to room"
+                  className="w-full py-2.5 px-3 rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg border-2 border-red-500/80 bg-gradient-to-b from-red-600 via-red-700 to-red-900 text-white font-bold group"
+                >
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-200 group-hover:bg-white animate-pulse" />
+                  <span
+                    className="text-[10px] xl:text-[11px] uppercase tracking-wider font-mono text-red-100 group-hover:text-white"
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
+                    ⏻ POWER OFF (EXIT)
+                  </span>
+                </button>
               </div>
 
               {/* MATCHING SVG DUAL ROTARY KNOBS: 1. CHANNEL | 2. SCROLL */}
@@ -758,6 +841,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   label="CHANNEL"
                   accentColor="#a6e26e"
                   isLightMode={isLightMode}
+                  isWiggling={knobWiggleChannel}
                 />
 
                 <div className={`w-full h-[1px] ${isLightMode ? 'bg-[#3b699e]' : 'bg-[#213a57]'}`} />
@@ -770,6 +854,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   label="SCROLL"
                   accentColor="#e6cf65"
                   isLightMode={isLightMode}
+                  isWiggling={knobWiggleScroll}
                 />
               </div>
 
@@ -1366,25 +1451,42 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               />
               <foreignObject x="204" y="302" width="310" height="310" className="pointer-events-none">
                 <div
-                  className="w-full h-full crt-screen-container overflow-hidden pointer-events-none"
+                  className="w-full h-full crt-screen-container overflow-hidden pointer-events-none relative"
                   style={{
                     transform: 'skewY(-1.9deg)',
                     transformOrigin: 'left center',
                   }}
                 >
-                  <ConsoleScreenContent
-                    projects={projects}
-                    activeTab={screenTab}
-                    pingRefreshKey={pingRefreshKey}
-                    isTableZoomedOut={true}
-                    insertingProject={
-                      cameraMode === 'inserting' || cameraMode === 'zooming-in'
-                        ? activeCartridge
-                        : null
-                    }
-                    hideRomsTab={true}
-                    isLightMode={isLightMode}
-                  />
+                  {isTvPoweredOff ? (
+                    <div className="w-full h-full bg-[#050805] flex items-center justify-center relative overflow-hidden">
+                      <img
+                        src="/img/tv-static.gif"
+                        alt="White Noise Static"
+                        className="w-full h-full object-cover opacity-90 mix-blend-screen"
+                      />
+                      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+                      <div
+                        className="absolute bottom-4 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-black/80 border border-red-500/80 text-red-400 text-[10px] font-bold font-mono tracking-wider animate-pulse whitespace-nowrap shadow-lg"
+                        style={{ fontFamily: 'var(--font-pixel)' }}
+                      >
+                        [ TV STANDBY - CLICK TO POWER ON ]
+                      </div>
+                    </div>
+                  ) : (
+                    <ConsoleScreenContent
+                      projects={projects}
+                      activeTab={screenTab}
+                      pingRefreshKey={pingRefreshKey}
+                      isTableZoomedOut={true}
+                      insertingProject={
+                        cameraMode === 'inserting' || cameraMode === 'zooming-in'
+                          ? activeCartridge
+                          : null
+                      }
+                      hideRomsTab={true}
+                      isLightMode={isLightMode}
+                    />
+                  )}
                 </div>
               </foreignObject>
             </g>
