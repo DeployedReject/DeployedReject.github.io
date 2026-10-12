@@ -132,7 +132,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
   const [pings, setPings] = useState<PingResult[]>([
     { name: 'Aggregator Backend', target: '144.24.141.13', status: 'UNPINGABLE', latencyMs: null },
     { name: 'Sentric Technologies', target: '150.230.141.102', status: 'PINGING', latencyMs: null },
-    { name: 'Home Server', target: '[API NOT REVEALED]', status: 'HIDDEN', latencyMs: null },
+    { name: 'Home Server', target: '[IP NOT REVEALED]', status: 'HIDDEN', latencyMs: null },
   ]);
   const [typedProgress, setTypedProgress] = useState<{ text: string; count: number }>({
     text: '',
@@ -519,13 +519,12 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
               <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-between pr-1 gap-2">
                 <div className="space-y-1">
                   <div
-                    className={`text-[9px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center justify-between border-b pb-1 ${
+                    className={`text-[9px] sm:text-[11px] font-bold uppercase tracking-wider border-b pb-1 ${
                       isLightMode ? 'text-[#1c3b22] border-[#8ab083]' : 'text-[#a6e26e] border-[#2e4d22]'
                     }`}
                     style={{ fontFamily: 'var(--font-pixel)' }}
                   >
                     <span>{'\uf0e0'} SEND A MESSAGE</span>
-                    <span className="text-[8px] opacity-80">RATE LIMIT: 10/MIN</span>
                   </div>
 
                   <p

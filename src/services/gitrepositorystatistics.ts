@@ -309,7 +309,7 @@ export async function measureEndpointPings(): Promise<PingResult[]> {
     sentricResult,
     {
       name: 'Home Server',
-      target: '[API NOT REVEALED]',
+      target: '[IP NOT REVEALED]',
       status: 'HIDDEN',
       latencyMs: null,
     },
