@@ -28,170 +28,8 @@ interface TVConsoleSceneProps {
   onToggleLightMode?: () => void;
 }
 
-// Desktop Fullscreen TV does NOT include the ROMs menu
+// Desktop Fullscreen TV / Computer does NOT include the ROMs menu
 const TV_TABS: ScreenTab[] = ['status', 'github', 'pings', 'hire'];
-
-/**
- * Pure SVG Rotary Dial used in Fullscreen TV View — matches the exact SVG look
- * of the rotary dials on the zoomed-out Blue TV.
- */
-const MatchingSvgRotaryKnob: React.FC<{
-  angle: number;
-  onTurnClockwise: () => void;
-  onTurnCounterClockwise: () => void;
-  label: string;
-  accentColor: string;
-  isLightMode?: boolean;
-  isWiggling?: boolean;
-}> = ({
-  angle,
-  onTurnClockwise,
-  onTurnCounterClockwise,
-  label,
-  accentColor,
-  isLightMode = false,
-  isWiggling = false,
-}) => {
-  const [isKnobHovered, setIsKnobHovered] = useState<boolean>(false);
-  const isChannel = label.toUpperCase().includes('CHANNEL');
-
-  return (
-    <div
-      onMouseEnter={() => setIsKnobHovered(true)}
-      onMouseLeave={() => setIsKnobHovered(false)}
-      className="flex flex-col items-center select-none w-full gap-1.5 relative"
-    >
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`text-[8px] tracking-wider uppercase font-bold ${
-            isLightMode ? 'text-[#e2e8f0]' : 'text-[#b4beb4]'
-          }`}
-          style={{ fontFamily: 'var(--font-pixel)' }}
-        >
-          {label}
-        </span>
-      </div>
-
-      {/* Directed Knob Navigation Tooltip */}
-      <div
-        className={`transition-all duration-200 pointer-events-none flex flex-col items-center gap-0.5 ${
-          isKnobHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
-        }`}
-      >
-        <div className="px-2 py-0.5 rounded bg-[#070d14]/95 border border-[#60a5fa]/60 shadow-[0_2px_8px_rgba(0,0,0,0.8)] text-[8px] font-mono whitespace-nowrap text-cyan-200 flex items-center gap-1.5">
-          <span className="text-amber-400 font-bold">&larr; Left: {isChannel ? 'Prev Tab' : 'Prev Opt'}</span>
-          <span className="text-slate-500">|</span>
-          <span className="text-emerald-400 font-bold">Right: {isChannel ? 'Next Tab' : 'Next Opt'} &rarr;</span>
-        </div>
-      </div>
-
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          const rect = e.currentTarget.getBoundingClientRect();
-          const clickedLeftHalf = e.clientX - rect.left < rect.width / 2;
-          if (clickedLeftHalf) {
-            onTurnCounterClockwise();
-          } else {
-            onTurnClockwise();
-          }
-        }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onTurnCounterClockwise();
-        }}
-        onWheel={(e) => {
-          e.stopPropagation();
-          if (e.deltaY > 0) onTurnClockwise();
-          else onTurnCounterClockwise();
-        }}
-        title={`Click Left half: Prev ${isChannel ? 'Channel' : 'Option'} | Click Right half: Next ${isChannel ? 'Channel' : 'Option'}`}
-        className={`relative w-22 h-22 xl:w-24 xl:h-24 rounded-full cursor-pointer group flex items-center justify-center transition-transform active:scale-95 ${
-          isWiggling ? 'animate-knobWiggle' : ''
-        }`}
-      >
-        {/* Left / Right Click Zone Visual Guides on Hover */}
-        <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none flex opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="w-1/2 h-full bg-cyan-500/10 hover:bg-cyan-500/20 flex items-center justify-start pl-1 text-[9px] text-cyan-300 font-bold font-mono">
-            &#9664;
-          </div>
-          <div className="w-1/2 h-full bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-end pr-1 text-[9px] text-emerald-300 font-bold font-mono">
-            &#9654;
-          </div>
-        </div>
-
-        {/* Exact Same SVG Dial Geometry as the Zoomed-Out TV */}
-        <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
-          {/* Outer Tick Marks */}
-          {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((deg) => (
-            <line
-              key={deg}
-              x1="50"
-              y1="4"
-              x2="50"
-              y2="10"
-              stroke={deg % 72 === 0 ? accentColor : isLightMode ? '#93c5fd' : '#3e5c82'}
-              strokeWidth={deg % 72 === 0 ? '2.5' : '1.5'}
-              strokeLinecap="round"
-              transform={`rotate(${deg} 50 50)`}
-            />
-          ))}
-
-          {/* Outer Ring */}
-          <circle
-            cx="50"
-            cy="50"
-            r="38"
-            fill={isLightMode ? '#1e3a5f' : '#111f30'}
-            stroke={isLightMode ? '#60a5fa' : '#3b5e87'}
-            strokeWidth="3"
-          />
-          {/* Subtle Green Ray-Traced Rim Highlight on Left Arc (Dark Mode only) */}
-          {!isLightMode && (
-            <path
-              d="M 22,24 A 38,38 0 0,0 22,76"
-              fill="none"
-              stroke="#a6e26e"
-              strokeWidth="2"
-              strokeOpacity="0.55"
-            />
-          )}
-
-          {/* Inner Cap */}
-          <circle
-            cx="50"
-            cy="50"
-            r="27"
-            fill={isLightMode ? '#2b5282' : '#1b2f48'}
-            stroke={isLightMode ? '#60a5fa' : '#2a4669'}
-            strokeWidth="1.5"
-          />
-
-          {/* Rotating Pointer Line (Matches zoomed-out TV knob pointer) */}
-          <g
-            style={{
-              transform: `rotate(${angle}deg)`,
-              transformOrigin: '50px 50px',
-              transition: 'transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-            }}
-          >
-            <line
-              x1="50"
-              y1="50"
-              x2="50"
-              y2="25"
-              stroke={accentColor}
-              strokeWidth="4.5"
-              strokeLinecap="round"
-            />
-            <circle cx="50" cy="50" r="4.5" fill="#0d1826" stroke={accentColor} strokeWidth="1.5" />
-          </g>
-        </svg>
-      </div>
-    </div>
-  );
-};
 
 export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   projects,
@@ -208,8 +46,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [screenTab, setScreenTab] = useState<ScreenTab>('status');
   const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
-  const [channelKnobAngle, setChannelKnobAngle] = useState<number>(0);
-  const [scrollKnobAngle, setScrollKnobAngle] = useState<number>(35);
   const [copiedBanner, setCopiedBanner] = useState<string | null>(null);
   const [knobToast, setKnobToast] = useState<string | null>(null);
   const [knobWiggleChannel, setKnobWiggleChannel] = useState<boolean>(false);
@@ -283,7 +119,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
       dir === 'next' ? (safeIdx + 1) % TV_TABS.length : (safeIdx - 1 + TV_TABS.length) % TV_TABS.length;
     setScreenTab(TV_TABS[nextIdx]);
     setOptionIndex(0);
-    setChannelKnobAngle((prev) => (dir === 'next' ? prev + 45 : prev - 45));
   };
 
   const turnScroll = (dir: 'next' | 'prev') => {
@@ -295,7 +130,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     setOptionIndex((prev) =>
       dir === 'next' ? (prev + 1) % total : (prev - 1 + total) % total
     );
-    setScrollKnobAngle((prev) => (dir === 'next' ? prev + 40 : prev - 40));
   };
 
   const triggerOption = (opt: ChannelOption) => {
@@ -522,18 +356,19 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   }, [cameraMode, screenTab, currentChannelOptions, safeOptionIndex]);
 
   // ============================================================================
-  // MODE 1: FULLSCREEN CRT VIEW (cameraMode === 'closeup')
-  // - Retro Blue TV Casing matching the zoomed-out SVG TV
-  // - Knob 1: CHANNEL | Knob 2: SCROLL | Button: SELECT
+  // ============================================================================
+  // MODE 1: FULLSCREEN CRT COMPUTER VIEW (cameraMode === 'closeup')
+  // - Retro Cream-Coloured Computer Casing matching the vintage workstation PC
+  // - Clean Computer Stepper Buttons: TAB / CHANNEL | SCROLL | SELECT
   // ============================================================================
   if (cameraMode === 'closeup') {
     return (
       <div
         className={`relative w-screen h-screen overflow-hidden select-none flex items-stretch ${
-          isLightMode ? 'bg-[#e6decb]' : 'bg-black'
+          isLightMode ? 'bg-[#ede5d5]' : 'bg-black'
         }`}
       >
-        {/* TV Static Transition Burst when entering closeup TV view */}
+        {/* Computer Screen Static Transition Burst when entering closeup mode */}
         {staticBurst && (
           <div className="fixed inset-0 z-[120] pointer-events-none overflow-hidden animate-tvStaticBurst">
             <img
@@ -544,7 +379,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           </div>
         )}
 
-        {/* Directed Navigation Tooltip on Entering TV Closeup Mode */}
+        {/* Directed Navigation Tooltip on Entering Computer Closeup Mode */}
         {showGuideTooltip && (
           <div
             onClick={() => setShowGuideTooltip(false)}
@@ -553,12 +388,12 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             <div className="relative max-w-xl w-full p-6 sm:p-7 rounded-2xl bg-[#09130b]/98 border-3 border-[#a6e26e] text-[#a6e26e] shadow-[0_0_50px_rgba(166,226,110,0.6)] flex flex-col items-center gap-4 text-center font-mono">
               <div className="flex items-center justify-center text-sm sm:text-base font-bold tracking-wider">
                 <span className="text-white text-base sm:text-lg uppercase" style={{ fontFamily: 'var(--font-pixel)' }}>
-                  TV CONTROLS & NAVIGATION
+                  COMPUTER CONTROLS & NAVIGATION
                 </span>
               </div>
 
               <p className="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed">
-                Click tabs or items on the screen directly, turn knobs, or use keyboard navigation:
+                Click tabs or items on the screen directly, use computer buttons, or keyboard navigation:
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full py-2">
@@ -567,7 +402,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">←</kbd>
                     <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">→</kbd>
                   </div>
-                  <span className="text-[11px] sm:text-xs text-white font-bold">Channels</span>
+                  <span className="text-[11px] sm:text-xs text-white font-bold">Tabs / Channels</span>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
@@ -623,36 +458,36 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           title="Hold 2s to return to room view"
         />
 
-        {/* Outer 3D Moulded Blue CRT Television Cabinet */}
+        {/* Outer 3D Moulded Cream Retro Computer Cabinet */}
         <div
           className="relative w-full h-full p-3 sm:p-5 md:p-6 flex items-stretch transition-colors duration-300"
           style={{
             background: isLightMode
-              ? 'linear-gradient(145deg, #3b76b8 0%, #2b5c94 52%, #1d426e 100%)'
-              : 'linear-gradient(145deg, #1e3a5f 0%, #152945 52%, #0b1626 100%)',
+              ? 'linear-gradient(145deg, #f7f1e4 0%, #ede3ce 50%, #ded2b8 100%)'
+              : 'linear-gradient(145deg, #383228 0%, #2b261e 50%, #1e1a14 100%)',
             boxShadow: isLightMode
-              ? 'inset 0 2px 8px rgba(255,255,255,0.45), inset 0 -10px 25px rgba(15,35,60,0.65)'
-              : 'inset 0 2px 6px rgba(140,185,240,0.22), inset 0 -10px 30px rgba(0,0,0,0.95)',
+              ? 'inset 0 2px 6px rgba(255,255,255,0.7), inset 0 -10px 25px rgba(130,110,85,0.35)'
+              : 'inset 0 2px 4px rgba(220,205,180,0.12), inset 0 -10px 30px rgba(0,0,0,0.95)',
           }}
         >
-          {/* Inner Recessed Blue CRT Bezel Well */}
+          {/* Inner Recessed Cream Computer Bezel Well */}
           <div
             className="relative flex-1 h-full rounded-[26px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden transition-colors duration-300"
             style={{
               background: isLightMode
-                ? 'linear-gradient(180deg, #254f80 0%, #2f629c 50%, #3a74b5 100%)'
-                : 'linear-gradient(180deg, #0f1e33 0%, #162b46 50%, #1c3557 100%)',
+                ? 'linear-gradient(180deg, #e4d7bf 0%, #dbcfb6 50%, #cfc2a7 100%)'
+                : 'linear-gradient(180deg, #27221b 0%, #1e1a14 50%, #16130f 100%)',
               boxShadow: isLightMode
-                ? 'inset 0 8px 24px rgba(10,25,45,0.55), 0 2px 6px rgba(255,255,255,0.35)'
-                : 'inset 0 12px 35px rgba(0,0,0,0.92), inset 0 0 24px rgba(166,226,110,0.22), 0 2px 4px rgba(140,190,255,0.12)',
-              border: isLightMode ? '3px solid #60a5fa' : '3px solid #2e5077',
+                ? 'inset 0 8px 24px rgba(80,65,45,0.3), 0 2px 4px rgba(255,255,255,0.45)'
+                : 'inset 0 12px 35px rgba(0,0,0,0.92), inset 0 0 24px rgba(166,226,110,0.18), 0 2px 4px rgba(220,205,180,0.06)',
+              border: isLightMode ? '3px solid #bdae92' : '3px solid #4a4032',
             }}
           >
-            {/* FULLSCREEN CRT TUBE DISPLAY */}
+            {/* FULLSCREEN CRT MONITOR DISPLAY */}
             <div
               className={`relative flex-1 h-full rounded-[20px] overflow-hidden crt-screen-container border-4 ${
                 isLightMode
-                  ? 'bg-[#e6f0e2] border-[#5c8754] shadow-[inset_0_0_30px_rgba(20,45,25,0.18)]'
+                  ? 'bg-[#e6f0e2] border-[#7d9b75] shadow-[inset_0_0_30px_rgba(20,45,25,0.18)]'
                   : 'bg-[#070c08] border-[#3a6b4c] shadow-[0_0_55px_rgba(166,226,110,0.24),inset_0_0_60px_rgba(0,0,0,0.95)]'
               }`}
             >
@@ -665,23 +500,11 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     return;
                   }
                   if (tab === screenTab) return;
-                  const currentIdx = TV_TABS.indexOf(screenTab);
-                  const newIdx = TV_TABS.indexOf(tab);
-                  if (currentIdx !== -1 && newIdx !== -1) {
-                    const diff = newIdx - currentIdx;
-                    setChannelKnobAngle((prev) => prev + diff * 45);
-                  } else {
-                    setChannelKnobAngle((prev) => prev + 45);
-                  }
                   setScreenTab(tab);
                   setOptionIndex(0);
                 }}
                 optionIndex={safeOptionIndex}
                 onSelectOption={(idx) => {
-                  const diff = idx - safeOptionIndex;
-                  if (diff !== 0) {
-                    setScrollKnobAngle((prev) => prev + diff * 35);
-                  }
                   setOptionIndex(idx);
                 }}
                 onTriggerOption={(opt) => triggerOption(opt)}
@@ -722,17 +545,17 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               {!isLightMode && <div className="crt-vignette" />}
             </div>
 
-            {/* RIGHT CONTROL PANEL (Matches the Zoomed-Out Blue SVG TV Panel) */}
+            {/* RIGHT COMPUTER CONTROL PANEL (Cream Computer Workstation) */}
             <div
               className="w-60 xl:w-66 shrink-0 h-full rounded-[18px] p-3.5 xl:p-4 flex flex-col justify-between relative z-30 transition-colors duration-300"
               style={{
                 background: isLightMode
-                  ? 'linear-gradient(160deg, #2b588c 0%, #214670 58%, #183557 100%)'
-                  : 'linear-gradient(160deg, #162840 0%, #101e30 58%, #0a1420 100%)',
+                  ? 'linear-gradient(160deg, #ece1cc 0%, #e0d4bc 58%, #d2c5ab 100%)'
+                  : 'linear-gradient(160deg, #2a251d 0%, #201c16 58%, #17130f 100%)',
                 boxShadow: isLightMode
-                  ? '-4px 0 18px rgba(10,25,45,0.45), inset 0 2px 4px rgba(255,255,255,0.28)'
-                  : '-8px 0 26px rgba(0,0,0,0.8), inset 2px 0 8px rgba(166,226,110,0.18), inset 0 2px 3px rgba(140,190,255,0.16)',
-                border: isLightMode ? '2px solid #60a5fa' : '2px solid #2b4a6f',
+                  ? '-4px 0 18px rgba(80,65,45,0.25), inset 0 2px 4px rgba(255,255,255,0.4)'
+                  : '-8px 0 26px rgba(0,0,0,0.8), inset 2px 0 8px rgba(166,226,110,0.18), inset 0 2px 3px rgba(220,205,180,0.08)',
+                border: isLightMode ? '2px solid #bdae92' : '2px solid #483e32',
               }}
             >
               {/* Top Section: Power LED & Prominent Power Switch Button */}
@@ -740,8 +563,8 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 <div
                   className={`rounded-xl p-2.5 border flex items-center justify-between ${
                     isLightMode
-                      ? 'border-[#60a5fa] bg-[#1a385c]'
-                      : 'border-[#2b4a6f] bg-[#0c1726]'
+                      ? 'border-[#baa98e] bg-[#ded1b6]'
+                      : 'border-[#433b2e] bg-[#1a1612]'
                   }`}
                   style={{
                     boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.55)',
@@ -757,7 +580,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     />
                     <span
                       className={`text-[8px] font-bold tracking-wider ${
-                        isLightMode ? 'text-[#e2e8f0]' : 'text-[#b4beb4]'
+                        isLightMode ? 'text-[#3d3326]' : 'text-[#b4beb4]'
                       }`}
                       style={{ fontFamily: 'var(--font-pixel)' }}
                     >
@@ -770,14 +593,14 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   </span>
                 </div>
 
-                {/* MINIMAL POWER SWITCH BUTTON TO TURN OFF & EXIT TV */}
+                {/* POWER SWITCH BUTTON TO TURN OFF & EXIT COMPUTER */}
                 <button
                   type="button"
                   onClick={() => {
                     setIsTvPoweredOff(true);
                     triggerZoomOut();
                   }}
-                  title="Power Off (Exit TV)"
+                  title="Power Off (Exit Computer)"
                   className="w-full py-2.5 px-3 rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg border-2 border-red-500/80 bg-gradient-to-b from-red-600 via-red-700 to-red-900 text-white font-bold group hover:border-red-400 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]"
                 >
                   <span className="text-base sm:text-lg text-red-100 group-hover:text-white group-hover:scale-110 transition-transform font-mono select-none">
@@ -786,43 +609,127 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 </button>
               </div>
 
-              {/* MATCHING SVG DUAL ROTARY KNOBS: 1. CHANNEL | 2. SCROLL */}
+              {/* VINTAGE 3.5" FLOPPY DISK DRIVE BAY */}
+              <div
+                className={`rounded-xl p-3 border flex flex-col gap-2 ${
+                  isLightMode
+                    ? 'border-[#baa98e] bg-[#e4d7bf]'
+                    : 'border-[#453d32] bg-[#1a1612]'
+                }`}
+                style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.5)' }}
+              >
+                <div className="flex items-center justify-between text-[7.5px] font-mono font-bold tracking-wider opacity-85">
+                  <span className={isLightMode ? 'text-[#4d4233]' : 'text-[#c7baa5]'}>DRIVE A: 1.44MB</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
+                </div>
+                {/* Horizontal Floppy Disk Entry Slot */}
+                <div
+                  className={`w-full h-4 rounded-sm flex items-center justify-between px-1.5 ${
+                    isLightMode ? 'bg-[#2b241c]' : 'bg-[#090806]'
+                  }`}
+                  style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.9)' }}
+                >
+                  <div className="w-3/4 h-1 rounded-full bg-black/60" />
+                  {/* Eject Button */}
+                  <div
+                    className={`w-3.5 h-2.5 rounded-sm border ${
+                      isLightMode
+                        ? 'bg-[#ded1b6] border-[#8c7b60]'
+                        : 'bg-[#3b3329] border-[#5a4e3f]'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* RETRO COMPUTER CONTROLS: TACTILE BUTTONS (NO KNOBS) */}
               <div
                 className={`rounded-2xl p-3 flex flex-col items-center justify-around gap-3 border ${
                   isLightMode
-                    ? 'border-[#5288c4] bg-[#173252]'
-                    : 'border-[#274466] bg-[#0b1524]'
+                    ? 'border-[#bdae92] bg-[#e8ddc7]'
+                    : 'border-[#433b2f] bg-[#181410]'
                 }`}
-                style={{
-                  boxShadow: 'inset 0 6px 16px rgba(0,0,0,0.65)',
-                }}
+                style={{ boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.55)' }}
               >
-                {/* Knob 1: Channel Selector */}
-                <MatchingSvgRotaryKnob
-                  angle={channelKnobAngle}
-                  onTurnClockwise={() => turnChannel('next')}
-                  onTurnCounterClockwise={() => turnChannel('prev')}
-                  label="CHANNEL"
-                  accentColor="#a6e26e"
-                  isLightMode={isLightMode}
-                  isWiggling={knobWiggleChannel}
-                />
+                {/* Tab / Channel Stepper */}
+                <div className="flex flex-col items-center w-full gap-1.5">
+                  <span
+                    className={`text-[8px] tracking-wider uppercase font-bold ${
+                      isLightMode ? 'text-[#4d4233]' : 'text-[#c2b59e]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
+                    TAB / CHANNEL
+                  </span>
+                  <div className={`flex items-center gap-2 w-full ${knobWiggleChannel ? 'animate-knobWiggle' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={() => turnChannel('prev')}
+                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
+                        isLightMode
+                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
+                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
+                      }`}
+                      title="Previous Tab / Channel"
+                    >
+                      ◀ PREV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => turnChannel('next')}
+                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
+                        isLightMode
+                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
+                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
+                      }`}
+                      title="Next Tab / Channel"
+                    >
+                      NEXT ▶
+                    </button>
+                  </div>
+                </div>
 
-                <div className={`w-full h-[1px] ${isLightMode ? 'bg-[#3b699e]' : 'bg-[#213a57]'}`} />
+                <div className={`w-full h-[1px] ${isLightMode ? 'bg-[#c9baa0]' : 'bg-[#332b21]'}`} />
 
-                {/* Knob 2: Scroll Selector (Scrolls options on active channel) */}
-                <MatchingSvgRotaryKnob
-                  angle={scrollKnobAngle}
-                  onTurnClockwise={() => turnScroll('next')}
-                  onTurnCounterClockwise={() => turnScroll('prev')}
-                  label="SCROLL"
-                  accentColor="#e6cf65"
-                  isLightMode={isLightMode}
-                  isWiggling={knobWiggleScroll}
-                />
+                {/* Option / Scroll Stepper */}
+                <div className="flex flex-col items-center w-full gap-1.5">
+                  <span
+                    className={`text-[8px] tracking-wider uppercase font-bold ${
+                      isLightMode ? 'text-[#4d4233]' : 'text-[#c2b59e]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-pixel)' }}
+                  >
+                    SCROLL / OPTION
+                  </span>
+                  <div className={`flex items-center gap-2 w-full ${knobWiggleScroll ? 'animate-knobWiggle' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={() => turnScroll('prev')}
+                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
+                        isLightMode
+                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
+                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
+                      }`}
+                      title="Previous Option"
+                    >
+                      ▲ UP
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => turnScroll('next')}
+                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
+                        isLightMode
+                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
+                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
+                      }`}
+                      title="Next Option"
+                    >
+                      DOWN ▼
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* SINGLE SELECT BUTTON TO OPEN SELECTED OPTION */}
+              {/* ACTION / SELECT BUTTON TO OPEN SELECTED OPTION */}
               <button
                 type="button"
                 onClick={handlePressSelectButton}
@@ -842,12 +749,12 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 </span>
               </button>
 
-              {/* Matching SVG Speaker Grille Slots at Bottom of Panel */}
+              {/* Matching Computer Ventilation Grille Slots at Bottom of Panel */}
               <div className="flex flex-col gap-1.5 px-2 py-1 opacity-80">
                 {[0, 1, 2, 3, 4].map((slot) => (
                   <div
                     key={slot}
-                    className="w-full h-1.5 rounded-full bg-[#060c14] border-b border-[#233d5c]"
+                    className="w-full h-1.5 rounded-full bg-[#120f0c] border-b border-[#3b3327]"
                   />
                 ))}
               </div>
@@ -1005,19 +912,19 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               <feGaussianBlur stdDeviation="6" />
             </filter>
 
-            {/* ---------------- BLUE TV CASING GRADIENTS (DARK & LIGHT) ---------------- */}
+            {/* ---------------- CREAM COMPUTER CASING GRADIENTS (DARK & LIGHT) ---------------- */}
             <linearGradient id="tvBlueFront" x1="0" y1="0" x2="1" y2="0.2">
-              <stop offset="0%" stopColor="#244770" />
-              <stop offset="55%" stopColor="#1b3656" />
-              <stop offset="100%" stopColor="#11243b" />
+              <stop offset="0%" stopColor="#484136" />
+              <stop offset="55%" stopColor="#383229" />
+              <stop offset="100%" stopColor="#27231c" />
             </linearGradient>
             <linearGradient id="tvBlueLeftSide" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#0d1b2e" />
-              <stop offset="100%" stopColor="#1b3657" />
+              <stop offset="0%" stopColor="#1c1813" />
+              <stop offset="100%" stopColor="#302b22" />
             </linearGradient>
             <linearGradient id="tvBlueTop" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#2a5180" />
-              <stop offset="100%" stopColor="#18304f" />
+              <stop offset="0%" stopColor="#524a3e" />
+              <stop offset="100%" stopColor="#352f26" />
             </linearGradient>
             <linearGradient id="tvBezelGreenRay" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#72c768" />
@@ -1026,17 +933,17 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             </linearGradient>
 
             <linearGradient id="tvBlueFrontLight" x1="0" y1="0" x2="1" y2="0.2">
-              <stop offset="0%" stopColor="#3e7ec4" />
-              <stop offset="55%" stopColor="#2f66a3" />
-              <stop offset="100%" stopColor="#224c7d" />
+              <stop offset="0%" stopColor="#faf3e6" />
+              <stop offset="55%" stopColor="#ede2cc" />
+              <stop offset="100%" stopColor="#dfd2b7" />
             </linearGradient>
             <linearGradient id="tvBlueLeftSideLight" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#214978" />
-              <stop offset="100%" stopColor="#326aa8" />
+              <stop offset="0%" stopColor="#c8baa0" />
+              <stop offset="100%" stopColor="#dfd2b8" />
             </linearGradient>
             <linearGradient id="tvBlueTopLight" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#589be3" />
-              <stop offset="100%" stopColor="#3b78bd" />
+              <stop offset="0%" stopColor="#fffdf8" />
+              <stop offset="100%" stopColor="#ebdfc7" />
             </linearGradient>
 
             {/* Clip Path for Live CRT Screen Inside the Angled Blue TV */}
@@ -1361,7 +1268,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
           </g>
 
           {/* ================================================================ */}
-          {/* 3. BLUE CRT TV SITTING 100% INSIDE THE REAR CONSOLE DECK         */}
+          {/* 3. CREAM CRT COMPUTER SITTING 100% INSIDE THE REAR CONSOLE DECK   */}
           {/* ================================================================ */}
           <g
             onMouseEnter={handleTvMouseEnter}
@@ -1369,19 +1276,19 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             onClick={triggerZoomIn}
             className="cursor-zoom-in"
           >
-            {/* 3D Top Roof of Blue TV */}
+            {/* 3D Top Roof of Cream Computer */}
             <polygon
               points="168,286 126,261 576,246 618,271"
               fill={isLightMode ? 'url(#tvBlueTopLight)' : 'url(#tvBlueTop)'}
-              stroke={isLightMode ? '#60a5fa' : '#3b699e'}
+              stroke={isLightMode ? '#c2b398' : '#574d3f'}
               strokeWidth="2"
             />
 
-            {/* 3D Left Side Depth Wall of Blue TV */}
+            {/* 3D Left Side Depth Wall of Cream Computer */}
             <polygon
               points="126,261 168,286 168,656 126,631"
               fill={isLightMode ? 'url(#tvBlueLeftSideLight)' : 'url(#tvBlueLeftSide)'}
-              stroke={isLightMode ? '#3b82f6' : '#2c4f7c'}
+              stroke={isLightMode ? '#ad9e83' : '#453c30'}
               strokeWidth="2"
             />
 
@@ -1393,21 +1300,21 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 y1={vy}
                 x2="160"
                 y2={vy + 15}
-                stroke={isLightMode ? '#173457' : '#08111f'}
+                stroke={isLightMode ? '#8a7a62' : '#14110e'}
                 strokeWidth="4"
                 strokeLinecap="round"
               />
             ))}
 
-            {/* Main Blue TV Front Face */}
+            {/* Main Cream Computer Front Face */}
             <polygon
               points="168,286 618,271 618,641 168,656"
               fill={isLightMode ? 'url(#tvBlueFrontLight)' : 'url(#tvBlueFront)'}
-              stroke={isLightMode ? '#60a5fa' : '#38669c'}
+              stroke={isLightMode ? '#c4b59a' : '#5c5243'}
               strokeWidth="2.5"
             />
 
-            {/* Live CRT Screen Embedded Directly Inside the SVG TV Bezel */}
+            {/* Live CRT Screen Embedded Directly Inside the Screen Bezel */}
             <g clipPath="url(#angledTvScreenClip)">
               <polygon
                 points="206,314 512,304 512,601 206,611"
@@ -1453,22 +1360,22 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
             <polygon
               points="202,310 516,300 516,605 202,615"
               fill="none"
-              stroke={isLightMode ? '#60a5fa' : 'url(#tvBezelGreenRay)'}
+              stroke={isLightMode ? '#bdae93' : 'url(#tvBezelGreenRay)'}
               strokeWidth="5"
             />
             <polygon
               points="206,314 512,304 512,601 206,611"
               fill="none"
-              stroke={isLightMode ? '#93c5fd' : '#a6e26e'}
+              stroke={isLightMode ? '#ded3bb' : '#a6e26e'}
               strokeOpacity="0.7"
               strokeWidth="2"
             />
 
-            {/* Right-Side Control Panel on the Angled Blue SVG TV */}
+            {/* Right-Side Control Panel on the Angled Cream Computer */}
             <polygon
               points="528,299 604,296 604,601 528,604"
-              fill={isLightMode ? '#1d4470' : '#0e1d30'}
-              stroke={isLightMode ? '#60a5fa' : '#2d527d'}
+              fill={isLightMode ? '#ded3bb' : '#1f1b16'}
+              stroke={isLightMode ? '#baa98e' : '#453c31'}
               strokeWidth="1.5"
             />
             {!isLightMode && (
@@ -1483,24 +1390,69 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               />
             )}
 
-            {/* Power LED on Blue SVG TV */}
+            {/* Power LED on Cream Computer */}
             <circle cx="544" cy="322" r="4.5" fill="#a6e26e" />
-            <line x1="556" y1="322" x2="592" y2="321" stroke="#3a628f" strokeWidth="5" strokeLinecap="round" />
+            <line x1="556" y1="322" x2="592" y2="321" stroke={isLightMode ? '#94836b' : '#4a4034'} strokeWidth="5" strokeLinecap="round" />
 
-            {/* Rotary Knob 1 (CHANNEL) on Blue SVG TV */}
-            <circle cx="566" cy="374" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
-            <circle cx="566" cy="374" r="15" fill="#1b2f48" />
-            <line x1="566" y1="374" x2="566" y2="358" stroke="#a6e26e" strokeWidth="3.5" strokeLinecap="round" />
+            {/* 3.5" Floppy Disk Drive Bay on Cream Computer */}
+            <g transform="translate(536, 362)">
+              {/* Recessed Floppy Bay */}
+              <rect
+                x="0"
+                y="0"
+                width="60"
+                height="34"
+                rx="3"
+                fill={isLightMode ? '#c9bca2' : '#120f0c'}
+                stroke={isLightMode ? '#a8987e' : '#383025'}
+                strokeWidth="1.2"
+              />
+              {/* Horizontal Floppy Disk Entry Slot */}
+              <rect x="5" y="11" width="50" height="5" rx="1.5" fill={isLightMode ? '#2b231a' : '#060504'} />
+              {/* Disk Activity LED */}
+              <circle cx="12" cy="24" r="2" fill="#a6e26e" />
+              {/* Eject Button */}
+              <rect
+                x="42"
+                y="20"
+                width="11"
+                height="7"
+                rx="1"
+                fill={isLightMode ? '#ded1b6' : '#2d261e'}
+                stroke={isLightMode ? '#8a7a62' : '#4f4335'}
+                strokeWidth="0.8"
+              />
+            </g>
 
-            {/* Rotary Knob 2 (SCROLL) on Blue SVG TV */}
-            <circle cx="566" cy="436" r="22" fill="#111f30" stroke="#3b5e87" strokeWidth="2.5" />
-            <circle cx="566" cy="436" r="15" fill="#1b2f48" />
-            <line x1="566" y1="436" x2="578" y2="426" stroke="#e6cf65" strokeWidth="3.5" strokeLinecap="round" />
+            {/* Retro Computer Model Badge */}
+            <g transform="translate(536, 408)">
+              <rect
+                x="0"
+                y="0"
+                width="60"
+                height="16"
+                rx="2"
+                fill={isLightMode ? '#d5c7ad' : '#181410'}
+                stroke={isLightMode ? '#b09f83' : '#3b3226'}
+                strokeWidth="1"
+              />
+              <text
+                x="30"
+                y="11"
+                fill={isLightMode ? '#4d4130' : '#a89b85'}
+                fontSize="7"
+                fontFamily="var(--font-pixel)"
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                DR-1984
+              </text>
+            </g>
 
-            {/* Single SELECT Button on Blue SVG TV */}
+            {/* Action / SELECT Push Button on Cream Computer */}
             <rect
               x="540"
-              y="472"
+              y="436"
               width="52"
               height="18"
               rx="4"
@@ -1508,25 +1460,36 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               stroke="#a6e26e"
               strokeWidth="1.5"
             />
+            <text
+              x="566"
+              y="448"
+              textAnchor="middle"
+              fill="#a6e26e"
+              fontSize="6.5"
+              fontFamily="var(--font-pixel)"
+              fontWeight="bold"
+            >
+              SELECT
+            </text>
 
-            {/* Speaker Grille Slots on Blue SVG TV */}
-            {[506, 518, 530, 542].map((sy) => (
+            {/* Speaker / Ventilation Grille Slots on Cream Computer */}
+            {[470, 482, 494, 506].map((sy) => (
               <line
                 key={sy}
                 x1="540"
                 y1={sy}
                 x2="592"
                 y2={sy - 2}
-                stroke="#07101c"
+                stroke={isLightMode ? '#8a7a62' : '#0c0a08'}
                 strokeWidth="4"
                 strokeLinecap="round"
               />
             ))}
 
-            {/* Directed Tooltip & TV Highlight on Load (Active for 5s in Room View) */}
+            {/* Directed Tooltip & Computer Highlight on Load (Active for 5s in Room View) */}
             {showGuideTooltip && (
               <g className="pointer-events-none">
-                {/* Pulsing highlight around the TV cabinet */}
+                {/* Pulsing highlight around the Computer cabinet */}
                 <polygon
                   points="164,282 622,267 622,645 164,660"
                   fill="none"
@@ -1536,7 +1499,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   className="animate-pulse"
                   filter="url(#rtGlow)"
                 />
-                {/* Floating directed speech bubble pointing to TV */}
+                {/* Floating directed speech bubble pointing to Computer */}
                 <g transform="translate(393, 220)" className="animate-bounce">
                   {/* Tooltip background pill */}
                   <rect
@@ -1551,7 +1514,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     strokeWidth="1.5"
                     filter="url(#rtFineBlur)"
                   />
-                  {/* Speech bubble pointer arrow pointing down to TV */}
+                  {/* Speech bubble pointer arrow pointing down to Computer */}
                   <polygon
                     points="-8,-6 8,-6 0,4"
                     fill="#0a120d"
@@ -1570,7 +1533,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                     textAnchor="middle"
                     letterSpacing="0.05em"
                   >
-                    HOVER 2s (OR CLICK) TO ENTER TV
+                    HOVER 2s (OR CLICK) TO ENTER COMPUTER
                   </text>
                 </g>
               </g>

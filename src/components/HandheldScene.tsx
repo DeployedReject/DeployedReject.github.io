@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { flushSync } from 'react-dom';
+import { useState, useEffect, useMemo } from 'react';
 import type { Project } from '../data/projects';
 import {
   ConsoleScreenContent,
@@ -39,77 +38,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
-  const lightButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  const toggleLightModeWithTransition = async (btnEl?: HTMLButtonElement | null) => {
-    const willBeLight = !isLightMode;
-
-    if (
-      !document.startViewTransition ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      onToggleLightMode?.();
-      return;
-    }
-
-    const targetEl = btnEl || lightButtonRef.current;
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight * 0.75;
-    let left = x;
-    let top = y;
-
-    if (targetEl) {
-      const rect = targetEl.getBoundingClientRect();
-      left = rect.left;
-      top = rect.top;
-      x = rect.left + rect.width / 2;
-      y = rect.top + rect.height / 2;
-    }
-
-    const right = window.innerWidth - left;
-    const bottom = window.innerHeight - top;
-    const maxRadius = Math.hypot(
-      Math.max(left, right),
-      Math.max(top, bottom),
-    );
-
-    const transition = document.startViewTransition(() => {
-      flushSync(() => {
-        onToggleLightMode?.();
-      });
-    });
-
-    await transition.ready;
-
-    if (willBeLight) {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${maxRadius}px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          duration: 650,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          pseudoElement: '::view-transition-new(root)',
-        }
-      );
-    } else {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(${maxRadius}px at ${x}px ${y}px)`,
-            `circle(0px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          duration: 380,
-          easing: 'cubic-bezier(0.4, 0, 1, 1)',
-          pseudoElement: '::view-transition-old(root)',
-        }
-      );
-    }
+  const handleToggleBacklight = () => {
+    onToggleLightMode?.();
   };
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
@@ -180,9 +111,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
 
   return (
     <div
-      className={`w-screen h-screen flex flex-col overflow-hidden select-none transition-colors duration-300 ${
-        isLightMode ? 'bg-[#f5ecdd]' : 'bg-[#080706]'
-      }`}
+      className="w-screen h-screen flex flex-col overflow-hidden select-none bg-[#080706]"
     >
       {/* ==================================================================== */}
       {/* TOP 50%: DIMENSIONAL RECESSED SCREEN HOUSING                         */}
@@ -190,54 +119,48 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
       <div
         className="w-full h-1/2 p-2.5 sm:p-4 flex flex-col relative transition-all duration-300"
         style={{
-          background: isLightMode
-            ? 'linear-gradient(165deg, #e3dacb 0%, #d1c3b0 55%, #b8a692 100%)'
-            : 'linear-gradient(165deg, #2b2624 0%, #1c1817 55%, #100e0d 100%)',
-          boxShadow: isLightMode
-            ? 'inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -8px 20px rgba(80,60,40,0.35)'
-            : 'inset 0 2px 4px rgba(255,255,255,0.08), inset 0 -8px 20px rgba(0,0,0,0.85)',
-          borderBottom: isLightMode ? '4px solid #8c7d6b' : '4px solid #080605',
+          background: 'linear-gradient(165deg, #2b2624 0%, #1c1817 55%, #100e0d 100%)',
+          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.08), inset 0 -8px 20px rgba(0,0,0,0.85)',
+          borderBottom: '4px solid #080605',
         }}
       >
         {/* Top Lens Bezel Header: Power LED + Backlight Status */}
         <div className="flex items-center justify-between px-2 mb-1.5 shrink-0">
           <div className="flex items-center gap-2">
             <span
-              className="w-2.5 h-2.5 rounded-full animate-pulse"
+              className="w-2.5 h-2.5 rounded-full transition-all duration-300"
               style={{
-                backgroundColor: isLightMode ? '#f59e0b' : '#39e89b',
-                boxShadow: isLightMode ? '0 0 10px #f59e0b' : '0 0 12px #39e89b',
+                backgroundColor: isLightMode ? '#39e89b' : '#3f3f46',
+                boxShadow: isLightMode ? '0 0 12px #39e89b' : 'none',
               }}
             />
             <span
-              className={`text-[7px] tracking-wider uppercase font-bold ${
-                isLightMode ? 'text-[#3d342c]' : 'text-[#e2deda]'
+              className={`text-[7px] tracking-wider uppercase font-bold transition-colors duration-300 ${
+                isLightMode ? 'text-emerald-400' : 'text-[#71717a]'
               }`}
               style={{ fontFamily: 'var(--font-pixel)' }}
             >
-              {isLightMode ? 'DAYLIGHT (•‿•)' : 'BACKLIT (•‿•)'}
+              {isLightMode ? 'BACKLIGHT: ON' : 'BACKLIGHT: OFF'}
             </span>
           </div>
 
           <span
-            className={`text-[7px] tracking-wider uppercase ${
-              isLightMode ? 'text-[#4f4339]' : 'text-[#b8aba0]'
-            }`}
+            className="text-[7px] tracking-wider uppercase text-[#a1a1aa]"
             style={{ fontFamily: 'var(--font-pixel)' }}
           >
             legally distinct handheld
           </span>
         </div>
 
-        {/* Deep Recessed Screen Cavity */}
+        {/* Deep Recessed Screen Cavity (Illuminated by Backlight) */}
         <div
           className={`relative flex-1 w-full rounded-[14px] overflow-hidden crt-screen-container transition-all duration-300 ${
             isLightMode ? 'bg-[#edf5eb]' : 'bg-[#040805]'
           }`}
           style={{
             boxShadow: isLightMode
-              ? 'inset 0 4px 12px rgba(0,0,0,0.22), 0 2px 0 rgba(255,255,255,0.5)'
-              : 'inset 0 8px 28px rgba(0,0,0,0.98), 0 2px 0 rgba(255,255,255,0.06), 0 0 40px rgba(57,232,155,0.22)',
+              ? 'inset 0 4px 12px rgba(0,0,0,0.22), 0 2px 0 rgba(255,255,255,0.5), 0 0 35px rgba(166,226,110,0.35)'
+              : 'inset 0 8px 28px rgba(0,0,0,0.98), 0 2px 0 rgba(255,255,255,0.06), 0 0 20px rgba(0,0,0,0.8)',
             border: isLightMode ? '3px solid #738a70' : '3px solid #0e1610',
           }}
         >
@@ -270,12 +193,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
       <div
         className="w-full h-1/2 flex flex-col justify-between p-4 sm:p-6 relative overflow-hidden"
         style={{
-          background: isLightMode
-            ? 'linear-gradient(155deg, #faf3e8 0%, #ece0ce 48%, #d8c6b2 88%, #c4af98 100%)'
-            : 'linear-gradient(155deg, #3d3532 0%, #292321 48%, #1c1715 88%, #120e0d 100%)',
-          boxShadow: isLightMode
-            ? 'inset 0 4px 6px rgba(255,255,255,0.8), inset 0 -12px 24px rgba(66,50,36,0.65), inset 6px 0 12px rgba(255,255,255,0.4), inset -6px 0 14px rgba(66,50,36,0.45)'
-            : 'inset 0 4px 6px rgba(255,255,255,0.15), inset 0 -12px 24px rgba(0,0,0,0.9), inset 6px 0 12px rgba(255,255,255,0.08), inset -6px 0 14px rgba(0,0,0,0.7)',
+          background: 'linear-gradient(155deg, #3d3532 0%, #292321 48%, #1c1715 88%, #120e0d 100%)',
+          boxShadow:
+            'inset 0 4px 6px rgba(255,255,255,0.15), inset 0 -12px 24px rgba(0,0,0,0.9), inset 6px 0 12px rgba(255,255,255,0.08), inset -6px 0 14px rgba(0,0,0,0.7)',
         }}
       >
         {/* Subtle Baked Plastic Texture Overlay from handheld-body.webp */}
@@ -286,9 +206,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
         />
 
         {/* Top Molded Seam Groove */}
-        <div className="relative z-10 flex items-center justify-center px-2 py-1 rounded-md bg-[#c4b19c]/70 border border-[#a6927c] shadow-[inset_0_2px_4px_rgba(70,54,40,0.35),0_1px_0_rgba(255,255,255,0.6)]">
+        <div className="relative z-10 flex items-center justify-center px-2 py-1 rounded-md bg-[#241f1c] border border-[#3d3530] shadow-[inset_0_2px_4px_rgba(0,0,0,0.5),0_1px_0_rgba(255,255,255,0.08)]">
           <span
-            className="text-[7px] sm:text-[8px] text-[#45382d] font-bold tracking-wider"
+            className="text-[7px] sm:text-[8px] text-[#b8aba0] font-bold tracking-wider"
             style={{ fontFamily: 'var(--font-pixel)' }}
           >
             {'\uf053\uf054'} CHANNELS  |  {'\uf077\uf078'} SCROLL
@@ -302,10 +222,8 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             <div
               className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full flex items-center justify-center"
               style={{
-                background:
-                  'radial-gradient(circle at 35% 35%, #c2ae98 0%, #d9c9b6 70%, #e8dacb 100%)',
-                boxShadow:
-                  'inset 0 4px 10px rgba(70,54,40,0.45), 0 2px 3px rgba(255,255,255,0.65)',
+                background: 'radial-gradient(circle at 35% 35%, #221d1b 0%, #181413 70%, #100d0c 100%)',
+                boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.65), 0 2px 3px rgba(255,255,255,0.08)',
               }}
             >
               {/* D-Pad 3D Cross SVG */}
@@ -372,14 +290,14 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             </div>
           </div>
 
-          {/* RIGHT: Single Recessed Circular 3D SELECT Action Button (A & B merged) */}
+          {/* RIGHT: Single Recessed Circular 3D SELECT Action Button */}
           <div
             className="p-3 sm:p-4 rounded-full flex items-center justify-center -rotate-12"
             style={{
-              background: 'linear-gradient(180deg, #bfa992 0%, #d6c5b2 100%)',
+              background: 'linear-gradient(180deg, #241f1d 0%, #171312 100%)',
               boxShadow:
-                'inset 0 4px 8px rgba(66,50,36,0.5), 0 2px 2px rgba(255,255,255,0.65)',
-              border: '1px solid #b09a82',
+                'inset 0 4px 8px rgba(0,0,0,0.7), 0 2px 2px rgba(255,255,255,0.08)',
+              border: '1px solid #362e2a',
             }}
           >
             <div className="flex flex-col items-center">
@@ -416,27 +334,28 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             <div
               className="p-1 rounded-full shrink-0"
               style={{
-                background: '#b8a38c',
-                boxShadow: 'inset 0 2px 4px rgba(50,38,28,0.5), 0 1px 0 rgba(255,255,255,0.6)',
+                background: '#241f1d',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.08)',
               }}
             >
               <button
-                ref={lightButtonRef}
                 type="button"
-                onClick={(e) => toggleLightModeWithTransition(e.currentTarget)}
-                className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block"
+                onClick={handleToggleBacklight}
+                className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block transition-all"
                 style={{
                   background: isLightMode
-                    ? 'linear-gradient(180deg, #d97706 0%, #b45309 100%)'
+                    ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)'
                     : 'linear-gradient(180deg, #5c534d 0%, #38322e 100%)',
-                  boxShadow: '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.3)',
+                  boxShadow: isLightMode
+                    ? '0 0 10px rgba(16,185,129,0.7), inset 0 1px 1px rgba(255,255,255,0.6)'
+                    : '0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2)',
                 }}
-                title="Toggle Backlight (Light / Dark Mode)"
+                title="Toggle Backlight"
               />
             </div>
             <span
-              className={`text-[8px] sm:text-[9px] font-bold tracking-wider leading-none select-none ${
-                isLightMode ? 'text-[#3d3228]' : 'text-[#a89b8d]'
+              className={`text-[8px] sm:text-[9px] font-bold tracking-wider leading-none select-none transition-colors ${
+                isLightMode ? 'text-emerald-400' : 'text-[#8c7f72]'
               }`}
               style={{ fontFamily: "'Press Start 2P', monospace" }}
             >
@@ -451,9 +370,9 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
                 key={slot}
                 className="w-1.5 h-7 sm:h-8 rounded-full"
                 style={{
-                  background: 'linear-gradient(90deg, #332922 0%, #5c4b3e 100%)',
+                  background: 'linear-gradient(90deg, #1a1614 0%, #382e27 100%)',
                   boxShadow:
-                    'inset 0 2px 3px rgba(0,0,0,0.85), 1px 1px 0 rgba(255,255,255,0.45)',
+                    'inset 0 2px 3px rgba(0,0,0,0.85), 1px 1px 0 rgba(255,255,255,0.1)',
                 }}
               />
             ))}

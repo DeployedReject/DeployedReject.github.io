@@ -34,7 +34,7 @@ const BOOT_LOG_TEMPLATES = [
   '[    0.312901] systemd[1]: Reached target Local File Systems (Pre).',
   '[    0.345820] systemd[1]: Starting systemd-udevd.service...',
   '[    0.389102] systemd-udevd[284]: Starting version 255.4',
-  '[    0.420918] input: Retro 3-Knob TV Console Controller as /dev/input/event0',
+  '[    0.420918] input: Retro Cream Computer Console Controller as /dev/input/event0',
   '[    0.456819] input: DMG Handheld 8-Way D-Pad & Action Well as /dev/input/event1',
   '[    0.491029] systemd[1]: Started systemd-udevd.service.',
   '[    0.534820] systemd[1]: Starting cf-p-link supervisor daemon...',
@@ -72,7 +72,7 @@ export const RetroLoadingScreen: React.FC<RetroLoadingScreenProps> = ({ onComple
     return () => window.clearInterval(spinnerTimer);
   }, []);
 
-  // Preload actual assets and cascade the logs
+  // Preload actual assets and cascade the logs across a few seconds
   useEffect(() => {
     let logIdx = 0;
     let isCancelled = false;
@@ -86,28 +86,28 @@ export const RetroLoadingScreen: React.FC<RetroLoadingScreenProps> = ({ onComple
       document.fonts.ready.catch(() => {});
     }
 
-    // Cascade log lines quickly (terminal flood)
+    // Cascade log lines one by one across ~3.2s
     const logInterval = window.setInterval(() => {
       if (isCancelled) return;
       if (logIdx < BOOT_LOG_TEMPLATES.length) {
-        const nextLines = BOOT_LOG_TEMPLATES.slice(0, logIdx + 2);
+        logIdx += 1;
+        const nextLines = BOOT_LOG_TEMPLATES.slice(0, logIdx);
         setLogs(nextLines);
-        logIdx += 2;
         const pct = Math.min(100, Math.round((logIdx / BOOT_LOG_TEMPLATES.length) * 100));
         setProgress(pct);
       } else {
         setProgress(100);
         window.clearInterval(logInterval);
       }
-    }, 35);
+    }, 75);
 
-    // Guarantee completion within 1.4s
+    // Guarantee completion within ~3.6s
     const maxTimer = window.setTimeout(() => {
       if (!isCancelled) {
         setLogs(BOOT_LOG_TEMPLATES);
         setProgress(100);
       }
-    }, 1300);
+    }, 3600);
 
     return () => {
       isCancelled = true;
@@ -128,11 +128,11 @@ export const RetroLoadingScreen: React.FC<RetroLoadingScreenProps> = ({ onComple
     if (progress >= 100 && !isFadingOut) {
       const fadeTimer = window.setTimeout(() => {
         setIsFadingOut(true);
-      }, 180);
+      }, 250);
 
       const doneTimer = window.setTimeout(() => {
         onComplete();
-      }, 420);
+      }, 550);
 
       return () => {
         window.clearTimeout(fadeTimer);
