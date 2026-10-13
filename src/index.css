@@ -522,6 +522,18 @@
   mix-blend-mode: normal;
 }
 
+/* Ensure proper snapshot stacking so clip-path reveals work without flicker */
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 999;
+}
 
-
-
+/* Respect user motion preferences — instant toggle, no animation */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}

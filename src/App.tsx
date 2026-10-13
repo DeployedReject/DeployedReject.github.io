@@ -149,7 +149,7 @@ export function App() {
 
   return (
     <div
-      className={`relative w-screen h-screen overflow-hidden select-none transition-colors duration-300 ${
+      className={`relative w-screen h-screen overflow-hidden select-none ${
         isLightMode && deviceLayout !== 'handheld' ? 'bg-[#ede4d3]' : 'bg-[#0c0a09]'
       }`}
     >

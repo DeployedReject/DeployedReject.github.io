@@ -139,14 +139,14 @@ export const FullscreenProjectView: React.FC<FullscreenProjectViewProps> = ({
 
   return (
     <div
-      className={`h-screen w-screen overflow-hidden flex flex-col relative selection:bg-emerald-500 selection:text-black transition-colors duration-300 ${
+      className={`h-screen w-screen overflow-hidden flex flex-col relative selection:bg-emerald-500 selection:text-black ${
         isLightMode ? 'bg-[#f5f0e6] text-stone-900' : 'bg-[#090a0f] text-stone-100'
       }`}
     >
 
       {/* Single Top Bar (Only place with Eject, Title/Tagline, and Summary toggle) */}
       <header
-        className={`shrink-0 z-50 border-b-2 px-4 sm:px-6 py-2.5 transition-colors duration-300 ${
+        className={`shrink-0 z-50 border-b-2 px-4 sm:px-6 py-2.5 ${
           isLightMode
             ? 'bg-[#ebe4d5] border-[#c8bda8] text-stone-900 shadow-sm'
             : 'bg-[#121417] border-[#333942] text-stone-100 shadow-xl'

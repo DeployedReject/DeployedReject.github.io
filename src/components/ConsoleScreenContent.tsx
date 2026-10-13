@@ -484,7 +484,7 @@ export const ConsoleScreenContent: React.FC<ConsoleScreenContentProps> = ({
 
   return (
     <div
-      className={`w-full h-full p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none relative overflow-hidden transition-colors duration-300 ${
+      className={`w-full h-full p-3 sm:p-5 md:p-6 flex flex-col justify-between select-none relative overflow-hidden ${
         isLightMode ? 'bg-[#e6f0e2] text-[#142918]' : 'bg-[#070c08] text-[#a6e26e]'
       }`}
       style={{

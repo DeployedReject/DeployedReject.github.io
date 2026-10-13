@@ -460,7 +460,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
         {/* Outer 3D Moulded Cream Retro Computer Cabinet */}
         <div
-          className="relative w-full h-full p-3 sm:p-5 md:p-6 flex items-stretch transition-colors duration-300"
+          className="relative w-full h-full p-3 sm:p-5 md:p-6 flex items-stretch"
           style={{
             background: isLightMode
               ? 'linear-gradient(145deg, #f7f1e4 0%, #ede3ce 50%, #ded2b8 100%)'
@@ -472,7 +472,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         >
           {/* Inner Recessed Cream Computer Bezel Well */}
           <div
-            className="relative flex-1 h-full rounded-[26px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden transition-colors duration-300"
+            className="relative flex-1 h-full rounded-[26px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden"
             style={{
               background: isLightMode
                 ? 'linear-gradient(180deg, #e4d7bf 0%, #dbcfb6 50%, #cfc2a7 100%)'
@@ -547,7 +547,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
             {/* RIGHT COMPUTER CONTROL PANEL (Cream Computer Workstation) */}
             <div
-              className="w-60 xl:w-66 shrink-0 h-full rounded-[18px] p-3.5 xl:p-4 flex flex-col justify-between relative z-30 transition-colors duration-300"
+              className="w-60 xl:w-66 shrink-0 h-full rounded-[18px] p-3.5 xl:p-4 flex flex-col justify-between relative z-30"
               style={{
                 background: isLightMode
                   ? 'linear-gradient(160deg, #ece1cc 0%, #e0d4bc 58%, #d2c5ab 100%)'
@@ -789,7 +789,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   return (
     <div
-      className={`relative w-screen h-screen overflow-hidden select-none transition-colors duration-300 ${
+      className={`relative w-screen h-screen overflow-hidden select-none ${
         isLightMode ? 'bg-[#ded3be]' : 'bg-[#020302]'
       }`}
     >
@@ -810,7 +810,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         {/* ================================================================== */}
         <div className="absolute top-[4%] inset-x-0 z-40 flex flex-col items-center px-6 text-center pointer-events-none">
           <h1
-            className={`text-xs sm:text-sm md:text-base lg:text-xl tracking-wider leading-relaxed transition-colors duration-300 ${
+            className={`text-xs sm:text-sm md:text-base lg:text-xl tracking-wider leading-relaxed ${
               isLightMode ? 'text-[#241f19]' : 'pixel-dull-white'
             }`}
             style={{
@@ -823,7 +823,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
           <div className="h-14 sm:h-16 mt-2.5 flex items-center justify-center max-w-4xl">
             <p
-              className={`text-[10px] sm:text-xs md:text-sm leading-relaxed transition-all duration-200 ${
+              className={`text-[10px] sm:text-xs md:text-sm leading-relaxed transition-[opacity,transform] duration-200 ${
                 hoverSubtitle ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
               } ${isLightMode ? 'text-[#3b3228]' : 'pixel-dull-white'}`}
               style={{
