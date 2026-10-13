@@ -48,8 +48,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
   const [copiedBanner, setCopiedBanner] = useState<string | null>(null);
   const [knobToast, setKnobToast] = useState<string | null>(null);
-  const [knobWiggleChannel, setKnobWiggleChannel] = useState<boolean>(false);
-  const [knobWiggleScroll, setKnobWiggleScroll] = useState<boolean>(false);
   const [isTvPoweredOff, setIsTvPoweredOff] = useState<boolean>(false);
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
   const [hoveredConsole, setHoveredConsole] = useState<boolean>(false);
@@ -96,21 +94,14 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   const isCartridgeActive = Boolean(activeCartridge || isRomLoading || isRomReady);
 
-  const showCartridgeLockedToast = (type: 'channel' | 'scroll') => {
+  const showCartridgeLockedToast = () => {
     setKnobToast("CAN'T CHANGE CHANNEL: CARTRIDGE LOADED");
-    if (type === 'channel') {
-      setKnobWiggleChannel(true);
-      window.setTimeout(() => setKnobWiggleChannel(false), 420);
-    } else {
-      setKnobWiggleScroll(true);
-      window.setTimeout(() => setKnobWiggleScroll(false), 420);
-    }
     window.setTimeout(() => setKnobToast(null), 2500);
   };
 
   const turnChannel = (dir: 'next' | 'prev') => {
     if (isCartridgeActive) {
-      showCartridgeLockedToast('channel');
+      showCartridgeLockedToast();
       return;
     }
     const idx = TV_TABS.indexOf(screenTab);
@@ -123,7 +114,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
   const turnScroll = (dir: 'next' | 'prev') => {
     if (isCartridgeActive) {
-      showCartridgeLockedToast('scroll');
+      showCartridgeLockedToast();
       return;
     }
     const total = Math.max(1, currentChannelOptions.length);
@@ -393,7 +384,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               </div>
 
               <p className="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed">
-                Click tabs or items on the screen directly, use computer buttons, or keyboard navigation:
+                Click tabs or items on the screen directly, or use keyboard navigation:
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full py-2">
@@ -472,7 +463,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         >
           {/* Inner Recessed Cream Computer Bezel Well */}
           <div
-            className="relative flex-1 h-full rounded-[26px] p-3 sm:p-4 md:p-5 flex gap-4 sm:gap-5 items-stretch overflow-hidden"
+            className="relative flex-1 h-full rounded-[26px] p-3 sm:p-4 md:p-5 flex items-stretch overflow-hidden"
             style={{
               background: isLightMode
                 ? 'linear-gradient(180deg, #e4d7bf 0%, #dbcfb6 50%, #cfc2a7 100%)'
@@ -496,7 +487,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 activeTab={screenTab}
                 onSelectTab={(tab) => {
                   if (isCartridgeActive) {
-                    showCartridgeLockedToast('channel');
+                    showCartridgeLockedToast();
                     return;
                   }
                   if (tab === screenTab) return;
@@ -543,221 +534,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 }`}
               />
               {!isLightMode && <div className="crt-vignette" />}
-            </div>
-
-            {/* RIGHT COMPUTER CONTROL PANEL (Cream Computer Workstation) */}
-            <div
-              className="w-60 xl:w-66 shrink-0 h-full rounded-[18px] p-3.5 xl:p-4 flex flex-col justify-between relative z-30"
-              style={{
-                background: isLightMode
-                  ? 'linear-gradient(160deg, #ece1cc 0%, #e0d4bc 58%, #d2c5ab 100%)'
-                  : 'linear-gradient(160deg, #2a251d 0%, #201c16 58%, #17130f 100%)',
-                boxShadow: isLightMode
-                  ? '-4px 0 18px rgba(80,65,45,0.25), inset 0 2px 4px rgba(255,255,255,0.4)'
-                  : '-8px 0 26px rgba(0,0,0,0.8), inset 2px 0 8px rgba(166,226,110,0.18), inset 0 2px 3px rgba(220,205,180,0.08)',
-                border: isLightMode ? '2px solid #bdae92' : '2px solid #483e32',
-              }}
-            >
-              {/* Top Section: Power LED & Prominent Power Switch Button */}
-              <div className="flex flex-col gap-2">
-                <div
-                  className={`rounded-xl p-2.5 border flex items-center justify-between ${
-                    isLightMode
-                      ? 'border-[#baa98e] bg-[#ded1b6]'
-                      : 'border-[#433b2e] bg-[#1a1612]'
-                  }`}
-                  style={{
-                    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.55)',
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded-full animate-pulse"
-                      style={{
-                        backgroundColor: isTvPoweredOff ? '#ef4444' : '#a6e26e',
-                        boxShadow: isTvPoweredOff ? '0 0 10px #ef4444' : '0 0 10px #a6e26e',
-                      }}
-                    />
-                    <span
-                      className={`text-[8px] font-bold tracking-wider ${
-                        isLightMode ? 'text-[#3d3326]' : 'text-[#b4beb4]'
-                      }`}
-                      style={{ fontFamily: 'var(--font-pixel)' }}
-                    >
-                      {isTvPoweredOff ? 'POWER: OFF' : 'POWER: ON'}
-                    </span>
-                  </div>
-
-                  <span className="text-[8px] opacity-75 font-mono text-slate-300">
-                    CRT 60Hz
-                  </span>
-                </div>
-
-                {/* POWER SWITCH BUTTON TO TURN OFF & EXIT COMPUTER */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsTvPoweredOff(true);
-                    triggerZoomOut();
-                  }}
-                  title="Power Off (Exit Computer)"
-                  className="w-full py-2.5 px-3 rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg border-2 border-red-500/80 bg-gradient-to-b from-red-600 via-red-700 to-red-900 text-white font-bold group hover:border-red-400 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]"
-                >
-                  <span className="text-base sm:text-lg text-red-100 group-hover:text-white group-hover:scale-110 transition-transform font-mono select-none">
-                    ⏻
-                  </span>
-                </button>
-              </div>
-
-              {/* VINTAGE 3.5" FLOPPY DISK DRIVE BAY */}
-              <div
-                className={`rounded-xl p-3 border flex flex-col gap-2 ${
-                  isLightMode
-                    ? 'border-[#baa98e] bg-[#e4d7bf]'
-                    : 'border-[#453d32] bg-[#1a1612]'
-                }`}
-                style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.5)' }}
-              >
-                <div className="flex items-center justify-between text-[7.5px] font-mono font-bold tracking-wider opacity-85">
-                  <span className={isLightMode ? 'text-[#4d4233]' : 'text-[#c7baa5]'}>DRIVE A: 1.44MB</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
-                </div>
-                {/* Horizontal Floppy Disk Entry Slot */}
-                <div
-                  className={`w-full h-4 rounded-sm flex items-center justify-between px-1.5 ${
-                    isLightMode ? 'bg-[#2b241c]' : 'bg-[#090806]'
-                  }`}
-                  style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.9)' }}
-                >
-                  <div className="w-3/4 h-1 rounded-full bg-black/60" />
-                  {/* Eject Button */}
-                  <div
-                    className={`w-3.5 h-2.5 rounded-sm border ${
-                      isLightMode
-                        ? 'bg-[#ded1b6] border-[#8c7b60]'
-                        : 'bg-[#3b3329] border-[#5a4e3f]'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* RETRO COMPUTER CONTROLS: TACTILE BUTTONS (NO KNOBS) */}
-              <div
-                className={`rounded-2xl p-3 flex flex-col items-center justify-around gap-3 border ${
-                  isLightMode
-                    ? 'border-[#bdae92] bg-[#e8ddc7]'
-                    : 'border-[#433b2f] bg-[#181410]'
-                }`}
-                style={{ boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.55)' }}
-              >
-                {/* Tab / Channel Stepper */}
-                <div className="flex flex-col items-center w-full gap-1.5">
-                  <span
-                    className={`text-[8px] tracking-wider uppercase font-bold ${
-                      isLightMode ? 'text-[#4d4233]' : 'text-[#c2b59e]'
-                    }`}
-                    style={{ fontFamily: 'var(--font-pixel)' }}
-                  >
-                    TAB / CHANNEL
-                  </span>
-                  <div className={`flex items-center gap-2 w-full ${knobWiggleChannel ? 'animate-knobWiggle' : ''}`}>
-                    <button
-                      type="button"
-                      onClick={() => turnChannel('prev')}
-                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
-                        isLightMode
-                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
-                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
-                      }`}
-                      title="Previous Tab / Channel"
-                    >
-                      ◀ PREV
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => turnChannel('next')}
-                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
-                        isLightMode
-                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
-                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
-                      }`}
-                      title="Next Tab / Channel"
-                    >
-                      NEXT ▶
-                    </button>
-                  </div>
-                </div>
-
-                <div className={`w-full h-[1px] ${isLightMode ? 'bg-[#c9baa0]' : 'bg-[#332b21]'}`} />
-
-                {/* Option / Scroll Stepper */}
-                <div className="flex flex-col items-center w-full gap-1.5">
-                  <span
-                    className={`text-[8px] tracking-wider uppercase font-bold ${
-                      isLightMode ? 'text-[#4d4233]' : 'text-[#c2b59e]'
-                    }`}
-                    style={{ fontFamily: 'var(--font-pixel)' }}
-                  >
-                    SCROLL / OPTION
-                  </span>
-                  <div className={`flex items-center gap-2 w-full ${knobWiggleScroll ? 'animate-knobWiggle' : ''}`}>
-                    <button
-                      type="button"
-                      onClick={() => turnScroll('prev')}
-                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
-                        isLightMode
-                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
-                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
-                      }`}
-                      title="Previous Option"
-                    >
-                      ▲ UP
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => turnScroll('next')}
-                      className={`flex-1 py-2 rounded-lg font-mono font-bold text-xs cursor-pointer active:translate-y-0.5 transition-all flex items-center justify-center border shadow ${
-                        isLightMode
-                          ? 'bg-[#f4ebe0] hover:bg-white text-[#3d3429] border-[#b0a088]'
-                          : 'bg-[#2a241d] hover:bg-[#383027] text-[#d6c9b2] border-[#544738]'
-                      }`}
-                      title="Next Option"
-                    >
-                      DOWN ▼
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* ACTION / SELECT BUTTON TO OPEN SELECTED OPTION */}
-              <button
-                type="button"
-                onClick={handlePressSelectButton}
-                className="w-full py-3 px-3 rounded-xl cursor-pointer active:translate-y-1 transition-all flex items-center justify-center gap-2 group"
-                style={{
-                  background: 'linear-gradient(180deg, #2b6e48 0%, #1e5235 65%, #143824 100%)',
-                  boxShadow:
-                    '0 5px 0 #0c2416, 0 8px 14px rgba(0,0,0,0.6), inset 0 1px 2px rgba(166,226,110,0.55)',
-                  border: '2px solid #a6e26e',
-                }}
-              >
-                <span
-                  className="text-[9px] xl:text-[10px] text-[#e2f9c8] font-bold tracking-wider uppercase group-hover:text-white transition-colors"
-                  style={{ fontFamily: 'var(--font-pixel)' }}
-                >
-                  {'\uf061'} SELECT
-                </span>
-              </button>
-
-              {/* Matching Computer Ventilation Grille Slots at Bottom of Panel */}
-              <div className="flex flex-col gap-1.5 px-2 py-1 opacity-80">
-                {[0, 1, 2, 3, 4].map((slot) => (
-                  <div
-                    key={slot}
-                    className="w-full h-1.5 rounded-full bg-[#120f0c] border-b border-[#3b3327]"
-                  />
-                ))}
-              </div>
             </div>
           </div>
         </div>

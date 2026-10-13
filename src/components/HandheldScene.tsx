@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { flushSync } from 'react-dom';
+import { useState, useEffect, useMemo } from 'react';
 import type { Project } from '../data/projects';
 import {
   ConsoleScreenContent,
@@ -40,80 +39,8 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   const [optionIndex, setOptionIndex] = useState<number>(0);
   const [pingRefreshKey, setPingRefreshKey] = useState<number>(0);
 
-  const backlightRef = useRef<HTMLButtonElement | null>(null);
-  const backlightCooldownRef = useRef<number>(0);
-
-  const handleToggleBacklight = async () => {
-    if (Date.now() < backlightCooldownRef.current) return;
-
-    const willBeLight = !isLightMode;
-    backlightCooldownRef.current = Date.now() + (willBeLight ? 750 : 450);
-
-    // Fallback for unsupported browsers or reduced motion preference
-    if (
-      !document.startViewTransition ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      onToggleLightMode?.();
-      return;
-    }
-
-    // Get origin coordinates from the backlight button
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight * 0.85;
-
-    if (backlightRef.current) {
-      const rect = backlightRef.current.getBoundingClientRect();
-      x = rect.left + rect.width / 2;
-      y = rect.top + rect.height / 2;
-    }
-
-    const left = x;
-    const top = y;
-    const right = window.innerWidth - left;
-    const bottom = window.innerHeight - top;
-    const maxRadius = Math.hypot(
-      Math.max(left, right),
-      Math.max(top, bottom),
-    );
-
-    const transition = document.startViewTransition(() => {
-      flushSync(() => {
-        onToggleLightMode?.();
-      });
-    });
-
-    await transition.ready;
-
-    if (willBeLight) {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${maxRadius}px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          duration: 650,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          pseudoElement: '::view-transition-new(root)',
-        }
-      );
-    } else {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(${maxRadius}px at ${x}px ${y}px)`,
-            `circle(0px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          duration: 380,
-          easing: 'cubic-bezier(0.4, 0, 1, 1)',
-          pseudoElement: '::view-transition-old(root)',
-        }
-      );
-    }
+  const handleToggleBacklight = () => {
+    onToggleLightMode?.();
   };
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
@@ -413,7 +340,6 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
             >
               <button
                 type="button"
-                ref={backlightRef}
                 onClick={handleToggleBacklight}
                 className="w-12 h-3.5 sm:w-14 sm:h-4 rounded-full cursor-pointer active:translate-y-0.5 block transition-transform"
                 style={{
