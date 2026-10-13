@@ -140,6 +140,12 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   };
 
   const handlePressSelectButton = () => {
+    if (isCartridgeActive) {
+      if (isRomReady) {
+        onLaunchRom?.();
+      }
+      return;
+    }
     if (currentChannelOptions.length === 0) return;
     triggerOption(currentChannelOptions[safeOptionIndex]);
   };
@@ -344,7 +350,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [cameraMode, screenTab, currentChannelOptions, safeOptionIndex]);
+  }, [cameraMode, screenTab, currentChannelOptions, safeOptionIndex, isCartridgeActive, isRomReady, onLaunchRom]);
 
   // ============================================================================
   // ============================================================================

@@ -47,7 +47,10 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   const highlightedProject =
     projects[((selectedIndex % projects.length) + projects.length) % projects.length] || projects[0];
 
+  const isCartridgeActive = Boolean(activeCartridge || isRomLoading || isRomReady);
+
   const cycleTab = (dir: 'prev' | 'next') => {
+    if (isCartridgeActive) return;
     const idx = TABS.indexOf(screenTab);
     setOptionIndex(0);
     if (dir === 'next') {
@@ -58,6 +61,7 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
   };
 
   const cycleItem = (dir: 'prev' | 'next') => {
+    if (isCartridgeActive) return;
     if (screenTab === 'cartridges') {
       setSelectedIndex((prev) =>
         dir === 'next'
@@ -87,6 +91,13 @@ export const HandheldScene: React.FC<HandheldSceneProps> = ({
       : 0;
 
   const handleActionA = () => {
+    if (isCartridgeActive) {
+      if (isRomReady) {
+        onLaunchRom?.();
+      }
+      return;
+    }
+
     if (screenTab === 'cartridges') {
       onSelectProject(highlightedProject.id);
       return;

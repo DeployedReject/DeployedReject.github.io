@@ -49,15 +49,18 @@ export function App() {
 
   const [isRomReady, setIsRomReady] = useState<boolean>(false);
   const [isRomLoading, setIsRomLoading] = useState<boolean>(false);
+  const isLaunchingRomRef = useRef(false);
 
   const handleLaunchRom = () => {
-    if (!isRomReady && !isRomLoading) return;
+    if (isLaunchingRomRef.current || (!isRomReady && !isRomLoading)) return;
+    isLaunchingRomRef.current = true;
     clearTimers();
     setIsRomReady(false);
     setIsRomLoading(false);
     setStaticBurst(true);
     const tBoot = window.setTimeout(() => {
       setIsFullscreenProject(true);
+      isLaunchingRomRef.current = false;
     }, 240);
     const tClear = window.setTimeout(() => setStaticBurst(false), 520);
     timersRef.current.push(tBoot, tClear);
@@ -80,6 +83,7 @@ export function App() {
 
   const handleSelectProject = (projectId: string) => {
     clearTimers();
+    isLaunchingRomRef.current = false;
     setActiveCartridgeId(projectId);
     setIsRomLoading(true);
     setIsRomReady(false);
@@ -98,6 +102,7 @@ export function App() {
 
   const handleEject = () => {
     clearTimers();
+    isLaunchingRomRef.current = false;
     setIsRomLoading(false);
     setIsRomReady(false);
     setStaticBurst(true);
