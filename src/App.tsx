@@ -47,6 +47,12 @@ export function App() {
     return () => clearTimers();
   }, []);
 
+  // Failsafe: never let the BIOS boot overlay gate the app indefinitely
+  useEffect(() => {
+    const failsafe = window.setTimeout(() => setIsLoading(false), 8000);
+    return () => window.clearTimeout(failsafe);
+  }, []);
+
   const [isRomReady, setIsRomReady] = useState<boolean>(false);
   const [isRomLoading, setIsRomLoading] = useState<boolean>(false);
   const isLaunchingRomRef = useRef(false);

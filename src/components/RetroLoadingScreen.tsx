@@ -123,23 +123,30 @@ export const RetroLoadingScreen: React.FC<RetroLoadingScreenProps> = ({ onComple
     }
   }, [logs]);
 
-  // Fade out and unmount when progress hits 100%
+  // Keep the latest onComplete accessible without restarting the timers
+  const onCompleteRef = useRef(onComplete);
   useEffect(() => {
-    if (progress >= 100 && !isFadingOut) {
-      const fadeTimer = window.setTimeout(() => {
-        setIsFadingOut(true);
-      }, 250);
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
-      const doneTimer = window.setTimeout(() => {
-        onComplete();
-      }, 550);
+  // Fade out once progress hits 100%, then hand control back to the app.
+  // Both timers live in one effect so the isFadingOut state update can't
+  // clear the completion timeout before it fires.
+  useEffect(() => {
+    if (progress < 100) return;
+    const fadeTimer = window.setTimeout(() => {
+      setIsFadingOut(true);
+    }, 250);
 
-      return () => {
-        window.clearTimeout(fadeTimer);
-        window.clearTimeout(doneTimer);
-      };
-    }
-  }, [progress, isFadingOut, onComplete]);
+    const doneTimer = window.setTimeout(() => {
+      onCompleteRef.current();
+    }, 550);
+
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(doneTimer);
+    };
+  }, [progress]);
 
   // Build ANSI block bar: e.g. [██████████████████░░░░░░░░] 68%
   const totalBarWidth = 28;
