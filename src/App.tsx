@@ -170,6 +170,7 @@ export function App() {
           onLaunchRom={handleLaunchRom}
           isLightMode={isLightMode}
           onToggleLightMode={() => setIsLightMode((prev) => !prev)}
+          isBooting={isLoading}
         />
       ) : (
         <HandheldScene

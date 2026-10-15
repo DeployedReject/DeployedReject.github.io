@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import type { Project } from '../data/projects';
+import { RetroIntro } from './RetroIntro';
+import { buildIntroPages, hasSeenIntro, markIntroAsSeen } from '../services/visitorIntro';
 import {
   ConsoleScreenContent,
   getChannelOptions,
@@ -26,6 +28,8 @@ interface TVConsoleSceneProps {
   onLaunchRom?: () => void;
   isLightMode?: boolean;
   onToggleLightMode?: () => void;
+  /** True while the BIOS boot loading screen is still covering the page */
+  isBooting?: boolean;
 }
 
 // Desktop Fullscreen TV / Computer does NOT include the ROMs menu
@@ -42,6 +46,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   onLaunchRom,
   isLightMode = false,
   onToggleLightMode,
+  isBooting = false,
 }) => {
   const [screenTab, setScreenTab] = useState<ScreenTab>('status');
   const [optionIndex, setOptionIndex] = useState<number>(0);
@@ -54,7 +59,14 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const [hoveredBulb, setHoveredBulb] = useState<boolean>(false);
   const [isYankingChain, setIsYankingChain] = useState<boolean>(false);
   const [staticBurst, setStaticBurst] = useState<boolean>(false);
-  const [showGuideTooltip, setShowGuideTooltip] = useState<boolean>(true);
+
+  // First-visit CRT intro (cookie-gated, typed out page by page with ENTER)
+  const [introPages] = useState<string[]>(() => buildIntroPages());
+  const [isIntroActive, setIsIntroActive] = useState<boolean>(() => !hasSeenIntro());
+  const [introPage, setIntroPage] = useState<number>(0);
+  const [introChars, setIntroChars] = useState<number>(0);
+
+  const introText = introPages[introPage] ?? '';
   const [stats, setStats] = useState<DeveloperStats | null>(() => getCachedDeveloperStats());
 
   const bulbRef = useRef<SVGGElement | null>(null);
@@ -65,18 +77,42 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
     fetchDeveloperStats().then(setStats);
   }, []);
 
-  // Show navigation guide tooltip whenever entering closeup TV mode
+  // Typewriter effect for the first-visit intro. Waits for the BIOS boot
+  // screen to finish so visitors actually watch the text get typed out.
   useEffect(() => {
-    if (cameraMode === 'closeup') {
-      setShowGuideTooltip(true);
-      const timer = window.setTimeout(() => {
-        setShowGuideTooltip(false);
-      }, 5500);
-      return () => window.clearTimeout(timer);
-    } else {
-      setShowGuideTooltip(false);
+    if (!isIntroActive || isBooting || !introText) return;
+    const timer = window.setInterval(() => {
+      setIntroChars((prev) => {
+        if (prev >= introText.length) {
+          window.clearInterval(timer);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 26);
+    return () => window.clearInterval(timer);
+  }, [isIntroActive, isBooting, introText]);
+
+  // ENTER (or clicking the prompt) fast-forwards the typing, then pages
+  // forward. Finishing the last page sets the cookie and hands the screen
+  // back over to the normal TV with a quick static burst.
+  const advanceIntro = useCallback(() => {
+    if (introChars < introText.length) {
+      setIntroChars(introText.length);
+      return;
     }
-  }, [cameraMode]);
+    if (introPage < introPages.length - 1) {
+      setIntroChars(0);
+      setIntroPage((prev) => prev + 1);
+      return;
+    }
+    markIntroAsSeen();
+    setIsIntroActive(false);
+    setIntroChars(0);
+    setIntroPage(0);
+    setStaticBurst(true);
+    window.setTimeout(() => setStaticBurst(false), 320);
+  }, [introChars, introPage, introPages, introText]);
 
   const activeCartridge = projects.find((p) => p.id === activeCartridgeId) || null;
   const hoveredProject = projects.find((p) => p.id === hoveredProjectId) || null;
@@ -257,6 +293,8 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
   const triggerZoomOut = () => {
     clearZoomTimers();
     if (cameraMode !== 'closeup') return;
+    // The first-visit intro keeps the visitor on the computer until finished
+    if (isIntroActive) return;
     if (Date.now() < zoomCooldownRef.current) return;
     zoomCooldownRef.current = Date.now() + 500;
     setStaticBurst(true);
@@ -324,6 +362,16 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
         return;
       }
 
+      // While the first-visit intro is on screen, ENTER is the only key that
+      // does anything (fast-forward typing / page forward).
+      if (isIntroActive) {
+        if (!isBooting && e.key === 'Enter') {
+          e.preventDefault();
+          advanceIntro();
+        }
+        return;
+      }
+
       if (e.key === 'Escape') {
         e.preventDefault();
         triggerZoomOut();
@@ -350,7 +398,7 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [cameraMode, screenTab, currentChannelOptions, safeOptionIndex, isCartridgeActive, isRomReady, onLaunchRom]);
+  }, [cameraMode, screenTab, currentChannelOptions, safeOptionIndex, isCartridgeActive, isRomReady, onLaunchRom, isIntroActive, isBooting, introChars, introPage, introText, introPages, advanceIntro]);
 
   // ============================================================================
   // ============================================================================
@@ -373,59 +421,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
               alt="TV Static"
               className="w-full h-full object-cover opacity-90"
             />
-          </div>
-        )}
-
-        {/* Directed Navigation Tooltip on Entering Computer Closeup Mode */}
-        {showGuideTooltip && (
-          <div
-            onClick={() => setShowGuideTooltip(false)}
-            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] cursor-pointer animate-fadeIn"
-          >
-            <div className="relative max-w-xl w-full p-6 sm:p-7 rounded-2xl bg-[#09130b]/98 border-3 border-[#a6e26e] text-[#a6e26e] shadow-[0_0_50px_rgba(166,226,110,0.6)] flex flex-col items-center gap-4 text-center font-mono">
-              <div className="flex items-center justify-center text-sm sm:text-base font-bold tracking-wider">
-                <span className="text-white text-base sm:text-lg uppercase" style={{ fontFamily: 'var(--font-pixel)' }}>
-                  COMPUTER CONTROLS & NAVIGATION
-                </span>
-              </div>
-
-              <p className="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed">
-                Click tabs or items on the screen directly, or use keyboard navigation:
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full py-2">
-                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
-                  <div className="flex gap-1">
-                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">←</kbd>
-                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">→</kbd>
-                  </div>
-                  <span className="text-[11px] sm:text-xs text-white font-bold">Tabs / Channels</span>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
-                  <div className="flex gap-1">
-                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">↑</kbd>
-                    <kbd className="px-2 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">↓</kbd>
-                  </div>
-                  <span className="text-[11px] sm:text-xs text-white font-bold">Scroll</span>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
-                  <kbd className="px-2.5 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">Enter</kbd>
-                  <span className="text-[11px] sm:text-xs text-white font-bold">Select</span>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-[#142618] border border-[#a6e26e]/60 flex flex-col items-center gap-1.5">
-                  <kbd className="px-2.5 py-1 rounded bg-[#09120a] border border-[#a6e26e] text-[#a6e26e] font-bold text-xs sm:text-sm shadow">Esc</kbd>
-                  <span className="text-[11px] sm:text-xs text-white font-bold">Exit / Zoom Out</span>
-                </div>
-              </div>
-
-              <div className="w-full pt-1 flex items-center justify-between text-[10px] sm:text-xs text-[#a6e26e]/80 border-t border-[#2d4d24]">
-                <span>Mouse clicks on screen & tabs enabled</span>
-                <span className="text-white font-bold px-2 py-0.5 rounded bg-[#1c3b22] border border-[#a6e26e]">CLICK ANYWHERE TO DISMISS</span>
-              </div>
-            </div>
           </div>
         )}
 
@@ -488,31 +483,42 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                   : 'bg-[#070c08] border-[#3a6b4c] shadow-[0_0_55px_rgba(166,226,110,0.24),inset_0_0_60px_rgba(0,0,0,0.95)]'
               }`}
             >
-              <ConsoleScreenContent
-                projects={projects}
-                activeTab={screenTab}
-                onSelectTab={(tab) => {
-                  if (isCartridgeActive) {
-                    showCartridgeLockedToast();
-                    return;
-                  }
-                  if (tab === screenTab) return;
-                  setScreenTab(tab);
-                  setOptionIndex(0);
-                }}
-                optionIndex={safeOptionIndex}
-                onSelectOption={(idx) => {
-                  setOptionIndex(idx);
-                }}
-                onTriggerOption={(opt) => triggerOption(opt)}
-                pingRefreshKey={pingRefreshKey}
-                isTableZoomedOut={false}
-                insertingProject={isRomLoading || isRomReady ? activeCartridge : null}
-                isRomReady={isRomReady}
-                onLaunchRom={onLaunchRom}
-                hideRomsTab={true}
-                isLightMode={isLightMode}
-              />
+              {isIntroActive ? (
+                <RetroIntro
+                  text={introText}
+                  visibleChars={introChars}
+                  pageIndex={introPage}
+                  pageCount={introPages.length}
+                  isLightMode={isLightMode}
+                  onAdvance={advanceIntro}
+                />
+              ) : (
+                <ConsoleScreenContent
+                  projects={projects}
+                  activeTab={screenTab}
+                  onSelectTab={(tab) => {
+                    if (isCartridgeActive) {
+                      showCartridgeLockedToast();
+                      return;
+                    }
+                    if (tab === screenTab) return;
+                    setScreenTab(tab);
+                    setOptionIndex(0);
+                  }}
+                  optionIndex={safeOptionIndex}
+                  onSelectOption={(idx) => {
+                    setOptionIndex(idx);
+                  }}
+                  onTriggerOption={(opt) => triggerOption(opt)}
+                  pingRefreshKey={pingRefreshKey}
+                  isTableZoomedOut={false}
+                  insertingProject={isRomLoading || isRomReady ? activeCartridge : null}
+                  isRomReady={isRomReady}
+                  onLaunchRom={onLaunchRom}
+                  hideRomsTab={true}
+                  isLightMode={isLightMode}
+                />
+              )}
 
               {copiedBanner && (
                 <div
@@ -1267,59 +1273,6 @@ export const TVConsoleScene: React.FC<TVConsoleSceneProps> = ({
                 strokeLinecap="round"
               />
             ))}
-
-            {/* Directed Tooltip & Computer Highlight on Load (Active for 5s in Room View) */}
-            {showGuideTooltip && (
-              <g className="pointer-events-none">
-                {/* Pulsing highlight around the Computer cabinet */}
-                <polygon
-                  points="164,282 622,267 622,645 164,660"
-                  fill="none"
-                  stroke="#a6e26e"
-                  strokeWidth="3.5"
-                  strokeDasharray="8,6"
-                  className="animate-pulse"
-                  filter="url(#rtGlow)"
-                />
-                {/* Floating directed speech bubble pointing to Computer */}
-                <g transform="translate(393, 220)" className="animate-bounce">
-                  {/* Tooltip background pill */}
-                  <rect
-                    x="-140"
-                    y="-38"
-                    width="280"
-                    height="32"
-                    rx="6"
-                    fill="#0a120d"
-                    fillOpacity="0.95"
-                    stroke="#a6e26e"
-                    strokeWidth="1.5"
-                    filter="url(#rtFineBlur)"
-                  />
-                  {/* Speech bubble pointer arrow pointing down to Computer */}
-                  <polygon
-                    points="-8,-6 8,-6 0,4"
-                    fill="#0a120d"
-                    stroke="#a6e26e"
-                    strokeWidth="1.5"
-                  />
-                  <line x1="-7" y1="-6" x2="7" y2="-6" stroke="#0a120d" strokeWidth="2.5" />
-                  {/* Tooltip text */}
-                  <text
-                    x="0"
-                    y="-18"
-                    fill="#a6e26e"
-                    fontSize="11"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    letterSpacing="0.05em"
-                  >
-                    HOVER 2s (OR CLICK) TO ENTER COMPUTER
-                  </text>
-                </g>
-              </g>
-            )}
           </g>
 
           {/* ================================================================ */}
